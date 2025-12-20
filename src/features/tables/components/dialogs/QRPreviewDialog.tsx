@@ -6,26 +6,34 @@ import React, { useState, useEffect } from 'react';
 import { PDFPreviewDialog } from './PDFPreviewDialog';
 import { QRCodeCanvas } from "qrcode.react";
 import { genQRApi, downloadSingleQRApi, getQRApi } from "../../services/qr.api";
-
+import { ConfirmDialog } from '../../components/dialogs/ConfirmDialog'
 interface QRPreviewDialogProps {
   table: Table;
   onClose: () => void;
   qrUrl?: string | null;
+  create_at: string,
+  expire_at: string,
 }
 
 export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
   const [showPDFPreview, setShowPDFPreview] = useState(false);
   const [qrUrl, setQrUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [expire_at, setExpireAt] = useState('');
+  const [create_at, setCreateAt] = useState('');
 
+  const [showConfirmInactive, setShowConfirmInactive] = useState(false);
   useEffect(() => {
     const fetchQR = async () => {
       try {
         setLoading(true);
         const res = await getQRApi.fetch(table.id);
+
         setQrUrl(res.url);
+        setCreateAt(res.create_at);
+        setExpireAt(res.expire_at);
       } catch (error) {
-        console.error("Failed to generate QR", error);
+        console.error("Failed to fetch QR", error);
       } finally {
         setLoading(false);
       }
@@ -35,11 +43,22 @@ export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
   }, [table.id]);
 
   const qrData = {
-    createdDate: 'Dec 10, 2024',
     lastScan: '2 hours ago',
     totalScans: 47,
-    tokenStatus: 'Active',
   };
+  const formatDate = (iso: string) =>
+    new Date(iso).toLocaleString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+  const isActive = expire_at
+    ? new Date(expire_at).getTime() > Date.now()
+    : false;
+
   const extractToken = (url: string) => {
     try {
       const params = new URL(url).searchParams;
@@ -73,9 +92,31 @@ export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
     setShowPDFPreview(true);
   };
 
-  const handleRegenerateQR = () => {
-    if (confirm('Are you sure you want to regenerate this QR code? The old QR code will no longer work.')) {
-      alert(`Regenerating QR code for ${table.table_number}`);
+  const handleRegenerateQR = async () => {
+    const hasActiveOrders =
+      table.order_data && table.order_data.active_orders > 0;
+
+    if (hasActiveOrders) {
+      setShowConfirmInactive(true);
+      return;
+    }
+    RegenerateQR();
+  }
+  const RegenerateQR = async () => {
+    try {
+      setLoading(true);
+
+      const res = await genQRApi.generate(table.id);
+
+      setQrUrl(res.url);
+      setCreateAt(res.create_at);
+      setExpireAt(res.expire_at);
+
+    } catch (error) {
+      console.error("Failed to regenerate QR", error);
+      alert("Failed to regenerate QR code");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -147,7 +188,7 @@ export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
                     </div>
                     <div className="flex-1">
                       <p className="text-sm text-gray-500 mb-0.5">Created Date</p>
-                      <p className="text-gray-900">{qrData.createdDate}</p>
+                      <p className="text-gray-900">{create_at ? formatDate(create_at) : "--"}</p>
                     </div>
                   </div>
 
@@ -170,8 +211,14 @@ export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
                     </div>
                     <div className="flex-1">
                       <p className="text-sm text-gray-500 mb-1.5">Token Status</p>
-                      <Badge className="bg-[#27ae60] text-white border-0">
-                        {qrData.tokenStatus}
+                      <Badge
+                        className={
+                          isActive
+                            ? "bg-[#27ae60] text-white border-0"
+                            : "bg-red-500 text-white border-0"
+                        }
+                      >
+                        {isActive ? "Active" : "Expired"}
                       </Badge>
                     </div>
                   </div>
@@ -223,6 +270,33 @@ export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
           table={table}
           qrUrl={qrUrl}
           onClose={() => setShowPDFPreview(false)}
+        />
+      )}
+      {showConfirmInactive && (
+        <ConfirmDialog
+          open={showConfirmInactive}
+          title="Regenerate QR Code?"
+          description={
+            <>
+              <p>
+                This table currently has{" "}
+                <strong>{table.order_data?.active_orders}</strong> active order(s).
+              </p>
+              <p className="mt-2 text-red-600">
+                Regenerating QR will invalidate the old QR code. Are you sure you want to regenerate this QR code?
+              </p>
+            </>
+          }
+          confirmText="Yes"
+          cancelText="Cancel"
+          confirmVariant="danger"
+          onCancel={() => {
+            setShowConfirmInactive(false);
+          }}
+          onConfirm={() => {
+            RegenerateQR();
+            setShowConfirmInactive(false);
+          }}
         />
       )}
     </div>
