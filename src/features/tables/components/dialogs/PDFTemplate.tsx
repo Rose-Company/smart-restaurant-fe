@@ -1,16 +1,17 @@
 import React from 'react';
 import { Wifi } from 'lucide-react';
 import type { Table } from '../../types/table.types';
-
+import { QRCodeCanvas } from "qrcode.react";
 interface PDFTemplateProps {
   table: Table;
+  qrUrl: string | null;
 }
 
-export function PDFTemplate({ table }: PDFTemplateProps) {
+export function PDFTemplate({ table, qrUrl }: PDFTemplateProps) {
   // Extract just the number from table number (e.g., "T-05" -> "05")
   const tableNumberDisplay =
-    table.tableNumber.split('-')[1] ||
-    table.tableNumber.slice(-2).padStart(2, '0');
+    table.table_number.split('-')[1] ||
+    table.table_number.slice(-2).padStart(2, '0');
 
   return (
     <div
@@ -26,7 +27,7 @@ export function PDFTemplate({ table }: PDFTemplateProps) {
       {/* Header with Logo and Restaurant Name */}
       <div className="text-center px-6 relative z-10" style={{ paddingTop: '15px' }}>
         {/* Logo Circle with Icon */}
-        <div 
+        <div
           className="inline-flex items-center justify-center rounded-full"
           style={{
             width: '64px',
@@ -95,62 +96,13 @@ export function PDFTemplate({ table }: PDFTemplateProps) {
             border: '4px solid #27ae60',
           }}
         >
-          <svg
-            viewBox="0 0 200 200"
-            xmlns="http://www.w3.org/2000/svg"
-            style={{
-              width: '200px',
-              height: '200px',
-              display: 'block',
-            }}
-          >
-            <rect width="200" height="200" fill="white" />
-            {/* QR Code Pattern (mock) */}
-            {[...Array(10)].map((_, i) =>
-              [...Array(10)].map((_, j) => {
-                const isBlack =
-                  (i + j) % 2 === 0 || i === j || i + j === 9;
-                return (
-                  <rect
-                    key={`${i}-${j}`}
-                    x={10 + i * 18}
-                    y={10 + j * 18}
-                    width="16"
-                    height="16"
-                    fill={isBlack ? '#2c3e50' : 'white'}
-                  />
-                );
-              }),
-            )}
-            {/* Corner markers with emerald green */}
-            <rect
-              x="10"
-              y="10"
-              width="50"
-              height="50"
-              fill="none"
-              stroke="#27ae60"
-              strokeWidth="5"
+          {qrUrl && (
+            <QRCodeCanvas
+              value={qrUrl}
+              size={200}
+              level="H"
             />
-            <rect
-              x="140"
-              y="10"
-              width="50"
-              height="50"
-              fill="none"
-              stroke="#27ae60"
-              strokeWidth="5"
-            />
-            <rect
-              x="10"
-              y="140"
-              width="50"
-              height="50"
-              fill="none"
-              stroke="#27ae60"
-              strokeWidth="5"
-            />
-          </svg>
+          )}
         </div>
       </div>
 
@@ -194,7 +146,7 @@ export function PDFTemplate({ table }: PDFTemplateProps) {
           zIndex: 5,
         }}
       >
-        Table: {table.tableNumber} • {table.zone}
+        Table: {table.table_number} • {table.location}
       </div>
 
       {/* Footer - Full Width Gradient with WiFi Info Centered */}
@@ -210,7 +162,7 @@ export function PDFTemplate({ table }: PDFTemplateProps) {
           zIndex: 10,
         }}
       >
-        <div 
+        <div
           className="flex items-center justify-center gap-2"
           style={{ margin: '0 auto' }}
         >

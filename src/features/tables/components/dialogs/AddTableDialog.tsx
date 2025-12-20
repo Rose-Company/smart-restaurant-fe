@@ -20,7 +20,7 @@ import {
 
 // Validation schema
 const addTableSchema = z.object({
-  tableNumber: z
+  table_number: z
     .string()
     .min(2, 'Table number must be at least 2 characters')
     .regex(/^[A-Za-z0-9-]+$/, 'Only letters, numbers, and hyphens allowed')
@@ -38,10 +38,10 @@ type AddTableFormValues = z.infer<typeof addTableSchema>;
 interface AddTableDialogProps {
   onClose: () => void;
   onAdd: (table: {
-    tableNumber: string;
+    table_number: string;
     capacity: number;
     zone: string;
-    status: 'Active' | 'Inactive';
+    status: 'active' | 'inactive';
   }) => void;
 }
 
@@ -49,7 +49,7 @@ export function AddTableDialog({ onClose, onAdd }: AddTableDialogProps) {
   const form = useForm<AddTableFormValues>({
     resolver: zodResolver(addTableSchema),
     defaultValues: {
-      tableNumber: '',
+      table_number: '',
       capacity: 4,
       zone: 'Main Hall',
       isActive: true,
@@ -58,10 +58,10 @@ export function AddTableDialog({ onClose, onAdd }: AddTableDialogProps) {
 
   const onSubmit = (data: AddTableFormValues) => {
     onAdd({
-      tableNumber: data.tableNumber,
+      table_number: data.table_number,
       capacity: data.capacity,
       zone: data.zone,
-      status: data.isActive ? 'Active' : 'Inactive',
+      status: data.isActive ? 'active' : 'inactive',
     });
   };
 
@@ -91,7 +91,7 @@ export function AddTableDialog({ onClose, onAdd }: AddTableDialogProps) {
               {/* Table Name/Number */}
               <FormField
                 control={form.control}
-                name="tableNumber"
+                name="table_number"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-gray-700">
@@ -180,6 +180,18 @@ export function AddTableDialog({ onClose, onAdd }: AddTableDialogProps) {
                           <div className="flex items-center gap-2">
                             <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                             <span>Patio</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="Indoor">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
+                            <span>Indoor</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="Outdoor">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
+                            <span>Outdoor</span>
                           </div>
                         </SelectItem>
                       </SelectContent>

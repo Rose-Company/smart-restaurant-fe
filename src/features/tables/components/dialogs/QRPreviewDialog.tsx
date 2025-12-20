@@ -2,26 +2,71 @@ import { X, Download, FileText, AlertTriangle, Calendar, Activity, CheckCircle2 
 import { Button } from '../../../../components/ui/misc/button';
 import { Badge } from '../../../../components/ui/data-display/badge';
 import type { Table } from '../../types/table.types';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PDFPreviewDialog } from './PDFPreviewDialog';
+import { QRCodeCanvas } from "qrcode.react";
+import { genQRApi, downloadSingleQRApi, getQRApi } from "../../services/qr.api";
 
 interface QRPreviewDialogProps {
   table: Table;
   onClose: () => void;
+  qrUrl?: string | null;
 }
 
 export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
   const [showPDFPreview, setShowPDFPreview] = useState(false);
-  // Mock data for demonstration
+  const [qrUrl, setQrUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchQR = async () => {
+      try {
+        setLoading(true);
+        const res = await getQRApi.fetch(table.id);
+        setQrUrl(res.url);
+      } catch (error) {
+        console.error("Failed to generate QR", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchQR();
+  }, [table.id]);
+
   const qrData = {
     createdDate: 'Dec 10, 2024',
     lastScan: '2 hours ago',
     totalScans: 47,
     tokenStatus: 'Active',
   };
+  const extractToken = (url: string) => {
+    try {
+      const params = new URL(url).searchParams;
+      return params.get("token") || "";
+    } catch (error) {
+      console.error("Invalid URL", error);
+      return "";
+    }
+  };
+  const handleDownloadPNG = async () => {
+    if (!qrUrl) return;
 
-  const handleDownloadPNG = () => {
-    alert(`Downloading PNG QR code for ${table.tableNumber}`);
+    const token = extractToken(qrUrl);
+
+    try {
+      const blob = await downloadSingleQRApi.fetch(table.id, token);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+
+      a.href = url;
+      a.download = `${table.table_number}.png`;
+      a.click();
+
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Download QR failed:", error);
+    }
   };
 
   const handleOpenPDFPreview = () => {
@@ -30,7 +75,7 @@ export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
 
   const handleRegenerateQR = () => {
     if (confirm('Are you sure you want to regenerate this QR code? The old QR code will no longer work.')) {
-      alert(`Regenerating QR code for ${table.tableNumber}`);
+      alert(`Regenerating QR code for ${table.table_number}`);
     }
   };
 
@@ -41,7 +86,7 @@ export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
         <div className="flex items-center justify-between px-8 py-6 border-b border-gray-100">
           <div>
             <h2 className="text-gray-900 mb-1">QR Code Management</h2>
-            <p className="text-sm text-gray-500">Manage and download QR code for {table.tableNumber}</p>
+            <p className="text-sm text-gray-500">Manage and download QR code for {table.table_number}</p>
           </div>
           <button
             onClick={onClose}
@@ -56,42 +101,32 @@ export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
           {/* Left Side - QR Code Preview */}
           <div className="flex flex-col items-center justify-center space-y-6">
             <div className="w-full max-w-sm">
-              <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm">
+              <div className="">
                 <div className="aspect-square bg-white rounded-lg flex items-center justify-center">
-                  <svg
-                    viewBox="0 0 200 200"
-                    className="w-full h-full"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <rect width="200" height="200" fill="white" />
-                    {/* QR Code Pattern */}
-                    {[...Array(10)].map((_, i) =>
-                      [...Array(10)].map((_, j) => {
-                        const isBlack = (i + j) % 2 === 0 || (i === j) || (i + j === 9);
-                        return (
-                          <rect
-                            key={`${i}-${j}`}
-                            x={10 + i * 18}
-                            y={10 + j * 18}
-                            width="16"
-                            height="16"
-                            fill={isBlack ? '#2c3e50' : 'white'}
-                          />
-                        );
-                      })
-                    )}
-                    {/* Corner markers */}
-                    <rect x="10" y="10" width="50" height="50" fill="none" stroke="#27ae60" strokeWidth="4" />
-                    <rect x="140" y="10" width="50" height="50" fill="none" stroke="#27ae60" strokeWidth="4" />
-                    <rect x="10" y="140" width="50" height="50" fill="none" stroke="#27ae60" strokeWidth="4" />
-                  </svg>
+                  {loading && (
+                    <span className="text-sm text-gray-500">Loading QR...</span>
+                  )}
+
+                  {!loading && qrUrl && (
+                    <QRCodeCanvas
+                      value={qrUrl}
+                      size={200}
+                      level="H"
+                    />
+                  )}
+
+                  {!loading && !qrUrl && (
+                    <span className="text-sm text-red-500">
+                      Failed to load QR
+                    </span>
+                  )}
                 </div>
               </div>
 
               <div className="text-center mt-6">
-                <h3 className="text-gray-900 mb-1">{table.tableNumber}</h3>
+                <h3 className="text-gray-900 mb-1">{table.table_number}</h3>
                 <p className="text-sm text-gray-500">
-                  {table.capacity} {table.capacity === 1 ? 'person' : 'people'} • {table.zone}
+                  {table.capacity} {table.capacity === 1 ? 'person' : 'people'} • {table.location}
                 </p>
               </div>
             </div>
@@ -186,6 +221,7 @@ export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
       {showPDFPreview && (
         <PDFPreviewDialog
           table={table}
+          qrUrl={qrUrl}
           onClose={() => setShowPDFPreview(false)}
         />
       )}
