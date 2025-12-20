@@ -7,6 +7,8 @@ export interface ApiResponse<T> {
 }
 export interface GenerateQRData {
     url: string;
+    create_at: string;
+    expire_at: string;
 }
 
 export const genQRApi = {
