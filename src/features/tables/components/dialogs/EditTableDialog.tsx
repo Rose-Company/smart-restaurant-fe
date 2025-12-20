@@ -1,5 +1,5 @@
 import { useForm } from 'react-hook-form';
-import React from 'react';
+import React, { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { X } from 'lucide-react';
@@ -15,10 +15,10 @@ import {
   FormMessage,
 } from '../../../../components/ui/forms/form';
 import type { Table } from '../../types/table.types';
-
+import { ConfirmDialog } from '../../components/dialogs/ConfirmDialog'
 // Validation schema
 const editTableSchema = z.object({
-  tableNumber: z
+  table_number: z
     .string()
     .min(2, 'Table number must be at least 2 characters')
     .regex(/^[A-Za-z0-9-]+$/, 'Only letters, numbers, and hyphens allowed')
@@ -27,8 +27,8 @@ const editTableSchema = z.object({
     .number()
     .min(1, 'Capacity must be at least 1 person')
     .max(20, 'Capacity cannot exceed 20 people'),
-  zone: z.enum(['Main Hall', 'VIP', 'Patio']),
-  status: z.enum(['Active', 'Occupied', 'Inactive']),
+  zone: z.enum(['Main Hall', 'VIP', 'Patio', 'Indoor', 'Outdoor']),
+  status: z.enum(['active', 'occupied', 'inactive']),
 });
 
 type EditTableFormValues = z.infer<typeof editTableSchema>;
@@ -40,41 +40,56 @@ interface EditTableDialogProps {
 }
 
 export function EditTableDialog({ table, onClose, onSave }: EditTableDialogProps) {
+  const [showConfirmInactive, setShowConfirmInactive] = useState(false);
+  const [pendingData, setPendingData] = useState<EditTableFormValues | null>(null);
   const form = useForm<EditTableFormValues>({
     resolver: zodResolver(editTableSchema),
     defaultValues: {
-      tableNumber: table.tableNumber,
+      table_number: table.table_number,
       capacity: table.capacity,
-      zone: table.zone as 'Main Hall' | 'VIP' | 'Patio',
+      zone: table.location as 'Main Hall' | 'VIP' | 'Patio' | 'Indoor' | 'Outdoor',
       status: table.status,
     },
   });
 
   const onSubmit = (data: EditTableFormValues) => {
-    // Create updated table object
+    const hasActiveOrders =
+      table.order_data && table.order_data.active_orders > 0;
+    if (
+      data.status === "inactive" &&
+      table.status !== "inactive" &&
+      hasActiveOrders
+    ) {
+      setPendingData(data);
+      setShowConfirmInactive(true);
+      return;
+    }
+    submitUpdate(data);
+  };
+
+  const submitUpdate = (data: EditTableFormValues) => {
     const updatedTable: Table = {
       ...table,
-      tableNumber: data.tableNumber,
+      table_number: data.table_number,
       capacity: data.capacity,
-      zone: data.zone,
+      location: data.zone,
       status: data.status,
     };
 
-    // If changing to Occupied status and no order data exists, add mock data
-    if (data.status === 'Occupied' && !updatedTable.orderData) {
-      updatedTable.orderData = {
-        activeOrders: 1,
-        totalBill: 0,
+    if (data.status === "occupied" && !updatedTable.order_data) {
+      updatedTable.order_data = {
+        active_orders: 1,
+        total_bill: 0,
       };
     }
 
-    // If changing to Active or Inactive, remove order data
-    if (data.status !== 'Occupied') {
-      delete updatedTable.orderData;
+    if (data.status !== "occupied") {
+      delete updatedTable.order_data;
     }
 
     onSave(updatedTable);
   };
+
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -89,13 +104,14 @@ export function EditTableDialog({ table, onClose, onSave }: EditTableDialogProps
           </button>
         </div>
 
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="p-6">
             <div className="space-y-4">
               {/* Table Number */}
               <FormField
                 control={form.control}
-                name="tableNumber"
+                name="table_number"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Table Number</FormLabel>
@@ -153,6 +169,8 @@ export function EditTableDialog({ table, onClose, onSave }: EditTableDialogProps
                         <SelectItem value="Main Hall">Main Hall</SelectItem>
                         <SelectItem value="VIP">VIP</SelectItem>
                         <SelectItem value="Patio">Patio</SelectItem>
+                        <SelectItem value="Indoor">Indoor</SelectItem>
+                        <SelectItem value="Outdoor">Outdoor</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -177,9 +195,9 @@ export function EditTableDialog({ table, onClose, onSave }: EditTableDialogProps
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="Active">Active</SelectItem>
-                        <SelectItem value="Occupied">Occupied</SelectItem>
-                        <SelectItem value="Inactive">Inactive</SelectItem>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="occupied">Occupied</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -207,6 +225,38 @@ export function EditTableDialog({ table, onClose, onSave }: EditTableDialogProps
           </form>
         </Form>
       </div>
+      {showConfirmInactive && (
+        <ConfirmDialog
+          open={showConfirmInactive}
+          title="Set table to Inactive?"
+          description={
+            <>
+              <p>
+                This table currently has{" "}
+                <strong>{table.order_data?.active_orders}</strong> active order(s).
+              </p>
+              <p className="mt-2 text-red-600">
+                Changing status to <strong>Inactive</strong> will remove all active
+                orders.
+              </p>
+            </>
+          }
+          confirmText="Yes, set Inactive"
+          cancelText="Cancel"
+          confirmVariant="danger"
+          onCancel={() => {
+            setShowConfirmInactive(false);
+            setPendingData(null);
+          }}
+          onConfirm={() => {
+            if (pendingData) {
+              submitUpdate(pendingData);
+            }
+            setShowConfirmInactive(false);
+            setPendingData(null);
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -6,16 +6,17 @@ import { PDFTemplate } from './PDFTemplate';
 
 interface PDFPreviewDialogProps {
   table: Table;
+  qrUrl: string | null;
   onClose: () => void;
 }
 
-export function PDFPreviewDialog({ table, onClose }: PDFPreviewDialogProps) {
+export function PDFPreviewDialog({ table, onClose, qrUrl }: PDFPreviewDialogProps) {
   const handlePrint = () => {
     window.print();
   };
 
   const handleDownload = () => {
-    alert(`Downloading print-ready PDF for ${table.tableNumber}...`);
+    alert(`Downloading print-ready PDF for ${table.table_number}...`);
   };
 
   return (
@@ -27,7 +28,7 @@ export function PDFPreviewDialog({ table, onClose }: PDFPreviewDialogProps) {
           <div>
             <h2 className="text-gray-900 mb-1">Print-Ready PDF Preview</h2>
             <p className="text-sm text-gray-500">
-              A6 Portrait (105mm × 148mm) • {table.tableNumber}
+              A6 Portrait (105mm × 148mm) • {table.table_number}
             </p>
           </div>
           <button
@@ -45,7 +46,7 @@ export function PDFPreviewDialog({ table, onClose }: PDFPreviewDialogProps) {
           style={{ maxHeight: 'calc(100vh - 200px)' }}
         >
           <div className="flex justify-center">
-            <PDFTemplate table={table} />
+            <PDFTemplate table={table} qrUrl={qrUrl} />
           </div>
         </div>
 

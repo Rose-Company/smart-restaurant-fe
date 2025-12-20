@@ -1,4 +1,5 @@
 import { LayoutGrid, CheckCircle, XCircle } from 'lucide-react';
+import React from "react";
 
 interface StatsBarProps {
   stats: {

@@ -1,10 +1,11 @@
-import { TableCard } from './TableCard';
-import type { Table } from '../types/table.types';
+import React from "react";
+import { TableCard } from "./TableCard";
+import type { UITable } from "../pages/TablesPage";   
 
 interface TableGridProps {
-  tables: Table[];
-  onQRPreview: (table: Table) => void;
-  onEdit: (table: Table) => void;
+  tables: UITable[];
+  onQRPreview: (table: UITable) => void;
+  onEdit: (table: UITable) => void;
 }
 
 export function TableGrid({ tables, onQRPreview, onEdit }: TableGridProps) {

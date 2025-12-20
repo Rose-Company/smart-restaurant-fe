@@ -2,6 +2,7 @@ import { Search, X } from 'lucide-react';
 import { Input } from '../../../components/ui/forms/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/forms/select';
 import { Button } from '../../../components/ui/misc/button';
+import React from "react";
 
 interface FilterBarProps {
   searchQuery: string;
@@ -51,9 +52,9 @@ export function FilterBar({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="Active">Active</SelectItem>
-              <SelectItem value="Occupied">Occupied</SelectItem>
-              <SelectItem value="Inactive">Inactive</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="occupied">Occupied</SelectItem>
+              <SelectItem value="inactive">Inactive</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -81,7 +82,7 @@ export function FilterBar({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="default">Default Order</SelectItem>
-              <SelectItem value="tableNumber">Table Number</SelectItem>
+              <SelectItem value="table_number">Table Number</SelectItem>
               <SelectItem value="capacity">Capacity</SelectItem>
               <SelectItem value="recentlyCreated">Recently Created</SelectItem>
             </SelectContent>
