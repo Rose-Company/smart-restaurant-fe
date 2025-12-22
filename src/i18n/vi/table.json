@@ -1,0 +1,110 @@
+{
+  "addDialog": {
+    "title": "Tạo bàn mới",
+    "tableNumber": {
+      "label": "Tên bàn / Số bàn",
+      "placeholder": "Ví dụ: T-13, VIP-01, P-05",
+      "hint": "Nhập mã định danh duy nhất cho bàn"
+    },
+    "status": {
+      "activeHint": "Bàn đang sẵn sàng sử dụng",
+      "inactiveHint": "Bàn hiện đang không hoạt động"
+    },
+    "zone": {
+      "hint": "Chọn vị trí đặt bàn"
+    },
+    "actions": {
+      "cancel": "Hủy",
+      "submit": "Tạo bàn và tạo mã QR"
+    },
+    "footer": "Mã QR duy nhất sẽ được tạo tự động cho bàn sau khi tạo"
+  },
+    "tablePage": {
+    "title": "Quản lý bàn",
+    "subTitle": "Quản lý bàn trong nhà hàng và theo dõi tình trạng sử dụng",
+    "totalTable": "Tổng số bàn",
+    "occupied": "Đang sử dụng",
+    "available": "Còn trống",
+    "actions":{
+        "downloadAllQR": "Tải tất cả mã QR Code"
+    } 
+  },
+  "common": {
+    "capacity": {
+        "label": "Sức chứa",
+      "person": "người",
+      "people": "người"
+    },
+    "zone": {
+      "label": "Khu vực",
+      "Main Hall": "Sảnh chính",
+      "VIP": "VIP",
+      "VIP Room": "VIP",
+      "Patio": "Sân ngoài",
+      "Indoor": "Trong nhà",
+      "Outdoor": "Ngoài trời",
+      "all": "Tất cả khu vực"
+    },
+    "status": {
+      "label": "Trạng thái bàn",
+      "active": "Hoạt động",
+      "inactive": "Không hoạt động",
+      "occupied": "Đang sử dụng",
+      "all": "Tất cả trạng thái"
+    },
+    "sort": {
+      "created": "Tạo gần dây",
+      "order": "Sắp xếp mặc định",
+      "table": "Số bàn",
+      "searchPlaceHolder": "Tìm kiếm bàn..."
+    },
+    "actions": {
+      "cancel": "Hủy",
+      "edit": "Sửa",
+      "qrPreview": "Xem QR Code",
+      "clear": "Xóa"
+    },
+    "orders": {
+    "order": "Đơn hàng",
+    "total": "Tổng cộng",
+    "activeSession": "Phiên hoạt động"
+    }
+  },
+
+  "qrPreview": {
+    "header": {
+        "title": "Quản lý mã QR",
+        "subtitle": "Quản lý và tải mã QR cho bàn {{table}}"
+    },
+
+    "loading": {
+        "qr": "Đang tải mã QR...",
+        "failed": "Không thể tải mã QR"
+    },
+
+    "details": {
+        "title": "Thông tin mã QR",
+        "createdDate": "Ngày tạo",
+        "lastScanned": "Lần quét gần nhất",
+        "totalScans": "lượt quét",
+        "tokenStatus": "Trạng thái mã",
+        "active": "Đang hoạt động",
+        "expired": "Hết hạn"
+    },
+
+    "actions": {
+        "downloadPNG": "PNG",
+        "downloadPDF": "PDF (In)",
+        "regenerate": "Tạo lại mã QR",
+        "regenerateWarning": "Cảnh báo: Mã QR cũ sẽ không còn hiệu lực"
+    },
+
+    "confirm": {
+        "title": "Tạo lại mã QR?",
+        "hasOrders": "Bàn này hiện đang có {{count}} đơn hàng đang hoạt động.",
+        "warning": "Việc tạo lại mã QR sẽ làm mã cũ không còn hiệu lực. Bạn có chắc chắn muốn tiếp tục?",
+        "yes": "Đồng ý",
+        "cancel": "Hủy"
+    }
+  }
+}

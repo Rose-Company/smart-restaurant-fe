@@ -12,6 +12,7 @@ import {
   QRPreviewDialog,
 } from '../components';
 import { DownloadAllQRDialog } from '../components/dialogs/DownloadAllQRDialog';
+import { useTranslation } from "react-i18next";
 // UI Table type for components (camelCase)
 export interface UITable {
   id: number;
@@ -26,6 +27,7 @@ export interface UITable {
 }
 
 export function TablesPage() {
+  const {t} = useTranslation("table");
   const [tables, setTables] = useState<UITable[]>([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
@@ -250,8 +252,8 @@ export function TablesPage() {
       <div className="flex-1 overflow-auto">
         <div className="p-8">
           <div className="mb-6">
-            <h1 className="text-gray-900 mb-2">Table Management</h1>
-            <p className="text-gray-600">Manage restaurant tables and monitor occupancy</p>
+            <h1 className="text-gray-900 mb-2">{t("tablePage.title")}</h1>
+            <p className="text-gray-600">{t("tablePage.subTitle")}</p>
           </div>
 
           <ActionBar onAddTable={handleAddTable} onDownloadQR={handleDownloadQR} />

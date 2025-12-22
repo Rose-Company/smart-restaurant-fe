@@ -14,8 +14,9 @@ interface QRPreviewDialogProps {
   create_at: string,
   expire_at: string,
 }
-
+import { useTranslation } from "react-i18next";
 export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
+  const { t } = useTranslation("table");
   const [showPDFPreview, setShowPDFPreview] = useState(false);
   const [qrUrl, setQrUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -126,8 +127,8 @@ export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
         {/* Header */}
         <div className="flex items-center justify-between px-8 py-6 border-b border-gray-100">
           <div>
-            <h2 className="text-gray-900 mb-1">QR Code Management</h2>
-            <p className="text-sm text-gray-500">Manage and download QR code for {table.table_number}</p>
+            <h2 className="text-gray-900 mb-1">{t("qrPreview.header.title")}</h2>
+            <p className="text-sm text-gray-500">{t("qrPreview.header.subtitle", { table: table.table_number })}</p>
           </div>
           <button
             onClick={onClose}
@@ -145,7 +146,7 @@ export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
               <div className="">
                 <div className="aspect-square bg-white rounded-lg flex items-center justify-center">
                   {loading && (
-                    <span className="text-sm text-gray-500">Loading QR...</span>
+                    <span className="text-sm text-gray-500">{t("qrPreview.loading.qr")}</span>
                   )}
 
                   {!loading && qrUrl && (
@@ -158,7 +159,7 @@ export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
 
                   {!loading && !qrUrl && (
                     <span className="text-sm text-red-500">
-                      Failed to load QR
+                      {t("qrPreview.loading.failed")}
                     </span>
                   )}
                 </div>
@@ -167,7 +168,7 @@ export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
               <div className="text-center mt-6">
                 <h3 className="text-gray-900 mb-1">{table.table_number}</h3>
                 <p className="text-sm text-gray-500">
-                  {table.capacity} {table.capacity === 1 ? 'person' : 'people'} • {table.location}
+                  {table.capacity} {table.capacity === 1 ? t("common.capacity.person") : t("common.capacity.people")} • {t(`common.zone.${table.location}`)}
                 </p>
               </div>
             </div>
@@ -178,7 +179,7 @@ export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
             {/* Details Section */}
             <div className="space-y-6">
               <div>
-                <h3 className="text-gray-900 mb-4">QR Code Details</h3>
+                <h3 className="text-gray-900 mb-4">{t("qrPreview.details.title")}</h3>
 
                 <div className="space-y-4">
                   {/* Created Date */}
@@ -187,7 +188,7 @@ export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
                       <Calendar className="w-5 h-5 text-blue-600" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm text-gray-500 mb-0.5">Created Date</p>
+                      <p className="text-sm text-gray-500 mb-0.5">{t("qrPreview.details.createdDate")}</p>
                       <p className="text-gray-900">{create_at ? formatDate(create_at) : "--"}</p>
                     </div>
                   </div>
@@ -198,9 +199,9 @@ export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
                       <Activity className="w-5 h-5 text-purple-600" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm text-gray-500 mb-0.5">Last Scanned</p>
+                      <p className="text-sm text-gray-500 mb-0.5">{t("qrPreview.details.lastScanned")}</p>
                       <p className="text-gray-900">{qrData.lastScan}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{qrData.totalScans} total scans</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{qrData.totalScans} {t("qrPreview.details.totalScans")}</p>
                     </div>
                   </div>
 
@@ -210,7 +211,7 @@ export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
                       <CheckCircle2 className="w-5 h-5 text-green-600" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm text-gray-500 mb-1.5">Token Status</p>
+                      <p className="text-sm text-gray-500 mb-1.5">{t("qrPreview.details.tokenStatus")}</p>
                       <Badge
                         className={
                           isActive
@@ -218,7 +219,7 @@ export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
                             : "bg-red-500 text-white border-0"
                         }
                       >
-                        {isActive ? "Active" : "Expired"}
+                        {isActive ? t("qrPreview.details.active") : t("qrPreview.details.expired")}
                       </Badge>
                     </div>
                   </div>

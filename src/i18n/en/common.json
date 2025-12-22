@@ -1,0 +1,19 @@
+{
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "tables": "Tables",
+    "menu" : "Menu",
+    "qr": "QR Codes",
+    "customers": "Customers",
+    "analytics": "Analytics",
+    "reports": "Reports",
+    "settings": "Settings"
+  },
+  "system": {
+    "appName" : "RestaurantOS",
+    "adminPanel" : "Admin Panel"
+  },
+  "role": {
+    "administrator": "Administrator"
+  }
+}

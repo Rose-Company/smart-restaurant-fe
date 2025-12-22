@@ -3,7 +3,7 @@ import { QrCode, Edit, Users, MapPin, ShoppingBag, DollarSign } from "lucide-rea
 import { Button } from "../../../components/ui/misc/button";
 import { Badge } from "../../../components/ui/data-display/badge";
 import type { UITable } from "../pages/TablesPage";
-
+import { useTranslation } from "react-i18next";
 interface TableCardProps {
   table: UITable;
   onQRPreview: (table: UITable) => void;
@@ -11,17 +11,18 @@ interface TableCardProps {
 }
 
 export function TableCard({ table, onQRPreview, onEdit }: TableCardProps) {
+  const {t} = useTranslation("table");
   if (!table) {
     return null;
   }
   const getStatusConfig = (status: UITable["status"]) => {
     switch (status) {
       case "active":
-        return { color: "bg-[#27ae60] text-white", label: "Active" };
+        return { color: "bg-[#27ae60] text-white", label: t("common.status.active") };
       case "occupied":
-        return { color: "bg-orange-500 text-white", label: "Occupied" };
+        return { color: "bg-orange-500 text-white", label: t("common.status.occupied") };
       case "inactive":
-        return { color: "bg-gray-400 text-white", label: "Inactive" };
+        return { color: "bg-gray-400 text-white", label: t("common.status.inactive") };
     }
   };
 
@@ -57,31 +58,31 @@ export function TableCard({ table, onQRPreview, onEdit }: TableCardProps) {
       <div className="space-y-3 mb-4">
         <div className={`flex items-center gap-2 ${isInactive ? "text-gray-400" : "text-gray-600"}`}>
           <Users className="w-4 h-4" />
-          <span className="text-sm">Capacity: {table.capacity} people</span>
+          <span className="text-sm">{t("common.capacity.label")} : {table.capacity} {t("common.capacity.people")}</span>
         </div>
 
         <div className={`flex items-center gap-2 ${isInactive ? "text-gray-400" : "text-gray-600"}`}>
           <MapPin className="w-4 h-4" />
-          <span className="text-sm">Zone: {table.location}</span>
+          <span className="text-sm">{t("common.zone.label")} : {t(`common.zone.${table.location}`)}</span>
         </div>
       </div>
 
       {isOccupied && table.order_data && (
         <div className="mb-4 bg-orange-50 rounded-lg p-3 border border-orange-100">
-          <p className="text-xs text-orange-600 mb-2">Active Session</p>
+          <p className="text-xs text-orange-600 mb-2">{t("common.orders.activeSession")}</p>
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <ShoppingBag className="w-3.5 h-3.5 text-orange-700" />
               <span className="text-sm text-orange-900">
-                Orders: <strong>{table.order_data.active_orders}</strong>
+                {t("common.orders.order")}: <strong>{table.order_data.active_orders}</strong>
               </span>
             </div>
 
             <div className="flex items-center gap-1.5">
               <DollarSign className="w-3.5 h-3.5 text-orange-700" />
               <span className="text-sm text-orange-900">
-                Total: <strong>${table.order_data.total_bill.toFixed(2)}</strong>
+                {t("common.orders.total")}: <strong>${table.order_data.total_bill.toFixed(2)}</strong>
               </span>
             </div>
           </div>
@@ -100,7 +101,7 @@ export function TableCard({ table, onQRPreview, onEdit }: TableCardProps) {
             }`}
         >
           <QrCode className="w-4 h-4 mr-1" />
-          QR Preview
+          {t("common.actions.qrPreview")}
         </Button>
 
         <Button
@@ -110,7 +111,7 @@ export function TableCard({ table, onQRPreview, onEdit }: TableCardProps) {
           className="flex-1 border-[#27ae60] text-[#27ae60] hover:bg-[#27ae60] hover:text-white"
         >
           <Edit className="w-4 h-4 mr-1" />
-          Edit
+          {t("common.actions.edit")}
         </Button>
       </div>
     </div>

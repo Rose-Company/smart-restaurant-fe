@@ -8,6 +8,7 @@ import { Input } from '../../../../components/ui/forms/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../../components/ui/forms/select';
 import { Switch } from '../../../../components/ui/forms/switch';
 import { Slider } from '../../../../components/ui/forms/slider';
+import { useTranslation } from "react-i18next";
 import {
   Form,
   FormControl,
@@ -33,6 +34,8 @@ const addTableSchema = z.object({
   isActive: z.boolean(),
 });
 
+
+
 type AddTableFormValues = z.infer<typeof addTableSchema>;
 
 interface AddTableDialogProps {
@@ -46,6 +49,7 @@ interface AddTableDialogProps {
 }
 
 export function AddTableDialog({ onClose, onAdd }: AddTableDialogProps) {
+  const { t } = useTranslation("table");
   const form = useForm<AddTableFormValues>({
     resolver: zodResolver(addTableSchema),
     defaultValues: {
@@ -74,7 +78,7 @@ export function AddTableDialog({ onClose, onAdd }: AddTableDialogProps) {
             <div className="w-10 h-10 bg-[#27ae60] rounded-lg flex items-center justify-center">
               <Plus className="w-5 h-5 text-white" />
             </div>
-            <h2 className="text-gray-900">Add New Table</h2>
+            <h2 className="text-gray-900">{t("addDialog.title")}</h2>
           </div>
           <button
             onClick={onClose}
@@ -95,17 +99,17 @@ export function AddTableDialog({ onClose, onAdd }: AddTableDialogProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-gray-700">
-                      Table Name/Number
+                      {t("addDialog.tableNumber.label")}
                     </FormLabel>
                     <FormControl>
                       <Input
                         {...field}
-                        placeholder="e.g., T-13, VIP-01, P-05"
+                        placeholder={t("addDialog.tableNumber.placeholder")}
                         className="mt-2 border-gray-300 focus:border-[#27ae60] focus:ring-[#27ae60]"
                       />
                     </FormControl>
                     <FormDescription className="text-xs text-gray-500">
-                      Enter a unique identifier for the table
+                      {t("addDialog.tableNumber.hint")}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -120,10 +124,10 @@ export function AddTableDialog({ onClose, onAdd }: AddTableDialogProps) {
                   <FormItem>
                     <div className="flex items-center justify-between mb-2">
                       <FormLabel className="text-gray-700">
-                        Seating Capacity
+                        {t("common.capacity.label")}
                       </FormLabel>
                       <span className="text-sm bg-[#2c3e50] text-white px-3 py-1 rounded-full">
-                        {field.value} {field.value === 1 ? 'person' : 'people'}
+                        {field.value} {field.value === 1 ? t("common.capacity.person") : t("common.capacity.people")}
                       </span>
                     </div>
                     <FormControl>
@@ -137,8 +141,8 @@ export function AddTableDialog({ onClose, onAdd }: AddTableDialogProps) {
                       />
                     </FormControl>
                     <div className="flex justify-between text-xs text-gray-500 mt-2">
-                      <span>1 person</span>
-                      <span>20 people</span>
+                      <span>1 {t("common.capacity.person")}</span>
+                      <span>20 {t("common.capacity.people")}</span>
                     </div>
                     <FormMessage />
                   </FormItem>
@@ -152,7 +156,7 @@ export function AddTableDialog({ onClose, onAdd }: AddTableDialogProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-gray-700">
-                      Location/Zone
+                      {t("common.zone.label")}
                     </FormLabel>
                     <Select
                       onValueChange={field.onChange}
@@ -167,37 +171,37 @@ export function AddTableDialog({ onClose, onAdd }: AddTableDialogProps) {
                         <SelectItem value="Main Hall">
                           <div className="flex items-center gap-2">
                             <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                            <span>Main Hall</span>
+                            <span>{t("common.zone.Main Hall")}</span>
                           </div>
                         </SelectItem>
                         <SelectItem value="VIP">
                           <div className="flex items-center gap-2">
                             <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                            <span>VIP</span>
+                            <span>{t("common.zone.VIP")}</span>
                           </div>
                         </SelectItem>
                         <SelectItem value="Patio">
                           <div className="flex items-center gap-2">
                             <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                            <span>Patio</span>
+                            <span>{t("common.zone.Patio")}</span>
                           </div>
                         </SelectItem>
                         <SelectItem value="Indoor">
                           <div className="flex items-center gap-2">
                             <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
-                            <span>Indoor</span>
+                            <span>{t("common.zone.Indoor")}</span>
                           </div>
                         </SelectItem>
                         <SelectItem value="Outdoor">
                           <div className="flex items-center gap-2">
                             <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
-                            <span>Outdoor</span>
+                            <span>{t("common.zone.Outdoor")}</span>
                           </div>
                         </SelectItem>
                       </SelectContent>
                     </Select>
                     <FormDescription className="text-xs text-gray-500">
-                      Select the dining area where this table is located
+                      {t("addDialog.zone.hint")}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -214,12 +218,12 @@ export function AddTableDialog({ onClose, onAdd }: AddTableDialogProps) {
                       <div className="flex items-center justify-between">
                         <div>
                           <FormLabel className="text-gray-700 cursor-pointer">
-                            Table Status
+                            {t("common.status.label")}
                           </FormLabel>
                           <FormDescription className="text-xs text-gray-500 mt-1">
                             {field.value
-                              ? 'Table is active and ready for use'
-                              : 'Table is currently inactive'}
+                              ? t("addDialog.status.activeHint")
+                              : t("addDialog.status.inactiveHint")}
                           </FormDescription>
                         </div>
                         <div className="flex items-center gap-3">
@@ -227,7 +231,7 @@ export function AddTableDialog({ onClose, onAdd }: AddTableDialogProps) {
                             className={`text-sm ${field.value ? 'text-gray-400' : 'text-gray-700'
                               }`}
                           >
-                            Inactive
+                            {t("common.status.inactive")}
                           </span>
                           <FormControl>
                             <Switch
@@ -240,7 +244,7 @@ export function AddTableDialog({ onClose, onAdd }: AddTableDialogProps) {
                             className={`text-sm ${field.value ? 'text-[#27ae60]' : 'text-gray-400'
                               }`}
                           >
-                            Active
+                            {t("common.status.active")}
                           </span>
                         </div>
                       </div>
@@ -259,14 +263,14 @@ export function AddTableDialog({ onClose, onAdd }: AddTableDialogProps) {
                 variant="outline"
                 className="flex-1 border-gray-300 hover:bg-gray-50"
               >
-                Cancel
+                {t("common.actions.cancel")}
               </Button>
               <Button
                 type="submit"
                 className="flex-1 bg-[#27ae60] hover:bg-[#229954] text-white shadow-lg shadow-[#27ae60]/30"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Create & Generate QR
+                {t("addDialog.actions.submit")}
               </Button>
             </div>
           </form>
@@ -276,7 +280,7 @@ export function AddTableDialog({ onClose, onAdd }: AddTableDialogProps) {
         <div className="px-6 pb-6">
           <div className="bg-blue-50 rounded-lg p-3 border border-blue-100">
             <p className="text-xs text-blue-700">
-              💡 A unique QR code will be generated automatically for this table after creation
+              {t("addDialog.footer")}
             </p>
           </div>
         </div>
