@@ -61,7 +61,10 @@
       "cancel": "Cancel",
       "edit": "Edit",
       "qrPreview": "QR Preview",
-      "clear": "Clear"
+      "clear": "Clear",
+      "close": "Close",
+      "print": "Print",
+      "download": "Download PDF"
     },
     "orders":{
       "order": "Oders",
@@ -71,43 +74,35 @@
   },
   "qrPreview": {
     "header": {
-      "title": "Quản lý mã QR",
-      "subtitle": "Quản lý và tải mã QR cho bàn {{table}}"
+      "title": "QR Code Management",
+      "subtitle": "Manage and download QR code for table {{table}}"
     },
 
     "loading": {
-      "qr": "Đang tải mã QR...",
-      "failed": "Không thể tải mã QR"
-    },
-
-    "tableInfo": {
-      "person": "người",
-      "people": "người"
+      "qr": "Loading QR code...",
+      "failed": "Failed to load QR code"
     },
 
     "details": {
-      "title": "Thông tin mã QR",
-      "createdDate": "Ngày tạo",
-      "lastScanned": "Lần quét gần nhất",
-      "totalScans": "Tổng số lượt quét:",
-      "tokenStatus": "Trạng thái mã",
-      "active": "Đang hoạt động",
-      "expired": "Hết hạn"
+      "title": "QR Code Details",
+      "createdDate": "Created Date",
+      "lastScanned": "Last Scanned",
+      "totalScans": "scans",
+      "tokenStatus": "Token Status",
+      "active": "Active",
+      "expired": "Expired"
     },
 
     "actions": {
       "downloadPNG": "PNG",
-      "downloadPDF": "PDF (In)",
-      "regenerate": "Tạo lại mã QR",
-      "regenerateWarning": "Cảnh báo: Mã QR cũ sẽ không còn hiệu lực"
+      "downloadPDF": "PDF (Print)",
+      "regenerate": "Regenerate QR Code",
+      "regenerateWarning": "Warning: The previous QR code will become invalid"
     },
 
-    "confirm": {
-      "title": "Tạo lại mã QR?",
-      "hasOrders": "Bàn này hiện đang có {{count}} đơn hàng đang hoạt động.",
-      "warning": "Việc tạo lại mã QR sẽ làm mã cũ không còn hiệu lực. Bạn có chắc chắn muốn tiếp tục?",
-      "yes": "Đồng ý",
-      "cancel": "Hủy"
+    "pdf": {
+        "title": "Print-Ready PDF Preview",
+        "subtitle": "A6 Portrait (105mm × 148mm)"
     }
   }
 }

@@ -276,20 +276,19 @@ export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
       {showConfirmInactive && (
         <ConfirmDialog
           open={showConfirmInactive}
-          title="Regenerate QR Code?"
+          title= {t("qrPreview.confirm.title")}
           description={
             <>
               <p>
-                This table currently has{" "}
-                <strong>{table.order_data?.active_orders}</strong> active order(s).
+                {t("qrPreview.confirm.hasOrders",{count:table.order_data?.active_orders})}
               </p>
               <p className="mt-2 text-red-600">
-                Regenerating QR will invalidate the old QR code. Are you sure you want to regenerate this QR code?
+               {t("qrPreview.confirm.warning")}
               </p>
             </>
           }
-          confirmText="Yes"
-          cancelText="Cancel"
+          confirmText={t("qrPreview.confirm.yes")}
+          cancelText={t("qrPreview.confirm.cancel")}
           confirmVariant="danger"
           onCancel={() => {
             setShowConfirmInactive(false);
