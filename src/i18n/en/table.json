@@ -1,0 +1,113 @@
+{
+  "addDialog": {
+    "title": "Add New Table",
+    "tableNumber": {
+      "label": "Table Name/Number",
+      "placeholder": "e.g., T-13, VIP-01, P-05",
+      "hint": "Enter a unique identifier for the table"
+    },
+    "status": {
+      "activeHint": "Table is active and ready for use",
+      "inactiveHint": "Table is currently inactive"
+    },
+    "zone": {
+      "hint": "Select the dining area where this table is located"
+    },
+    "actions": {
+      "submit": "Create & Generate QR"
+    },
+    "footer": "A unique QR code will be generated automatically for this table after creation"
+  },
+  "tablePage":{
+    "title":"Table Mangement",
+    "subTitle": "Manage restaurant tables and monitor occupancy",
+    "totalTable": "Total Tables",
+    "occupied": "Occupied",
+    "available": "Available",
+    "actions":{
+        "downloadAllQR": "Download All QR Codes"
+    } 
+  },
+  "common": {
+    "capacity": {
+      "label" : "Capacity",
+      "person": "person",
+      "people": "people"
+    },
+    "zone": {
+      "label": "Location/Zone",
+      "Main Hall": "Main Hall",
+      "VIP": "VIP",
+      "VIP Room": "VIP",
+      "Patio": "Patio",
+      "Indoor": "Indoor",
+      "Outdoor": "Outdoor",
+      "all": "All Zones"
+    },
+    "status": {
+      "label": "Table Status",
+      "active": "Active",
+      "inactive": "Inactive",
+       "occupied": "Occupied",
+       "all": "All Status"
+    },
+    "sort": {
+      "created": "Recently Created",
+      "order": "Default Order",
+      "table": "Table Number",
+      "searchPlaceHolder": "Search table..."
+    },
+    "actions": {
+      "cancel": "Cancel",
+      "edit": "Edit",
+      "qrPreview": "QR Preview",
+      "clear": "Clear"
+    },
+    "orders":{
+      "order": "Oders",
+      "total": "Total",
+      "activeSession": "Active Session"
+    }
+  },
+  "qrPreview": {
+    "header": {
+      "title": "Quản lý mã QR",
+      "subtitle": "Quản lý và tải mã QR cho bàn {{table}}"
+    },
+
+    "loading": {
+      "qr": "Đang tải mã QR...",
+      "failed": "Không thể tải mã QR"
+    },
+
+    "tableInfo": {
+      "person": "người",
+      "people": "người"
+    },
+
+    "details": {
+      "title": "Thông tin mã QR",
+      "createdDate": "Ngày tạo",
+      "lastScanned": "Lần quét gần nhất",
+      "totalScans": "Tổng số lượt quét:",
+      "tokenStatus": "Trạng thái mã",
+      "active": "Đang hoạt động",
+      "expired": "Hết hạn"
+    },
+
+    "actions": {
+      "downloadPNG": "PNG",
+      "downloadPDF": "PDF (In)",
+      "regenerate": "Tạo lại mã QR",
+      "regenerateWarning": "Cảnh báo: Mã QR cũ sẽ không còn hiệu lực"
+    },
+
+    "confirm": {
+      "title": "Tạo lại mã QR?",
+      "hasOrders": "Bàn này hiện đang có {{count}} đơn hàng đang hoạt động.",
+      "warning": "Việc tạo lại mã QR sẽ làm mã cũ không còn hiệu lực. Bạn có chắc chắn muốn tiếp tục?",
+      "yes": "Đồng ý",
+      "cancel": "Hủy"
+    }
+  }
+}

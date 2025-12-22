@@ -1,0 +1,19 @@
+{
+  "sidebar": {
+    "dashboard": "Tổng quan",
+    "tables": "Quản lý bàn",
+    "menu" : "Quản lý thực đơn",
+    "qr": "Quản lý QR Code",
+    "customers": "Khách hàng",
+    "analytics": "Phân tích",
+    "reports": "Báo cáo",
+    "settings": "Cài đặt"
+  },
+  "system": {
+    "appName" : "Hệ thống quản lý nhà hàng",
+    "adminPanel": "Bảng quản lý"
+  },
+  "role": {
+    "administrator": "Quản trị viên"
+  }
+}

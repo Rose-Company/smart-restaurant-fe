@@ -1,6 +1,6 @@
 import { LayoutGrid, CheckCircle, XCircle } from 'lucide-react';
 import React from "react";
-
+import { useTranslation } from "react-i18next";
 interface StatsBarProps {
   stats: {
     total: number;
@@ -10,9 +10,10 @@ interface StatsBarProps {
 }
 
 export function StatsBar({ stats }: StatsBarProps) {
+  const {t} = useTranslation ("table");
   const statCards = [
     {
-      label: 'Total Tables',
+      label: t("tablePage.totalTable"),
       value: stats.total,
       icon: LayoutGrid,
       color: 'bg-blue-500',
@@ -20,7 +21,7 @@ export function StatsBar({ stats }: StatsBarProps) {
       textColor: 'text-blue-700',
     },
     {
-      label: 'Occupied',
+      label: t("tablePage.occupied"),
       value: stats.occupied,
       icon: XCircle,
       color: 'bg-orange-500',
@@ -28,7 +29,7 @@ export function StatsBar({ stats }: StatsBarProps) {
       textColor: 'text-orange-700',
     },
     {
-      label: 'Available',
+      label: t("tablePage.available"),
       value: stats.available,
       icon: CheckCircle,
       color: 'bg-[#27ae60]',

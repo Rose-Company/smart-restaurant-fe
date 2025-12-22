@@ -1,7 +1,7 @@
 import React from 'react';
-import { LayoutDashboard, Utensils, QrCode, Users, Settings, BarChart3, FileText } from 'lucide-react';
-
-export type SidebarPageKey = 'dashboard' | 'tables' | 'qr-codes' | 'customers' | 'analytics' | 'reports' | 'settings';
+import { LayoutDashboard, Utensils, QrCode, Users, Settings, BarChart3, FileText, Menu } from 'lucide-react';
+import { useTranslation } from "react-i18next";
+export type SidebarPageKey = 'dashboard' | 'tables' | 'menu' | 'qr-codes' | 'customers' | 'analytics' | 'reports' | 'settings';
 
 interface SidebarProps {
   currentPage: SidebarPageKey;
@@ -9,16 +9,18 @@ interface SidebarProps {
 }
 
 export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
+  const { t } = useTranslation("common");
   const menuItems: { icon: React.ComponentType<{ className?: string }>; label: string; key: SidebarPageKey }[] = [
-    { icon: LayoutDashboard, label: 'Dashboard', key: 'dashboard' },
-    { icon: Utensils, label: 'Tables', key: 'tables' },
-    { icon: QrCode, label: 'QR Codes', key: 'qr-codes' },
-    { icon: Users, label: 'Customers', key: 'customers' },
-    { icon: BarChart3, label: 'Analytics', key: 'analytics' },
-    { icon: FileText, label: 'Reports', key: 'reports' },
-    { icon: Settings, label: 'Settings', key: 'settings' },
+    { icon: LayoutDashboard, label: t("sidebar.dashboard"), key: 'dashboard' },
+    { icon: Utensils, label: t("sidebar.tables"), key: 'tables' },
+    { icon: Menu, label: t("sidebar.menu"), key: 'menu' },
+    { icon: QrCode, label: t("sidebar.qr"), key: 'qr-codes' },
+    { icon: Users, label: t("sidebar.customers"), key: 'customers' },
+    { icon: BarChart3, label: t("sidebar.analytics"), key: 'analytics' },
+    { icon: FileText, label: t("sidebar.reports"), key: 'reports' },
+    { icon: Settings, label: t("sidebar.settings"), key: 'settings' },
   ];
-
+  
   return (
     <div className="w-64 bg-[#2c3e50] text-white flex flex-col">
       <div className="p-6 border-b border-white/10">
@@ -27,8 +29,8 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
             <Utensils className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="text-white">RestaurantOS</h2>
-            <p className="text-sm text-white/60">Admin Panel</p>
+            <h2 className="text-white">{t("system.appName")}</h2>
+            <p className="text-sm text-white/60">{t("system.adminPanel")}</p>
           </div>
         </div>
       </div>
@@ -61,7 +63,7 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
           </div>
           <div className="flex-1">
             <p className="text-sm text-white">John Doe</p>
-            <p className="text-xs text-white/60">Administrator</p>
+            <p className="text-xs text-white/60">{t("role.administrator")}</p>
           </div>
         </div>
       </div>
