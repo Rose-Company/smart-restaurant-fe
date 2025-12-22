@@ -3,7 +3,7 @@ import { X, Download, Printer } from 'lucide-react';
 import { Button } from '../../../../components/ui/misc/button';
 import type { Table } from '../../types/table.types';
 import { PDFTemplate } from './PDFTemplate';
-
+import { useTranslation } from "react-i18next";
 interface PDFPreviewDialogProps {
   table: Table;
   qrUrl: string | null;
@@ -11,6 +11,7 @@ interface PDFPreviewDialogProps {
 }
 
 export function PDFPreviewDialog({ table, onClose, qrUrl }: PDFPreviewDialogProps) {
+  const {t} = useTranslation("table");
   const handlePrint = () => {
     window.print();
   };
@@ -26,9 +27,9 @@ export function PDFPreviewDialog({ table, onClose, qrUrl }: PDFPreviewDialogProp
         {/* Header */}
         <div className="flex items-center justify-between px-8 py-6 bg-white border-b border-gray-200">
           <div>
-            <h2 className="text-gray-900 mb-1">Print-Ready PDF Preview</h2>
+            <h2 className="text-gray-900 mb-1">{t("qrPreview.pdf.title")}</h2>
             <p className="text-sm text-gray-500">
-              A6 Portrait (105mm × 148mm) • {table.table_number}
+              {t("qrPreview.pdf.subtitle")} • {table.table_number}
             </p>
           </div>
           <button
@@ -58,7 +59,7 @@ export function PDFPreviewDialog({ table, onClose, qrUrl }: PDFPreviewDialogProp
             variant="outline"
             className="flex-1 border-gray-300"
           >
-            Close
+            {t("common.actions.close")}
           </Button>
           <Button
             type="button"
@@ -67,7 +68,7 @@ export function PDFPreviewDialog({ table, onClose, qrUrl }: PDFPreviewDialogProp
             className="flex-1 border-[#2c3e50] text-[#2c3e50] hover:bg-[#2c3e50] hover:text-white"
           >
             <Printer className="w-4 h-4 mr-2" />
-            Print
+             {t("common.actions.print")}
           </Button>
           <Button
             type="button"
@@ -75,7 +76,7 @@ export function PDFPreviewDialog({ table, onClose, qrUrl }: PDFPreviewDialogProp
             className="flex-1 bg-[#27ae60] hover:bg-[#229954] text-white"
           >
             <Download className="w-4 h-4 mr-2" />
-            Download PDF
+             {t("common.actions.download")}
           </Button>
         </div>
       </div>

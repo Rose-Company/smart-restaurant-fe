@@ -62,12 +62,15 @@
       "cancel": "Hủy",
       "edit": "Sửa",
       "qrPreview": "Xem QR Code",
-      "clear": "Xóa"
+      "clear": "Xóa",
+      "close": "Đóng",
+      "print": "In",
+      "download": "Tải PDF"
     },
     "orders": {
-    "order": "Đơn hàng",
-    "total": "Tổng cộng",
-    "activeSession": "Phiên hoạt động"
+        "order": "Đơn hàng",
+        "total": "Tổng cộng",
+        "activeSession": "Phiên hoạt động"
     }
   },
 
@@ -105,6 +108,11 @@
         "warning": "Việc tạo lại mã QR sẽ làm mã cũ không còn hiệu lực. Bạn có chắc chắn muốn tiếp tục?",
         "yes": "Đồng ý",
         "cancel": "Hủy"
-    }
+    },
+
+    "pdf": {
+        "title": "Xem trước PDF để in",
+        "subtitle": "Khổ A6 dọc (105mm × 148mm)"
+  }
   }
 }
