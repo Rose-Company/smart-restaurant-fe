@@ -6,7 +6,10 @@ import { MenuFilterBar } from '../components/MenuFilterBar';
 import { MenuTable } from '../components/MenuTable';
 import { AddMenuItemDialog } from '../components/dialogs/AddMenuItemDialog';
 import { CategoriesPage } from '../categories/pages/CategoriesPage';
+import { ModifiersPage } from '../modifiers/pages/ModifiersPage';
+import { AddModifierGroupDialog } from '../modifiers/components/dialogs/AddModifierGroupDialog';
 import type { MenuItem } from '../types/menu.types';
+import type { ModifierSelectionType, ModifierRequirement, ModifierOption } from '../modifiers/types/modifier.types';
 
 // Brand color constant
 const BRAND_COLOR = '#27ae60';
@@ -119,6 +122,7 @@ export function MenuPage() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
   const [activeTab, setActiveTab] = useState('all-items');
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showAddModifierGroupDialog, setShowAddModifierGroupDialog] = useState(false);
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -210,6 +214,17 @@ export function MenuPage() {
     }
   };
 
+  const handleAddModifierGroup = (groupData: {
+    name: string;
+    description: string;
+    selectionType: ModifierSelectionType;
+    requirement: ModifierRequirement;
+    options: ModifierOption[];
+  }) => {
+    console.log('New modifier group added:', groupData);
+    setShowAddModifierGroupDialog(false);
+  };
+
   return (
     <div className="flex-1 overflow-auto">
       <div className="p-8">
@@ -273,6 +288,22 @@ export function MenuPage() {
               Add New Item
             </Button>
           )}
+          {activeTab === 'modifiers' && (
+            <Button
+              onClick={() => setShowAddModifierGroupDialog(true)}
+              className="text-white"
+              style={{ backgroundColor: BRAND_COLOR }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = BRAND_COLOR_HOVER;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = BRAND_COLOR;
+              }}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Create New Group
+            </Button>
+          )}
         </div>
 
         {/* Tab Content */}
@@ -306,9 +337,7 @@ export function MenuPage() {
           </TabsContent>
 
           <TabsContent value="modifiers" className="mt-0">
-            <div className="bg-white rounded-xl p-12 shadow-sm border border-gray-200 text-center">
-              <p className="text-gray-500">Modifiers management coming soon...</p>
-            </div>
+            <ModifiersPage />
           </TabsContent>
         </Tabs>
       </div>
@@ -319,6 +348,15 @@ export function MenuPage() {
           isOpen={showAddDialog}
           onClose={() => setShowAddDialog(false)}
           onAddItem={handleAddItem}
+        />
+      )}
+
+      {/* Add Modifier Group Dialog */}
+      {showAddModifierGroupDialog && (
+        <AddModifierGroupDialog
+          isOpen={showAddModifierGroupDialog}
+          onClose={() => setShowAddModifierGroupDialog(false)}
+          onAddGroup={handleAddModifierGroup}
         />
       )}
     </div>

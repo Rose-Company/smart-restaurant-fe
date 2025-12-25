@@ -32,13 +32,29 @@ export function MenuTable({
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Available':
-        return 'bg-green-100 text-green-700 border-green-200';
+        return {
+          backgroundColor: '#dcfce7',
+          color: '#15803d',
+          borderColor: '#bbf7d0'
+        };
       case 'Sold Out':
-        return 'bg-red-100 text-red-700 border-red-200';
+        return {
+          backgroundColor: '#fee2e2',
+          color: '#b91c1c',
+          borderColor: '#fecaca'
+        };
       case 'Unavailable':
-        return 'bg-gray-100 text-gray-700 border-gray-200';
+        return {
+          backgroundColor: '#f3f4f6',
+          color: '#374151',
+          borderColor: '#e5e7eb'
+        };
       default:
-        return 'bg-gray-100 text-gray-700 border-gray-200';
+        return {
+          backgroundColor: '#f3f4f6',
+          color: '#374151',
+          borderColor: '#e5e7eb'
+        };
     }
   };
 
@@ -113,7 +129,7 @@ export function MenuTable({
 
                   {/* Status Column */}
                   <TableCell>
-                    <Badge variant="outline" className={getStatusColor(item.status)}>
+                    <Badge variant="outline" style={getStatusColor(item.status)}>
                       {item.status}
                     </Badge>
                   </TableCell>

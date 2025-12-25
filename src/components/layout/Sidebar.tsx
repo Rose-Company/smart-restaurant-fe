@@ -20,7 +20,7 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
     { icon: FileText, label: t("sidebar.reports"), key: 'reports' },
     { icon: Settings, label: t("sidebar.settings"), key: 'settings' },
   ];
-  
+
   return (
     <div className="w-64 bg-[#2c3e50] text-white flex flex-col">
       <div className="p-6 border-b border-white/10">
