@@ -3,9 +3,16 @@ import { Sidebar, type SidebarPageKey } from '../components/layout/Sidebar';
 import { TablesPage } from '../features/tables/pages/TablesPage';
 import { DashboardPage } from '../features/dashboard/pages/DashboardPage';
 import { MenuPage } from '../features/menu/pages/MenuPage';
+import LoginPage from '../features/auth/pages/LoginPage';
 
 export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentPage, setCurrentPage] = useState<SidebarPageKey>('tables');
+
+  // Show login page if not authenticated
+  if (!isAuthenticated) {
+    return <LoginPage onLogin={() => setIsAuthenticated(true)} />;
+  }
 
   const renderPage = () => {
     switch (currentPage) {
