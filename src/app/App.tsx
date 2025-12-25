@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Sidebar, type SidebarPageKey } from '../components/layout/Sidebar';
 import { TablesPage } from '../features/tables/pages/TablesPage';
 import { DashboardPage } from '../features/dashboard/pages/DashboardPage';
+import { MenuPage } from '../features/menu/pages/MenuPage';
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<SidebarPageKey>('tables');
@@ -12,9 +13,11 @@ export default function App() {
         return <DashboardPage />;
       case 'tables':
         return <TablesPage />;
+      case 'menu':
+        return <MenuPage />;
       // Các trang khác (qr-codes, customers, analytics, reports, settings)
       // hiện tại chỉ là placeholder đơn giản.
-      default:
+        default:
         return (
           <div className="flex-1 overflow-auto">
             <div className="p-8">
