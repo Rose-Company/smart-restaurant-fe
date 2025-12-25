@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, Upload, Star, Trash2, Plus, Edit } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { X, Upload, Star, Trash2, Plus, Edit, ExternalLink, Search } from 'lucide-react';
 import { Button } from '../../../../components/ui/misc/button';
 import { Input } from '../../../../components/ui/forms/input';
 import { Label } from '../../../../components/ui/forms/label';
@@ -50,6 +50,69 @@ export function AddMenuItemDialog({
   const [modifiers, setModifiers] = useState<ModifierGroup[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [hoveredImageId, setHoveredImageId] = useState<string | null>(null);
+  const [showAttachDropdown, setShowAttachDropdown] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const attachDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Available modifier groups (from global groups)
+  const availableGroups: ModifierGroup[] = [
+    {
+      id: 'size',
+      name: 'Size Selection',
+      required: true,
+      selectionType: 'Single',
+      optionsPreview: 'Small (+$0), Medium (+$2), Large (+$4)',
+    },
+    {
+      id: 'toppings',
+      name: 'Extra Toppings',
+      required: false,
+      selectionType: 'Multi',
+      optionsPreview: 'Cheese, Bacon, Mushrooms...',
+    },
+    {
+      id: 'sugar',
+      name: 'Sugar Level',
+      required: false,
+      selectionType: 'Single',
+      optionsPreview: 'No Sugar, 25%, 50%, 75%, 100%',
+    },
+    {
+      id: 'ice',
+      name: 'Ice Level',
+      required: false,
+      selectionType: 'Single',
+      optionsPreview: 'No Ice, Less Ice, Normal, Extra Ice',
+    },
+  ];
+
+  // Filter available groups based on search
+  const filteredGroups = availableGroups.filter(
+    (group) =>
+      !modifiers.some((m) => m.id === group.id) &&
+      group.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        attachDropdownRef.current &&
+        !attachDropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowAttachDropdown(false);
+        setSearchQuery('');
+      }
+    };
+
+    if (showAttachDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showAttachDropdown]);
 
   if (!isOpen) return null;
 
@@ -149,13 +212,13 @@ export function AddMenuItemDialog({
     setImages(updatedImages);
   };
 
-  const addModifierGroup = () => {
-    const newModifier: ModifierGroup = {
-      id: Math.random().toString(36).substr(2, 9),
-      name: 'New Modifier Group',
-      required: false,
-    };
-    setModifiers([...modifiers, newModifier]);
+  const attachModifierGroup = (groupId: string) => {
+    const groupToAttach = availableGroups.find((g) => g.id === groupId);
+    if (groupToAttach && !modifiers.some((m) => m.id === groupId)) {
+      setModifiers([...modifiers, groupToAttach]);
+      setShowAttachDropdown(false);
+      setSearchQuery('');
+    }
   };
 
   const removeModifierGroup = (id: string) => {
@@ -174,6 +237,8 @@ export function AddMenuItemDialog({
     setModifiers([]);
     setIsDragging(false);
     setHoveredImageId(null);
+    setShowAttachDropdown(false);
+    setSearchQuery('');
   };
 
   const handleClose = () => {
@@ -406,18 +471,18 @@ export function AddMenuItemDialog({
                     </div>
 
                     {/* Status Radio Group */}
-                    <div className="space-y-3">
-                      <Label className="text-sm font-medium text-gray-700">Status</Label>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700 mb-3 block">Status</Label>
                       <RadioGroup
                         value={status}
                         onValueChange={(value) =>
                           setStatus(value as 'Available' | 'Sold Out' | 'Unavailable')
                         }
-                        className="space-y-3"
+                        className="flex gap-3"
                       >
                         <Label
                           htmlFor="status-available"
-                          className="flex items-center justify-between p-3 rounded-lg border border-gray-200 cursor-pointer transition-all hover:border-gray-300"
+                          className="flex items-center justify-between p-3 rounded-lg border border-gray-200 cursor-pointer transition-all hover:border-gray-300 flex-1"
                           style={status === 'Available' ? {
                             borderColor: BRAND_COLOR,
                             backgroundColor: '#f0fdf4'
@@ -435,7 +500,7 @@ export function AddMenuItemDialog({
 
                         <Label
                           htmlFor="status-sold-out"
-                          className="flex items-center justify-between p-3 rounded-lg border border-gray-200 cursor-pointer transition-all hover:border-gray-300"
+                          className="flex items-center justify-between p-3 rounded-lg border border-gray-200 cursor-pointer transition-all hover:border-gray-300 flex-1"
                           style={status === 'Sold Out' ? {
                             borderColor: '#ef4444',
                             backgroundColor: '#fef2f2'
@@ -453,7 +518,7 @@ export function AddMenuItemDialog({
 
                         <Label
                           htmlFor="status-unavailable"
-                          className="flex items-center justify-between p-3 rounded-lg border border-gray-200 cursor-pointer transition-all hover:border-gray-300"
+                          className="flex items-center justify-between p-3 rounded-lg border border-gray-200 cursor-pointer transition-all hover:border-gray-300 flex-1"
                           style={status === 'Unavailable' ? {
                             borderColor: '#6b7280',
                             backgroundColor: '#f9fafb'
@@ -782,12 +847,34 @@ export function AddMenuItemDialog({
 
                   {/* Modifiers Section */}
                   <div>
+                    {/* Header */}
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-base font-normal text-gray-900">Modifiers</h3>
+                      <a
+                        href="#"
+                        className="text-sm flex items-center gap-1"
+                        style={{ color: BRAND_COLOR }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.textDecoration = 'underline';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.textDecoration = 'none';
+                        }}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          // Navigate to Manage Global Groups page
+                        }}
+                      >
+                        Manage Global Groups
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+
+                    {/* Attach Existing Group Button with Dropdown */}
+                    <div className="relative mb-4" ref={attachDropdownRef}>
                       <Button
                         variant="outline"
-                        size="sm"
-                        onClick={addModifierGroup}
+                        className="w-full justify-start"
                         style={{
                           borderColor: BRAND_COLOR,
                           color: BRAND_COLOR,
@@ -796,18 +883,104 @@ export function AddMenuItemDialog({
                           e.currentTarget.style.backgroundColor = `${BRAND_COLOR}1a`;
                         }}
                         onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = '';
+                          if (!showAttachDropdown) {
+                            e.currentTarget.style.backgroundColor = '';
+                          }
                         }}
+                        onClick={() => setShowAttachDropdown(!showAttachDropdown)}
                       >
-                        <Plus className="w-4 h-4 mr-1" />
-                        Add Group
+                        <Plus className="w-4 h-4 mr-2" />
+                        Attach Existing Group
                       </Button>
+
+                      {/* Dropdown Menu */}
+                      {showAttachDropdown && (
+                        <div
+                          className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50"
+                          style={{ maxHeight: '300px', overflowY: 'auto' }}
+                        >
+                          {/* Search Bar */}
+                          <div className="p-3 border-b border-gray-200">
+                            <div className="relative">
+                              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                              <Input
+                                placeholder="Search modifier groups..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="pl-9 px-8 py-2"
+                                style={{ backgroundColor: '#f3f3f5', borderColor: '#d1d5dc' }}
+                                onFocus={(e) => {
+                                  e.target.style.borderColor = BRAND_COLOR;
+                                }}
+                                onBlur={(e) => {
+                                  e.target.style.borderColor = '#d1d5dc';
+                                }}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Group List */}
+                          <div className="py-2">
+                            {filteredGroups.length === 0 ? (
+                              <div className="px-4 py-8 text-center text-sm text-gray-500">
+                                No groups found
+                              </div>
+                            ) : (
+                              filteredGroups.map((group) => (
+                                <button
+                                  key={group.id}
+                                  type="button"
+                                  className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0"
+                                  onClick={() => attachModifierGroup(group.id)}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex-1">
+                                      <p className="text-sm font-medium text-gray-900">
+                                        {group.name}
+                                      </p>
+                                      {group.optionsPreview && (
+                                        <p className="text-xs text-gray-500 mt-1">
+                                          {group.optionsPreview}
+                                        </p>
+                                      )}
+                                    </div>
+                                    {group.selectionType && (
+                                      <span
+                                        className="px-2 py-1 rounded-full text-xs font-medium"
+                                        style={{
+                                          backgroundColor:
+                                            group.selectionType === 'Single'
+                                              ? '#dbeafe'
+                                              : '#e9d5ff',
+                                          color:
+                                            group.selectionType === 'Single'
+                                              ? '#1e40af'
+                                              : '#6b21a8',
+                                        }}
+                                      >
+                                        {group.selectionType === 'Single'
+                                          ? 'Single'
+                                          : 'Multi'}
+                                      </span>
+                                    )}
+                                  </div>
+                                </button>
+                              ))
+                            )}
+                          </div>
+                          
+                        </div>
+                      )}
                     </div>
+
+                    {/* Attached Groups List */}
                     {modifiers.length === 0 ? (
                       <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                        <p className="text-sm text-gray-500 mb-2">No modifier groups attached</p>
+                        <p className="text-sm text-gray-500 mb-2">
+                          No modifier groups attached
+                        </p>
                         <p className="text-sm text-gray-400">
-                          Click "Add Group" to attach modifiers like size or toppings
+                          Click "Attach Existing Group" to add customization options
                         </p>
                       </div>
                     ) : (
@@ -815,60 +988,73 @@ export function AddMenuItemDialog({
                         {modifiers.map((modifier) => (
                           <div
                             key={modifier.id}
-                            className="flex items-center justify-between p-4 border border-gray-200 rounded-lg transition-colors"
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.borderColor = BRAND_COLOR;
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.borderColor = '';
+                            className="relative p-4 border rounded-lg"
+                            style={{
+                              borderColor: BRAND_COLOR,
                             }}
                           >
-                            <div className="flex-1">
-                              <p className="text-gray-900">{modifier.name}</p>
-                              <p className="text-sm text-gray-500">
-                                {modifier.required ? 'Required' : 'Optional'}
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.backgroundColor = `${BRAND_COLOR}1a`;
-                                  e.currentTarget.style.color = BRAND_COLOR;
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.backgroundColor = '';
-                                  e.currentTarget.style.color = '';
-                                }}
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
+                            {/* Header with badges */}
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h4 className="text-sm font-semibold text-gray-900">
+                                  {modifier.name}
+                                </h4>
+                                {/* Required/Optional Badge */}
+                                <span
+                                  className="px-2 py-0.5 rounded-full text-xs font-medium"
+                                  style={{
+                                    backgroundColor: modifier.required
+                                      ? '#fee2e2'
+                                      : '#f3f4f6',
+                                    color: modifier.required ? '#dc2626' : '#6b7280',
+                                  }}
+                                >
+                                  {modifier.required ? 'Required' : 'Optional'}
+                                </span>
+                                {/* Selection Type Badge */}
+                                {modifier.selectionType && (
+                                  <span
+                                    className="px-2 py-0.5 rounded-full text-xs font-medium"
+                                    style={{
+                                      backgroundColor:
+                                        modifier.selectionType === 'Single'
+                                          ? '#dbeafe'
+                                          : '#e9d5ff',
+                                      color:
+                                        modifier.selectionType === 'Single'
+                                          ? '#1e40af'
+                                          : '#6b21a8',
+                                    }}
+                                  >
+                                    {modifier.selectionType === 'Single'
+                                      ? 'Single Select'
+                                      : 'Multi Select'}
+                                  </span>
+                                )}
+                              </div>
+                              {/* Remove Button */}
+                              <button
+                                type="button"
                                 onClick={() => removeModifierGroup(modifier.id)}
-                                className="hover:bg-red-50 hover:text-red-600"
+                                className="text-gray-400 hover:text-gray-600 transition-colors"
                               >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
+                                <X className="w-4 h-4" />
+                              </button>
                             </div>
+
+                            {/* Options Preview */}
+                            {modifier.optionsPreview && (
+                              <div className="mt-2">
+                                <p className="text-xs text-gray-600 mb-1">Options:</p>
+                                <p className="text-xs text-gray-500">
+                                  {modifier.optionsPreview}
+                                </p>
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
                     )}
-
-                    {/* Example Modifier Groups */}
-                    <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                      <p className="text-sm font-normal text-blue-900 mb-2">
-                        💡 Example Modifier Groups:
-                      </p>
-                      <div className="space-y-1 text-sm text-blue-700">
-                        <p>• Size (Small, Medium, Large) - Required</p>
-                        <p>• Toppings (Extra Cheese, Mushrooms, etc.) - Optional</p>
-                        <p>• Cooking Level (Rare, Medium, Well Done) - Required</p>
-                      </div>
-                    </div>
                   </div>
                 </div>
               </div>
