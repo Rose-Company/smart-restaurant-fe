@@ -240,7 +240,7 @@ export function AddMenuItemDialog({
           }}
         >
           {/* Header */}
-          <div className="px-6 py-5 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
+          <div className="px-6 py-6 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
             <div>
               <h2 className="text-base font-normal text-gray-900">Add New Menu Item</h2>
               <p className="text-sm text-gray-600 mt-1">
@@ -568,8 +568,11 @@ export function AddMenuItemDialog({
                                 className="relative w-full mb-3 image-container"
                               >
                                 <div
-                                  className="relative rounded-lg overflow-hidden border-2 cursor-pointer w-full"
-                                  style={{ borderColor: BRAND_COLOR }}
+                                  className="relative rounded-lg overflow-hidden cursor-pointer w-full"
+                                  style={{ 
+                                    border: `2px solid ${BRAND_COLOR}`,
+                                    borderColor: BRAND_COLOR
+                                  }}
                                 >
                                   <img
                                     src={img.url}
@@ -586,18 +589,6 @@ export function AddMenuItemDialog({
                                       transition: 'background-color 0.2s ease-in-out'
                                     }}
                                   />
-
-                                  {/* Primary Badge - Top Left */}
-                                  <div
-                                    className="absolute top-2 left-2 text-white px-3 py-1 rounded-full flex items-center gap-1 text-sm font-medium"
-                                    style={{
-                                      backgroundColor: BRAND_COLOR,
-                                      zIndex: 20
-                                    }}
-                                  >
-                                    <Star className="w-4 h-4 fill-white" />
-                                    Primary
-                                  </div>
 
                                   {/* Delete button - Top Right - Chỉ hiển thị khi hover */}
                                   <button
@@ -628,6 +619,35 @@ export function AddMenuItemDialog({
                                   >
                                     <Trash2 className="w-4 h-4" />
                                   </button>
+                                </div>
+                                
+                                {/* Star Icon - Center - Always visible - Outside overflow container */}
+                                <div
+                                  className="absolute rounded-full flex items-center justify-center"
+                                  style={{
+                                    backgroundColor: BRAND_COLOR,
+                                    width: '40px',
+                                    height: '40px',
+                                    top: '50%',
+                                    left: '50%',
+                                    transform: 'translate(-50%, -50%)',
+                                    zIndex: 30,
+                                    display: 'flex',
+                                    visibility: 'visible',
+                                    opacity: 1,
+                                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                                    pointerEvents: 'none'
+                                  }}
+                                >
+                                  <Star 
+                                    className="w-5 h-5"
+                                    style={{ 
+                                      fill: '#ffffff', 
+                                      color: '#ffffff',
+                                      width: '20px',
+                                      height: '20px'
+                                    }} 
+                                  />
                                 </div>
                               </div>
                             ))}
@@ -856,7 +876,7 @@ export function AddMenuItemDialog({
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-end gap-3 flex-shrink-0">
+          <div className="px-6 py-6 border-t border-gray-200 flex items-center justify-end gap-3 flex-shrink-0">
             <Button
               variant="outline"
               onClick={handleClose}
