@@ -1,18 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Plus } from 'lucide-react';
 import { Button } from '../../../../../components/ui/misc/button';
 import { Input } from '../../../../../components/ui/forms/input';
 import { Textarea } from '../../../../../components/ui/forms/textarea';
 import { Label } from '../../../../../components/ui/forms/label';
-import type { ModifierSelectionType, ModifierRequirement, ModifierOption } from '../../types/modifier.types';
+import type { 
+  ModifierGroup, 
+  ModifierSelectionType, 
+  ModifierRequirement, 
+  ModifierOption 
+} from '../../types/modifier.types';
 
 const BRAND_COLOR = '#27ae60';
 const BRAND_COLOR_HOVER = '#229954';
 
-interface AddModifierGroupDialogProps {
+interface EditModifierGroupDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddGroup: (groupData: {
+  group: ModifierGroup | null;
+  onUpdateGroup: (id: number, groupData: {
     name: string;
     description: string;
     selectionType: ModifierSelectionType;
@@ -21,11 +27,12 @@ interface AddModifierGroupDialogProps {
   }) => void;
 }
 
-export function AddModifierGroupDialog({
+export function EditModifierGroupDialog({
   isOpen,
   onClose,
-  onAddGroup,
-}: AddModifierGroupDialogProps) {
+  group,
+  onUpdateGroup,
+}: EditModifierGroupDialogProps) {
   const [groupName, setGroupName] = useState('');
   const [description, setDescription] = useState('');
   const [selectionType, setSelectionType] = useState<ModifierSelectionType>('Multi Select');
@@ -34,13 +41,35 @@ export function AddModifierGroupDialog({
     { id: '1', name: '', priceAdjustment: 0 },
   ]);
 
+  // Load group data when dialog opens or group changes
+  useEffect(() => {
+    if (isOpen && group) {
+      setGroupName(group.name || '');
+      setDescription(group.description || '');
+      setSelectionType(group.selectionType || 'Multi Select');
+      setRequirement(group.requirement || 'Required');
+      setOptions(group.options && group.options.length > 0 
+        ? group.options 
+        : [{ id: '1', name: '', priceAdjustment: 0 }]
+      );
+    }
+  }, [isOpen, group]);
+
   const handleAddOption = () => {
     const newOption: ModifierOption = {
-      id: String(options.length + 1),
+      id: String(Date.now()),
       name: '',
       priceAdjustment: 0,
     };
     setOptions([...options, newOption]);
+  };
+
+  const handleRemoveOption = (id: string) => {
+    if (options.length > 1) {
+      setOptions(options.filter(opt => opt.id !== id));
+    } else {
+      alert('At least one option is required');
+    }
   };
 
   const handleOptionChange = (id: string, field: 'name' | 'priceAdjustment', value: string | number) => {
@@ -64,7 +93,9 @@ export function AddModifierGroupDialog({
       return;
     }
 
-    onAddGroup({
+    if (!group) return;
+
+    onUpdateGroup(group.id, {
       name: groupName,
       description,
       selectionType,
@@ -72,15 +103,10 @@ export function AddModifierGroupDialog({
       options: validOptions,
     });
 
-    // Reset form
-    setGroupName('');
-    setDescription('');
-    setSelectionType('Multi Select');
-    setRequirement('Required');
-    setOptions([{ id: '1', name: '', priceAdjustment: 0 }]);
+    onClose();
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !group) return null;
 
   return (
     <div
@@ -98,10 +124,10 @@ export function AddModifierGroupDialog({
         >
           <div>
             <h2 className="text-base font-normal text-gray-900" style={{ marginBottom: '4px' }}>
-              Create New Modifier Group
+              Edit Modifier Group
             </h2>
             <p className="text-sm text-gray-600">
-              Add a new customization option for menu items
+              Update customization option for menu items
             </p>
           </div>
           <button
@@ -292,9 +318,20 @@ export function AddModifierGroupDialog({
                   <div key={option.id} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {/* Option Name */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <Label className="text-sm font-medium text-gray-600">
-                        Option {index + 1} Name
-                      </Label>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm font-medium text-gray-600">
+                          Option {index + 1} Name
+                        </Label>
+                        {options.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveOption(option.id)}
+                            className="text-red-600 hover:text-red-700 text-xs"
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
                       <Input
                         value={option.name}
                         onChange={(e) => handleOptionChange(option.id, 'name', e.target.value)}
@@ -385,7 +422,7 @@ export function AddModifierGroupDialog({
               e.currentTarget.style.backgroundColor = BRAND_COLOR;
             }}
           >
-            Create Group
+            Update Group
           </Button>
         </div>
       </div>

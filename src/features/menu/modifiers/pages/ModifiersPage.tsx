@@ -1,6 +1,12 @@
 import React, { useState } from 'react';
 import { ModifierGroupCard } from '../components/ModifierGroupCard';
-import type { ModifierGroup } from '../types/modifier.types';
+import { EditModifierGroupDialog } from '../components/dialogs/EditModifierGroupDialog';
+import type { 
+  ModifierGroup, 
+  ModifierSelectionType, 
+  ModifierRequirement, 
+  ModifierOption 
+} from '../types/modifier.types';
 
 const initialModifierGroups: ModifierGroup[] = [
   {
@@ -83,7 +89,8 @@ const initialModifierGroups: ModifierGroup[] = [
 ];
 
 export function ModifiersPage() {
-  const [modifierGroups] = useState<ModifierGroup[]>(initialModifierGroups);
+  const [modifierGroups, setModifierGroups] = useState<ModifierGroup[]>(initialModifierGroups);
+  const [editingGroup, setEditingGroup] = useState<ModifierGroup | null>(null);
 
   const totalGroups = modifierGroups.length;
   const requiredGroups = modifierGroups.filter(g => g.requirement === 'Required').length;
@@ -91,12 +98,33 @@ export function ModifiersPage() {
   const multiSelectGroups = modifierGroups.filter(g => g.selectionType === 'Multi Select').length;
 
   const handleEdit = (id: number) => {
-    alert(`Edit modifier group ${id}`);
+    const group = modifierGroups.find(g => g.id === id);
+    if (group) {
+      setEditingGroup(group);
+    }
+  };
+
+  const handleUpdateGroup = (
+    id: number,
+    updatedGroupData: {
+      name: string;
+      description: string;
+      selectionType: ModifierSelectionType;
+      requirement: ModifierRequirement;
+      options: ModifierOption[];
+    }
+  ) => {
+    setModifierGroups(modifierGroups.map(group =>
+      group.id === id
+        ? { ...group, ...updatedGroupData }
+        : group
+    ));
+    setEditingGroup(null);
   };
 
   const handleDelete = (id: number) => {
     if (confirm('Are you sure you want to delete this modifier group?')) {
-      alert(`Delete modifier group ${id}`);
+      setModifierGroups(modifierGroups.filter(g => g.id !== id));
     }
   };
 
@@ -146,6 +174,16 @@ export function ModifiersPage() {
           <p className="text-gray-500">No modifier groups found</p>
           <p className="text-sm text-gray-400 mt-2">Click "Create New Group" to add your first modifier group</p>
         </div>
+      )}
+
+      {/* Edit Modifier Group Dialog */}
+      {editingGroup && (
+        <EditModifierGroupDialog
+          isOpen={!!editingGroup}
+          onClose={() => setEditingGroup(null)}
+          group={editingGroup}
+          onUpdateGroup={handleUpdateGroup}
+        />
       )}
     </>
   );
