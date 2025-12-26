@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { AddCategoryDialog, CategoryActionBar, CategoryStats, CategoriesTable } from '../components';
+import { EditCategoryDialog } from '../components/dialogs/EditCategoryDialog';
 import type { Category, CategoryFormData } from '../types/category.types';
 
 const initialCategories: Category[] = [
@@ -48,6 +49,7 @@ const initialCategories: Category[] = [
 export function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>(initialCategories);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [draggedItem, setDraggedItem] = useState<number | null>(null);
 
   const handleDragStart = (e: React.DragEvent, id: number) => {
@@ -99,7 +101,19 @@ export function CategoriesPage() {
   };
 
   const handleEdit = (id: number) => {
-    alert(`Edit category ${id} - Feature coming soon`);
+    const category = categories.find(cat => cat.id === id);
+    if (category) {
+      setEditingCategory(category);
+    }
+  };
+
+  const handleUpdateCategory = (id: number, updatedCategoryData: CategoryFormData) => {
+    setCategories(categories.map(cat =>
+      cat.id === id 
+        ? { ...cat, ...updatedCategoryData }
+        : cat
+    ));
+    setEditingCategory(null);
   };
 
   const handleDelete = (id: number) => {
@@ -134,6 +148,16 @@ export function CategoriesPage() {
         onClose={() => setShowAddDialog(false)}
         onAddCategory={handleAddCategory}
       />
+
+      {/* Edit Category Dialog */}
+      {editingCategory && (
+        <EditCategoryDialog
+          isOpen={!!editingCategory}
+          onClose={() => setEditingCategory(null)}
+          category={editingCategory}
+          onUpdateCategory={handleUpdateCategory}
+        />
+      )}
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../../components/ui
 import { MenuFilterBar } from '../components/MenuFilterBar';
 import { MenuTable } from '../components/MenuTable';
 import { AddMenuItemDialog } from '../components/dialogs/AddMenuItemDialog';
+import { EditMenuItemDialog } from '../components/dialogs/EditMenuItemDialog';
 import { CategoriesPage } from '../categories/pages/CategoriesPage';
 import { ModifiersPage } from '../modifiers/pages/ModifiersPage';
 import { AddModifierGroupDialog } from '../modifiers/components/dialogs/AddModifierGroupDialog';
@@ -123,6 +124,7 @@ export function MenuPage() {
   const [activeTab, setActiveTab] = useState('all-items');
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showAddModifierGroupDialog, setShowAddModifierGroupDialog] = useState(false);
+  const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -201,7 +203,29 @@ export function MenuPage() {
   };
 
   const handleEdit = (id: number) => {
-    alert(`Edit item ${id}`);
+    const item = menuItems.find((item) => item.id === id);
+    if (item) {
+      setEditingItem(item);
+    }
+  };
+
+  const handleUpdateItem = (
+    id: number,
+    updatedItem: Omit<MenuItem, 'id' | 'lastUpdate' | 'imageUrl'>,
+  ) => {
+    // Get primary image URL or first image URL for imageUrl field
+    const primaryImage = updatedItem.images?.find((img) => img.isPrimary);
+    const imageUrl = primaryImage?.url || updatedItem.images?.[0]?.url || '';
+    
+    const itemToUpdate: MenuItem = {
+      ...updatedItem,
+      id,
+      lastUpdate: new Date().toISOString().split('T')[0],
+      imageUrl,
+    };
+    
+    setMenuItems(menuItems.map((item) => (item.id === id ? itemToUpdate : item)));
+    setEditingItem(null);
   };
 
   const handleDelete = (id: number) => {
@@ -357,6 +381,16 @@ export function MenuPage() {
           isOpen={showAddModifierGroupDialog}
           onClose={() => setShowAddModifierGroupDialog(false)}
           onAddGroup={handleAddModifierGroup}
+        />
+      )}
+
+      {/* Edit Item Dialog */}
+      {editingItem && (
+        <EditMenuItemDialog
+          isOpen={!!editingItem}
+          onClose={() => setEditingItem(null)}
+          item={editingItem}
+          onUpdateItem={handleUpdateItem}
         />
       )}
     </div>
