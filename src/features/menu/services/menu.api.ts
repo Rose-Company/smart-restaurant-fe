@@ -33,8 +33,6 @@ export const menuItemApi = {
 
         const url = `/admin/menu/items${query ? `?${query}` : ""}`;
 
-        console.log("[menuItemApi] GET", url);
-
         return fetcher(url);
     },
 
