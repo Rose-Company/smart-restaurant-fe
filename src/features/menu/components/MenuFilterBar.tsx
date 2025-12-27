@@ -60,6 +60,7 @@ export function MenuFilterBar({
               <SelectItem value="Main Course">Main Course</SelectItem>
               <SelectItem value="Dessert">Dessert</SelectItem>
               <SelectItem value="Beverage">Beverage</SelectItem>
+              <SelectItem value="seafood">Sea Food</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -72,9 +73,9 @@ export function MenuFilterBar({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="Available">Available</SelectItem>
-              <SelectItem value="Sold Out">Sold Out</SelectItem>
-              <SelectItem value="Unavailable">Unavailable</SelectItem>
+              <SelectItem value="available">Available</SelectItem>
+              <SelectItem value="sold_out">Sold Out</SelectItem>
+              <SelectItem value="unavailable">Unavailable</SelectItem>
             </SelectContent>
           </Select>
         </div>
