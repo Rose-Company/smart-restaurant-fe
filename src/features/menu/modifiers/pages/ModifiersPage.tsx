@@ -3,7 +3,6 @@ import { Plus } from 'lucide-react';
 import { ModifierGroupCard } from '../components/ModifierGroupCard';
 import { EditModifierGroupDialog } from '../components/dialogs/EditModifierGroupDialog';
 import { AddModifierGroupDialog } from '../components/dialogs/AddModifierGroupDialog';
-import { Button } from '../../../components/ui/misc/button';
 import { modifierGroupApi } from '../services/modifier.api';
 import type { 
   ModifierGroup, 
@@ -11,6 +10,7 @@ import type {
   ModifierRequirement, 
   ModifierOption 
 } from '../types/modifier.types';
+import { Button } from '../../../../components/ui/misc/button';
 
 const BRAND_COLOR = '#27ae60';
 
