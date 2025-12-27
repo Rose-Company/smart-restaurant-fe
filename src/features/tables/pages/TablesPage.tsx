@@ -13,7 +13,7 @@ import {
 } from '../components';
 import { DownloadAllQRDialog } from '../components/dialogs/DownloadAllQRDialog';
 import { useTranslation } from "react-i18next";
-// UI Table type for components (camelCase)
+
 export interface UITable {
   id: number;
   table_number: string;
