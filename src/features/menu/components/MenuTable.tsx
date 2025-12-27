@@ -83,7 +83,7 @@ export function MenuTable({
 
   const handleDrop = (e: React.DragEvent, targetColumnId: ColumnId) => {
     e.preventDefault();
-    
+
     if (draggedColumn === null || draggedColumn === targetColumnId) {
       setDraggedColumn(null);
       return;
@@ -258,17 +258,16 @@ export function MenuTable({
                     onDragOver={(e) => handleDragOver(e, columnId)}
                     onDrop={(e) => handleDrop(e, columnId)}
                     onDragEnd={handleDragEnd}
-                    className={`text-gray-700 relative group ${
-                      draggedColumn === columnId ? 'opacity-50' : ''
-                    }`}
+                    className={`text-gray-700 relative group ${draggedColumn === columnId ? 'opacity-50' : ''
+                      }`}
                     style={{
                       cursor: 'move',
                       userSelect: 'none',
                     }}
                   >
                     <div className="flex items-center gap-2">
-                      <GripVertical 
-                        className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing" 
+                      <GripVertical
+                        className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
                       />
                       <span>{column.label}</span>
                     </div>
@@ -304,7 +303,7 @@ export function MenuTable({
 
       {/* Pagination Footer */}
       {totalPages > 0 && (
-        <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+        <div className="px-6 py-6 border-t border-gray-200 flex items-center justify-between">
           <p className="text-sm text-gray-600">
             Page {currentPage} of {totalPages}
           </p>
