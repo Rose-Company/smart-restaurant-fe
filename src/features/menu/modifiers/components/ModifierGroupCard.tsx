@@ -13,6 +13,9 @@ interface ModifierGroupCardProps {
 }
 
 export function ModifierGroupCard({ group, onEdit, onDelete }: ModifierGroupCardProps) {
+  const displayedOptions = group.options.slice(0, 3);
+  const hiddenCount = group.options.length - displayedOptions.length;
+
   return (
     <div 
       key={group.id} 
@@ -59,7 +62,7 @@ export function ModifierGroupCard({ group, onEdit, onDelete }: ModifierGroupCard
           Options Preview
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {group.options.slice(0, 3).map((option) => (
+          {displayedOptions.map((option) => (
             <div 
               key={option.id} 
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
@@ -80,9 +83,9 @@ export function ModifierGroupCard({ group, onEdit, onDelete }: ModifierGroupCard
               </span>
             </div>
           ))}
-          {group.hiddenOptionsCount && group.hiddenOptionsCount > 0 && (
+          {hiddenCount > 0 && (
             <p className="text-xs italic text-gray-400" style={{ marginTop: '8px' }}>
-              +{group.hiddenOptionsCount} more option{group.hiddenOptionsCount > 1 ? 's' : ''}
+              +{hiddenCount} more option{hiddenCount > 1 ? 's' : ''}
             </p>
           )}
         </div>
