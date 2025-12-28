@@ -432,7 +432,7 @@ export function EditMenuItemDialog({
                             value={price}
                             onChange={(e) => setPrice(e.target.value)}
                             style={{ backgroundColor: '#f3f3f5', borderColor: '#d1d5dc' }}
-                            className="pl-7 border"
+                            className="pl-10 border"
                             onFocus={(e) => {
                               e.target.style.borderColor = BRAND_COLOR;
                             }}
