@@ -9,6 +9,7 @@ import { EditMenuItemDialog } from '../components/dialogs/EditMenuItemDialog';
 import { CategoriesPage } from '../categories/pages/CategoriesPage';
 import { ModifiersPage } from '../modifiers/pages/ModifiersPage';
 import { AddModifierGroupDialog } from '../modifiers/components/dialogs/AddModifierGroupDialog';
+import { categoryApi } from '../categories/services/category.api';
 import type { MenuItem } from '../types/menu.types';
 import type { ModifierSelectionType, ModifierOption } from '../modifiers/types/modifier.types';
 import { menuItemApi } from '../services/menu.api';
@@ -24,6 +25,7 @@ export function MenuPage() {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showAddModifierGroupDialog, setShowAddModifierGroupDialog] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
+  const [categories, setCategories] = useState<Array<{ id: number; name: string }>>([]);
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -48,6 +50,19 @@ export function MenuPage() {
     description: raw.description,
     preparationTime: raw.preparation_time,
   });
+
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  const loadCategories = async () => {
+    try {
+      const cats = await categoryApi.list();
+      setCategories(cats.map(cat => ({ id: cat.id, name: cat.name })));
+    } catch (err) {
+      console.error('Error loading categories:', err);
+    }
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -127,12 +142,29 @@ export function MenuPage() {
     updatedItem: Omit<MenuItem, 'id' | 'lastUpdate' | 'imageUrl'>,
   ) => {
     try {
-      // TODO: Implement API call to update menu item
-      // For now, just reload the data
+      const category = categories.find(cat => cat.name === updatedItem.category);
+      const categoryId = category?.id || 0;
+
+      const imageUrls = updatedItem.images?.map(img => ({
+        url: img.url,
+        is_primary: img.isPrimary,
+      })) || [];
+
+      await menuItemApi.update(id, {
+        name: updatedItem.name,
+        price: updatedItem.price,
+        category_id: categoryId,
+        status: updatedItem.status === 'Available' ? 'available' : updatedItem.status === 'Sold Out' ? 'sold_out' : 'unavailable',
+        preparation_time: updatedItem.preparationTime,
+        description: updatedItem.description,
+        chef_recommended: updatedItem.chefRecommended,
+        images: imageUrls,
+        modifiers: updatedItem.modifiers?.map(m => ({ modifier_group_id: String(m.id) })) || [],
+      });
+
       setEditingItem(null);
       
       // Reload items after update
-      setLoading(true);
       const res = await menuItemApi.list({
         page: currentPage,
         page_size: itemsPerPage,
@@ -151,18 +183,43 @@ export function MenuPage() {
       const data = res.data;
       setItems(res.data.items.map(mapMenuItem));
       setTotal(data.total);
-      setLoading(false);
     } catch (err) {
       console.error('Error updating menu item:', err);
-      alert('Failed to update menu item');
-      setLoading(false);
+      alert(err instanceof Error ? err.message : 'Failed to update menu item');
     }
   };
 
-  const handleDelete = (id: number) => {
-    // if (confirm('Are you sure you want to delete this item?')) {
-    //   setMenuItems(menuItems.filter((item) => item.id !== id));
-    // }
+  const handleDelete = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this item?')) {
+      return;
+    }
+
+    try {
+      await menuItemApi.delete(id);
+      
+      // Reload items after delete
+      const res = await menuItemApi.list({
+        page: currentPage,
+        page_size: itemsPerPage,
+        search: searchQuery || undefined,
+        category: categoryFilter !== 'all' ? categoryFilter : undefined,
+        status: statusFilter !== 'all' ? statusFilter : undefined,
+        sort:
+          sortBy === 'price-asc'
+            ? 'price_asc'
+            : sortBy === 'price-desc'
+              ? 'price_desc'
+              : sortBy === 'name'
+                ? 'name'
+                : undefined,
+      });
+      const data = res.data;
+      setItems(res.data.items.map(mapMenuItem));
+      setTotal(data.total);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to delete menu item');
+      console.error('Error deleting menu item:', err);
+    }
   };
 
   const handleAddModifierGroup = (groupData: {
