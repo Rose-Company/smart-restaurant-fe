@@ -1,124 +1,97 @@
 import { fetcher } from "../../../../lib/fetcher";
 import { Category } from "../types/category.types";
 
-/**
- * GET api/admin/menu/categories
- */
-export type MenuItemSort =
-    | "name"
-    | "price_asc"
-    | "price_desc"
-    | "last_update";
+export interface CategoryResponse {
+  id: number;
+  name: string;
+  description: string;
+  is_active: boolean;
+  display_order: number;
+  item_count?: number;
+}
 
-type ListParams = {
-    page?: number;
-    page_size?: number;
-    category?: string;
-    status?: string;
-    search?: string;
-    sort?: MenuItemSort;
+export interface CreateCategoryRequest {
+  name: string;
+  description: string;
+  is_active?: boolean;
+  display_order?: number;
+}
+
+export interface UpdateCategoryRequest {
+  name?: string;
+  description?: string;
+  is_active?: boolean;
+  status?: "active" | "inactive";
+  display_order?: number;
+}
+
+function mapCategoryResponseToCategory(response: CategoryResponse): Category {
+  return {
+    id: response.id,
+    name: response.name,
+    description: response.description,
+    isActive: response.is_active,
+    displayOrder: response.display_order,
+    itemCount: response.item_count || 0,
+  };
+}
+
+export const categoryApi = {
+  list: async (): Promise<Category[]> => {
+    const response = await fetcher<any>("/admin/menu/categories");
+    const categories = response.data?.items || response.data || response;
+    const categoryArray = Array.isArray(categories) ? categories : [];
+    return categoryArray.map(mapCategoryResponseToCategory);
+  },
+
+  create: async (data: CreateCategoryRequest): Promise<Category> => {
+    const response = await fetcher<CategoryResponse>("/admin/menu/categories", {
+      method: "POST",
+      body: JSON.stringify({
+        name: data.name,
+        description: data.description,
+        is_active: data.is_active !== undefined ? data.is_active : true,
+        display_order: data.display_order || 0,
+      }),
+    });
+    return mapCategoryResponseToCategory(response.data || response);
+  },
+
+  update: async (id: number, data: UpdateCategoryRequest): Promise<Category> => {
+    const response = await fetcher<CategoryResponse>(`/admin/menu/categories/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+    return mapCategoryResponseToCategory(response.data || response);
+  },
+
+  delete: async (id: number): Promise<void> => {
+    await fetcher(`/admin/menu/categories/${id}`, {
+      method: "DELETE",
+    });
+  },
+
+  updateStatus: async (id: number, isActive: boolean, displayOrder?: number): Promise<Category> => {
+    const requestData: any = { 
+      status: isActive ? 'active' : 'inactive',
+    };
+    
+    if (displayOrder !== undefined) {
+      requestData.display_order = displayOrder;
+    }
+    
+    const response = await fetcher<CategoryResponse>(`/admin/menu/categories/${id}/status`, {
+      method: "PATCH",
+      body: JSON.stringify(requestData),
+    });
+    return mapCategoryResponseToCategory(response.data || response);
+  },
+
+  updateOrder: async (id: number, displayOrder: number): Promise<Category> => {
+    const response = await fetcher<CategoryResponse>(`/admin/menu/categories/${id}/order`, {
+      method: "PATCH",
+      body: JSON.stringify({ display_order: displayOrder }),
+    });
+    return mapCategoryResponseToCategory(response.data || response);
+  },
 };
-export const menuItemApi = {
-    // List menu items (pagination + filter + search + sort)
-    list: (params?: ListParams) => {
-        const query = new URLSearchParams(
-            Object.entries(params || {}).reduce(
-                (acc, [k, v]) =>
-                    v !== undefined && v !== "" && v !== "all"
-                        ? { ...acc, [k]: String(v) }
-                        : acc,
-                {}
-            )
-        ).toString();
-
-        const url = `/admin/menu/items${query ? `?${query}` : ""}`;
-
-        console.log("[menuItemApi] GET", url);
-
-        return fetcher(url);
-    },
-
-    // // Get detail
-    // detail: (id: number | string) =>
-    //     fetcher(`/admin/menu/items/${id}`),
-
-    // // Create
-    // create: (data: {
-    //     name: string;
-    //     category: string;
-    //     price: number;
-    //     status: MenuItem["status"];
-    //     description?: string;
-    //     preparation_time?: number;
-    //     chef_recommended?: boolean;
-    //     image_url?: string;
-    // }) =>
-    //     fetcher(`/admin/menu/items`, {
-    //         method: "POST",
-    //         body: JSON.stringify(data),
-    //     }),
-
-    // // Update (PUT)
-    // update: (
-    //     id: number | string,
-    //     data: Partial<{
-    //         name: string;
-    //         category: string;
-    //         price: number;
-    //         status: MenuItem["status"];
-    //         description?: string;
-    //         preparation_time?: number;
-    //         chef_recommended?: boolean;
-    //         image_url?: string;
-    //     }>
-    // ) =>
-    //     fetcher(`/admin/menu/items/${id}`, {
-    //         method: "PUT",
-    //         body: JSON.stringify(data),
-    //     }),
-
-    // // Update status (PATCH)
-    // updateStatus: (
-    //     id: number | string,
-    //     status: MenuItem["status"]
-    // ) =>
-    //     fetcher(`/admin/menu/items/${id}/status`, {
-    //         method: "PATCH",
-    //         body: JSON.stringify({ status }),
-    //     }),
-
-    /**
- * POST /api/admin/menu/items/upload-image
- */
-    create: (data: {
-        name: string;
-        price: number;
-        category_id: number;
-        status: "available" | "unavailable" | "sold_out";
-        preparation_time?: number;
-        description?: string;
-        chef_recommended?: boolean;
-        images?: {
-            url: string;
-            is_primary?: boolean;
-        }[];
-        modifiers?: {
-            modifier_group_id: string;
-        }[];
-    }) =>
-        fetcher("/admin/menu/items", {
-            method: "POST",
-            body: JSON.stringify(data),
-        }),
-        
-    uploadImage: (file: File) => {
-        const formData = new FormData();
-        formData.append("file", file);
-
-        return fetcher("/admin/menu/items/upload-image", {
-            method: "POST",
-            body: formData,
-        });
-    },
-};
-

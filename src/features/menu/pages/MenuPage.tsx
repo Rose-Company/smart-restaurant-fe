@@ -9,6 +9,7 @@ import { EditMenuItemDialog } from '../components/dialogs/EditMenuItemDialog';
 import { CategoriesPage } from '../categories/pages/CategoriesPage';
 import { ModifiersPage } from '../modifiers/pages/ModifiersPage';
 import { AddModifierGroupDialog } from '../modifiers/components/dialogs/AddModifierGroupDialog';
+import { categoryApi } from '../categories/services/category.api';
 import type { MenuItem } from '../types/menu.types';
 import type { ModifierSelectionType, ModifierOption } from '../modifiers/types/modifier.types';
 import { menuItemApi } from '../services/menu.api';
@@ -24,6 +25,7 @@ export function MenuPage() {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showAddModifierGroupDialog, setShowAddModifierGroupDialog] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
+  const [categories, setCategories] = useState<Array<{ id: number; name: string }>>([]);
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -48,6 +50,50 @@ export function MenuPage() {
     description: raw.description,
     preparationTime: raw.preparation_time,
   });
+
+  const mapDetailToMenuItem = (raw: any): MenuItem => {
+    const primaryImage = raw.images?.find((img: any) => img.is_primary) || raw.images?.[0];
+    return {
+      id: raw.id,
+      name: raw.name,
+      category: raw.category?.name || raw.category || '',
+      price: raw.price,
+      status: raw.status === 'available' ? 'Available' : raw.status === 'sold_out' ? 'Sold Out' : 'Unavailable',
+      lastUpdate: raw.last_update || raw.updated_at || new Date().toISOString().split('T')[0],
+      chefRecommended: raw.chef_recommended || false,
+      imageUrl: primaryImage?.url || raw.image_url || '',
+      description: raw.description || '',
+      preparationTime: raw.preparation_time || 0,
+      images: raw.images?.map((img: any) => ({
+        id: String(img.id || img.url),
+        url: img.url,
+        isPrimary: img.is_primary || false,
+      })) || (primaryImage ? [{
+        id: 'primary',
+        url: primaryImage.url,
+        isPrimary: true,
+      }] : []),
+      modifiers: raw.modifiers?.map((mod: any) => ({
+        id: String(mod.id || mod.modifier_group_id),
+        name: mod.name || mod.modifier_group?.name || '',
+        required: mod.required || mod.is_required || false,
+        selectionType: mod.selection_type === 'single' ? 'Single' : 'Multi',
+      })) || [],
+    };
+  };
+
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  const loadCategories = async () => {
+    try {
+      const cats = await categoryApi.list();
+      setCategories(cats.map(cat => ({ id: cat.id, name: cat.name })));
+    } catch (err) {
+      console.error('Error loading categories:', err);
+    }
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -115,36 +161,102 @@ export function MenuPage() {
     // setShowAddDialog(false);
   };
 
-  const handleEdit = (id: number) => {
-    // const item = menuItems.find((item) => item.id === id);
-    // if (item) {
-    //   setEditingItem(item);
-    // }
+  const handleEdit = async (id: number) => {
+    try {
+      setLoading(true);
+      const response = await menuItemApi.detail(id);
+      const item = mapDetailToMenuItem(response);
+      setEditingItem(item);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to load menu item details');
+      console.error('Error loading menu item detail:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleUpdateItem = (
+  const handleUpdateItem = async (
     id: number,
     updatedItem: Omit<MenuItem, 'id' | 'lastUpdate' | 'imageUrl'>,
   ) => {
-    // // Get primary image URL or first image URL for imageUrl field
-    // const primaryImage = updatedItem.images?.find((img) => img.isPrimary);
-    // const imageUrl = primaryImage?.url || updatedItem.images?.[0]?.url || '';
+    try {
+      const category = categories.find(cat => cat.name === updatedItem.category);
+      const categoryId = category?.id || 0;
 
-    // const itemToUpdate: MenuItem = {
-    //   ...updatedItem,
-    //   id,
-    //   lastUpdate: new Date().toISOString().split('T')[0],
-    //   imageUrl,
-    // };
+      const imageUrls = updatedItem.images?.map(img => ({
+        url: img.url,
+        is_primary: img.isPrimary,
+      })) || [];
 
-    // setMenuItems(menuItems.map((item) => (item.id === id ? itemToUpdate : item)));
-    // setEditingItem(null);
+      await menuItemApi.update(id, {
+        name: updatedItem.name,
+        price: updatedItem.price,
+        category_id: categoryId,
+        status: updatedItem.status === 'Available' ? 'available' : updatedItem.status === 'Sold Out' ? 'sold_out' : 'unavailable',
+        preparation_time: updatedItem.preparationTime,
+        description: updatedItem.description,
+        chef_recommended: updatedItem.chefRecommended,
+        images: imageUrls,
+        modifiers: updatedItem.modifiers?.map(m => ({ modifier_group_id: String(m.id) })) || [],
+      });
+
+      setEditingItem(null);
+      
+      // Reload items after update
+      const res = await menuItemApi.list({
+        page: currentPage,
+        page_size: itemsPerPage,
+        search: searchQuery || undefined,
+        category: categoryFilter !== 'all' ? categoryFilter : undefined,
+        status: statusFilter !== 'all' ? statusFilter : undefined,
+        sort:
+          sortBy === 'price-asc'
+            ? 'price_asc'
+            : sortBy === 'price-desc'
+              ? 'price_desc'
+              : sortBy === 'name'
+                ? 'name'
+                : undefined,
+      });
+      const data = res.data;
+      setItems(res.data.items.map(mapMenuItem));
+      setTotal(data.total);
+    } catch (err) {
+      console.error('Error updating menu item:', err);
+      alert(err instanceof Error ? err.message : 'Failed to update menu item');
+    }
   };
 
-  const handleDelete = (id: number) => {
-    // if (confirm('Are you sure you want to delete this item?')) {
-    //   setMenuItems(menuItems.filter((item) => item.id !== id));
-    // }
+  const handleDelete = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this item?')) {
+      return;
+    }
+
+    try {
+      await menuItemApi.delete(id);
+      
+      const res = await menuItemApi.list({
+        page: currentPage,
+        page_size: itemsPerPage,
+        search: searchQuery || undefined,
+        category: categoryFilter !== 'all' ? categoryFilter : undefined,
+        status: statusFilter !== 'all' ? statusFilter : undefined,
+        sort:
+          sortBy === 'price-asc'
+            ? 'price_asc'
+            : sortBy === 'price-desc'
+              ? 'price_desc'
+              : sortBy === 'name'
+                ? 'name'
+                : undefined,
+      });
+      const data = res.data;
+      setItems(res.data.items.map(mapMenuItem));
+      setTotal(data.total);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to delete menu item');
+      console.error('Error deleting menu item:', err);
+    }
   };
 
   const handleAddModifierGroup = (groupData: {

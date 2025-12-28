@@ -4,10 +4,12 @@ import { Button } from '../../../../../components/ui/misc/button';
 import { Input } from '../../../../../components/ui/forms/input';
 import { Textarea } from '../../../../../components/ui/forms/textarea';
 import { Label } from '../../../../../components/ui/forms/label';
+import { Switch } from '../../../../../components/ui/forms/switch';
 import type { 
   ModifierGroup, 
   ModifierSelectionType, 
-  ModifierOption 
+  ModifierOption,
+  ModifierStatus
 } from '../../types/modifier.types';
 
 const BRAND_COLOR = '#27ae60';
@@ -22,6 +24,7 @@ interface EditModifierGroupDialogProps {
     description: string;
     selectionType: ModifierSelectionType;
     is_required: boolean;
+    status: ModifierStatus;
     options: ModifierOption[];
   }) => void;
 }
@@ -36,6 +39,7 @@ export function EditModifierGroupDialog({
   const [description, setDescription] = useState('');
   const [selectionType, setSelectionType] = useState<ModifierSelectionType>('multiple');
   const [is_required, setIs_required] = useState(false);
+  const [status, setStatus] = useState<ModifierStatus>('active');
   const [options, setOptions] = useState<ModifierOption[]>([
     { id: '1', name: '', priceAdjustment: 0, status: 'active' },
   ]);
@@ -47,6 +51,7 @@ export function EditModifierGroupDialog({
       setDescription(group.description || '');
       setSelectionType(group.selectionType || 'multiple');
       setIs_required(group.is_required || false);
+      setStatus(group.status || 'active');
       setOptions(group.options && group.options.length > 0 
         ? group.options 
         : [{ id: '1', name: '', priceAdjustment: 0, status: 'active' }]
@@ -107,6 +112,7 @@ export function EditModifierGroupDialog({
       description: description.trim(),
       selectionType,
       is_required,
+      status,
       options: validOptions,
     });
 
@@ -230,6 +236,22 @@ export function EditModifierGroupDialog({
                     multiple
                   </div>
                 </button>
+              </div>
+            </div>
+
+            {/* Status */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium text-gray-700">Status</Label>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">
+                    {status === 'active' ? 'Active' : 'Inactive'}
+                  </span>
+                  <Switch
+                    checked={status === 'active'}
+                    onCheckedChange={(checked) => setStatus(checked ? 'active' : 'inactive')}
+                  />
+                </div>
               </div>
             </div>
 

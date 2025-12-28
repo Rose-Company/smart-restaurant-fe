@@ -109,6 +109,54 @@ export const menuItemApi = {
             body: JSON.stringify(data),
         }),
         
+    detail: async (id: number | string) => {
+        const response = await fetcher<any>(`/admin/menu/items/${id}`);
+        return response.data || response;
+    },
+
+    update: async (
+        id: number | string,
+        data: {
+            name?: string;
+            price?: number;
+            category_id?: number;
+            status?: "available" | "unavailable" | "sold_out";
+            preparation_time?: number;
+            description?: string;
+            chef_recommended?: boolean;
+            images?: {
+                url: string;
+                is_primary?: boolean;
+            }[];
+            modifiers?: {
+                modifier_group_id: string;
+            }[];
+        }
+    ) => {
+        const response = await fetcher<any>(`/admin/menu/items/${id}`, {
+            method: "PUT",
+            body: JSON.stringify(data),
+        });
+        return response.data || response;
+    },
+
+    delete: async (id: number | string): Promise<void> => {
+        await fetcher(`/admin/menu/items/${id}`, {
+            method: "DELETE",
+        });
+    },
+
+    updateStatus: async (
+        id: number | string,
+        status: "available" | "unavailable" | "sold_out"
+    ) => {
+        const response = await fetcher<any>(`/admin/menu/items/${id}/status`, {
+            method: "PATCH",
+            body: JSON.stringify({ status }),
+        });
+        return response.data || response;
+    },
+        
     uploadImage: (file: File) => {
         const formData = new FormData();
         formData.append("file", file);
