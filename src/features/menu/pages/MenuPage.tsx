@@ -116,29 +116,47 @@ export function MenuPage() {
   };
 
   const handleEdit = (id: number) => {
-    // const item = menuItems.find((item) => item.id === id);
-    // if (item) {
-    //   setEditingItem(item);
-    // }
+    const item = items.find((item) => item.id === id);
+    if (item) {
+      setEditingItem(item);
+    }
   };
 
-  const handleUpdateItem = (
+  const handleUpdateItem = async (
     id: number,
     updatedItem: Omit<MenuItem, 'id' | 'lastUpdate' | 'imageUrl'>,
   ) => {
-    // // Get primary image URL or first image URL for imageUrl field
-    // const primaryImage = updatedItem.images?.find((img) => img.isPrimary);
-    // const imageUrl = primaryImage?.url || updatedItem.images?.[0]?.url || '';
-
-    // const itemToUpdate: MenuItem = {
-    //   ...updatedItem,
-    //   id,
-    //   lastUpdate: new Date().toISOString().split('T')[0],
-    //   imageUrl,
-    // };
-
-    // setMenuItems(menuItems.map((item) => (item.id === id ? itemToUpdate : item)));
-    // setEditingItem(null);
+    try {
+      // TODO: Implement API call to update menu item
+      // For now, just reload the data
+      setEditingItem(null);
+      
+      // Reload items after update
+      setLoading(true);
+      const res = await menuItemApi.list({
+        page: currentPage,
+        page_size: itemsPerPage,
+        search: searchQuery || undefined,
+        category: categoryFilter !== 'all' ? categoryFilter : undefined,
+        status: statusFilter !== 'all' ? statusFilter : undefined,
+        sort:
+          sortBy === 'price-asc'
+            ? 'price_asc'
+            : sortBy === 'price-desc'
+              ? 'price_desc'
+              : sortBy === 'name'
+                ? 'name'
+                : undefined,
+      });
+      const data = res.data;
+      setItems(res.data.items.map(mapMenuItem));
+      setTotal(data.total);
+      setLoading(false);
+    } catch (err) {
+      console.error('Error updating menu item:', err);
+      alert('Failed to update menu item');
+      setLoading(false);
+    }
   };
 
   const handleDelete = (id: number) => {
