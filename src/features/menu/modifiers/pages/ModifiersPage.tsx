@@ -7,7 +7,8 @@ import { modifierGroupApi } from '../services/modifier.api';
 import type { 
   ModifierGroup, 
   ModifierSelectionType,
-  ModifierOption 
+  ModifierOption,
+  ModifierStatus
 } from '../types/modifier.types';
 import { Button } from '../../../../components/ui/misc/button';
 
@@ -107,6 +108,7 @@ export function ModifiersPage() {
       description: string;
       selectionType: ModifierSelectionType;
       is_required: boolean;
+      status: ModifierStatus;
       options: ModifierOption[];
     }
   ) => {
@@ -120,7 +122,7 @@ export function ModifiersPage() {
         min_selections: 0,
         max_selections: updatedGroupData.selectionType === 'single' ? 1 : 999,
         display_order: 0,
-        status: 'active',
+        status: updatedGroupData.status,
       });
 
       if (currentGroup) {

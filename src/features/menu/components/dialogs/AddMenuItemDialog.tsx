@@ -21,6 +21,8 @@ import type {
   UploadedImage,
   ModifierGroup,
 } from '../../types/menu.types';
+import { categoryApi } from '../../categories/services/category.api';
+import { modifierGroupApi } from '../../modifiers/services/modifier.api';
 
 // Brand color constant to avoid Tailwind arbitrary value issues
 const BRAND_COLOR = '#27ae60';
@@ -53,38 +55,45 @@ export function AddMenuItemDialog({
   const [showAttachDropdown, setShowAttachDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const attachDropdownRef = useRef<HTMLDivElement>(null);
+  const [categories, setCategories] = useState<Array<{ id: number; name: string }>>([]);
+  const [availableGroups, setAvailableGroups] = useState<ModifierGroup[]>([]);
 
-  // Available modifier groups (from global groups)
-  const availableGroups: ModifierGroup[] = [
-    {
-      id: 'size',
-      name: 'Size Selection',
-      required: true,
-      selectionType: 'Single',
-      optionsPreview: 'Small (+$0), Medium (+$2), Large (+$4)',
-    },
-    {
-      id: 'toppings',
-      name: 'Extra Toppings',
-      required: false,
-      selectionType: 'Multi',
-      optionsPreview: 'Cheese, Bacon, Mushrooms...',
-    },
-    {
-      id: 'sugar',
-      name: 'Sugar Level',
-      required: false,
-      selectionType: 'Single',
-      optionsPreview: 'No Sugar, 25%, 50%, 75%, 100%',
-    },
-    {
-      id: 'ice',
-      name: 'Ice Level',
-      required: false,
-      selectionType: 'Single',
-      optionsPreview: 'No Ice, Less Ice, Normal, Extra Ice',
-    },
-  ];
+  // Load categories and modifier groups from backend
+  useEffect(() => {
+    if (isOpen) {
+      loadCategories();
+      loadModifierGroups();
+    }
+  }, [isOpen]);
+
+  const loadCategories = async () => {
+    try {
+      const cats = await categoryApi.list();
+      setCategories(cats.filter(cat => cat.isActive).map(cat => ({ id: cat.id, name: cat.name })));
+    } catch (err) {
+      console.error('Error loading categories:', err);
+    }
+  };
+
+  const loadModifierGroups = async () => {
+    try {
+      const groups = await modifierGroupApi.list();
+      const mappedGroups: ModifierGroup[] = groups
+        .filter(group => group.status === 'active')
+        .map(group => ({
+          id: String(group.id),
+          name: group.name,
+          required: group.is_required,
+          selectionType: group.selectionType === 'single' ? 'Single' : 'Multi',
+          optionsPreview: group.options.length > 0 
+            ? group.options.slice(0, 3).map(opt => `${opt.name} (+$${opt.priceAdjustment.toFixed(2)})`).join(', ')
+            : 'No options',
+        }));
+      setAvailableGroups(mappedGroups);
+    } catch (err) {
+      console.error('Error loading modifier groups:', err);
+    }
+  };
 
   // Filter available groups based on search
   const filteredGroups = availableGroups.filter(
@@ -392,7 +401,7 @@ export function AddMenuItemDialog({
                             value={price}
                             onChange={(e) => setPrice(e.target.value)}
                             style={{ backgroundColor: '#f3f3f5', borderColor: '#d1d5dc' }}
-                            className="pl-7 border"
+                            className="pl-9 border"
                             onFocus={(e) => {
                               e.target.style.borderColor = BRAND_COLOR;
                             }}
@@ -438,11 +447,11 @@ export function AddMenuItemDialog({
                           <SelectValue placeholder="Select a category" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Appetizer">Appetizer</SelectItem>
-                          <SelectItem value="Main Course">Main Course</SelectItem>
-                          <SelectItem value="Dessert">Dessert</SelectItem>
-                          <SelectItem value="Beverage">Beverage</SelectItem>
-                          <SelectItem value="Side Dish">Side Dish</SelectItem>
+                          {categories.map((cat) => (
+                            <SelectItem key={cat.id} value={cat.name}>
+                              {cat.name}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
