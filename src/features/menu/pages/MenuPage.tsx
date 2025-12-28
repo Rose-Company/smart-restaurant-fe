@@ -235,7 +235,6 @@ export function MenuPage() {
     try {
       await menuItemApi.delete(id);
       
-      // Reload items after delete
       const res = await menuItemApi.list({
         page: currentPage,
         page_size: itemsPerPage,
