@@ -4,7 +4,7 @@ import { Button } from '../../../../../components/ui/misc/button';
 import { Input } from '../../../../../components/ui/forms/input';
 import { Textarea } from '../../../../../components/ui/forms/textarea';
 import { Label } from '../../../../../components/ui/forms/label';
-import type { ModifierSelectionType, ModifierRequirement, ModifierOption } from '../../types/modifier.types';
+import type { ModifierSelectionType, ModifierOption } from '../../types/modifier.types';
 
 const BRAND_COLOR = '#27ae60';
 const BRAND_COLOR_HOVER = '#229954';
@@ -16,7 +16,7 @@ interface AddModifierGroupDialogProps {
     name: string;
     description: string;
     selectionType: ModifierSelectionType;
-    requirement: ModifierRequirement;
+    is_required: boolean;
     options: ModifierOption[];
   }) => void;
 }
@@ -28,10 +28,10 @@ export function AddModifierGroupDialog({
 }: AddModifierGroupDialogProps) {
   const [groupName, setGroupName] = useState('');
   const [description, setDescription] = useState('');
-  const [selectionType, setSelectionType] = useState<ModifierSelectionType>('Multi Select');
-  const [requirement, setRequirement] = useState<ModifierRequirement>('Required');
+  const [selectionType, setSelectionType] = useState<ModifierSelectionType>('multiple');
+  const [is_required, setIs_required] = useState(false);
   const [options, setOptions] = useState<ModifierOption[]>([
-    { id: '1', name: '', priceAdjustment: 0 },
+    { id: '1', name: '', priceAdjustment: 0, status: 'active' },
   ]);
 
   const handleAddOption = () => {
@@ -39,6 +39,7 @@ export function AddModifierGroupDialog({
       id: String(options.length + 1),
       name: '',
       priceAdjustment: 0,
+      status: 'active',
     };
     setOptions([...options, newOption]);
   };
@@ -58,26 +59,33 @@ export function AddModifierGroupDialog({
       return;
     }
 
-    const validOptions = options.filter((opt) => opt.name.trim() !== '');
+    const validOptions = options
+      .filter((opt) => opt.name && opt.name.trim() !== '')
+      .map((opt) => ({
+        ...opt,
+        name: (opt.name || '').trim(),
+        priceAdjustment: opt.priceAdjustment || 0,
+        status: (opt.status === 'active' || opt.status === 'inactive') ? opt.status : 'active',
+      }));
     if (validOptions.length === 0) {
       alert('Please add at least one option');
       return;
     }
 
     onAddGroup({
-      name: groupName,
-      description,
+      name: groupName.trim(),
+      description: description.trim(),
       selectionType,
-      requirement,
+      is_required,
       options: validOptions,
     });
 
     // Reset form
     setGroupName('');
     setDescription('');
-    setSelectionType('Multi Select');
-    setRequirement('Required');
-    setOptions([{ id: '1', name: '', priceAdjustment: 0 }]);
+    setSelectionType('multiple');
+    setIs_required(false);
+    setOptions([{ id: '1', name: '', priceAdjustment: 0, status: 'active' }]);
   };
 
   if (!isOpen) return null;
@@ -151,11 +159,11 @@ export function AddModifierGroupDialog({
                 {/* Single Select */}
                 <button
                   type="button"
-                  onClick={() => setSelectionType('Single Select')}
+                  onClick={() => setSelectionType('single')}
                   className="flex items-center justify-between rounded-lg p-4 transition-all cursor-pointer"
                   style={{
-                    border: selectionType === 'Single Select' ? '2px solid #3b82f6' : '2px solid #e5e7eb',
-                    backgroundColor: selectionType === 'Single Select' ? '#eff6ff' : 'white',
+                    border: selectionType === 'single' ? '2px solid #3b82f6' : '2px solid #e5e7eb',
+                    backgroundColor: selectionType === 'single' ? '#eff6ff' : 'white',
                   }}
                 >
                   <div className="flex flex-col items-start gap-1">
@@ -173,14 +181,14 @@ export function AddModifierGroupDialog({
                   </div>
                 </button>
 
-                {/* Multi Select */}
+                {/* multiple Select */}
                 <button
                   type="button"
-                  onClick={() => setSelectionType('Multi Select')}
+                  onClick={() => setSelectionType('multiple')}
                   className="flex items-center justify-between rounded-lg p-4 transition-all cursor-pointer"
                   style={{
-                    border: selectionType === 'Multi Select' ? '2px solid #a855f7' : '2px solid #e5e7eb',
-                    backgroundColor: selectionType === 'Multi Select' ? '#faf5ff' : 'white',
+                    border: selectionType === 'multiple' ? '2px solid #a855f7' : '2px solid #e5e7eb',
+                    backgroundColor: selectionType === 'multiple' ? '#faf5ff' : 'white',
                   }}
                 >
                   <div className="flex flex-col items-start gap-1">
@@ -207,11 +215,11 @@ export function AddModifierGroupDialog({
                 {/* Required */}
                 <button
                   type="button"
-                  onClick={() => setRequirement('Required')}
+                  onClick={() => setIs_required(true)}
                   className="flex items-center justify-between rounded-lg p-4 transition-all cursor-pointer"
                   style={{
-                    border: requirement === 'Required' ? '2px solid #ef4444' : '2px solid #e5e7eb',
-                    backgroundColor: requirement === 'Required' ? '#fef2f2' : 'white',
+                    border: is_required ? '2px solid #ef4444' : '2px solid #e5e7eb',
+                    backgroundColor: is_required ? '#fef2f2' : 'white',
                   }}
                 >
                   <div className="flex flex-col items-start gap-1">
@@ -232,11 +240,11 @@ export function AddModifierGroupDialog({
                 {/* Optional */}
                 <button
                   type="button"
-                  onClick={() => setRequirement('Optional')}
+                  onClick={() => setIs_required(false)}
                   className="flex items-center justify-between rounded-lg p-4 transition-all cursor-pointer"
                   style={{
-                    border: requirement === 'Optional' ? '2px solid #6b7280' : '2px solid #e5e7eb',
-                    backgroundColor: requirement === 'Optional' ? '#f9fafb' : 'white',
+                    border: !is_required ? '2px solid #6b7280' : '2px solid #e5e7eb',
+                    backgroundColor: !is_required ? '#f9fafb' : 'white',
                   }}
                 >
                   <div className="flex flex-col items-start gap-1">

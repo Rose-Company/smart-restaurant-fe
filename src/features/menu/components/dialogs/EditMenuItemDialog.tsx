@@ -1039,9 +1039,9 @@ export function EditMenuItemDialog({
                                     }}
                                   >
                                     {modifier.selectionType === 'Single'
-                                      ? 'Single Select'
-                                      : 'Multi Select'}
-                                  </span>
+                                      ? 'single'
+                                      : 'multi'}
+                                  </span> 
                                 )}
                               </div>
                               {/* Remove Button */}
