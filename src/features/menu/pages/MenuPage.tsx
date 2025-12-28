@@ -51,6 +51,37 @@ export function MenuPage() {
     preparationTime: raw.preparation_time,
   });
 
+  const mapDetailToMenuItem = (raw: any): MenuItem => {
+    const primaryImage = raw.images?.find((img: any) => img.is_primary) || raw.images?.[0];
+    return {
+      id: raw.id,
+      name: raw.name,
+      category: raw.category?.name || raw.category || '',
+      price: raw.price,
+      status: raw.status === 'available' ? 'Available' : raw.status === 'sold_out' ? 'Sold Out' : 'Unavailable',
+      lastUpdate: raw.last_update || raw.updated_at || new Date().toISOString().split('T')[0],
+      chefRecommended: raw.chef_recommended || false,
+      imageUrl: primaryImage?.url || raw.image_url || '',
+      description: raw.description || '',
+      preparationTime: raw.preparation_time || 0,
+      images: raw.images?.map((img: any) => ({
+        id: String(img.id || img.url),
+        url: img.url,
+        isPrimary: img.is_primary || false,
+      })) || (primaryImage ? [{
+        id: 'primary',
+        url: primaryImage.url,
+        isPrimary: true,
+      }] : []),
+      modifiers: raw.modifiers?.map((mod: any) => ({
+        id: String(mod.id || mod.modifier_group_id),
+        name: mod.name || mod.modifier_group?.name || '',
+        required: mod.required || mod.is_required || false,
+        selectionType: mod.selection_type === 'single' ? 'Single' : 'Multi',
+      })) || [],
+    };
+  };
+
   useEffect(() => {
     loadCategories();
   }, []);
@@ -130,10 +161,17 @@ export function MenuPage() {
     // setShowAddDialog(false);
   };
 
-  const handleEdit = (id: number) => {
-    const item = items.find((item) => item.id === id);
-    if (item) {
+  const handleEdit = async (id: number) => {
+    try {
+      setLoading(true);
+      const response = await menuItemApi.detail(id);
+      const item = mapDetailToMenuItem(response);
       setEditingItem(item);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to load menu item details');
+      console.error('Error loading menu item detail:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
