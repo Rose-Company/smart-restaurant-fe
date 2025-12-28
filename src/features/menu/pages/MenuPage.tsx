@@ -10,7 +10,7 @@ import { CategoriesPage } from '../categories/pages/CategoriesPage';
 import { ModifiersPage } from '../modifiers/pages/ModifiersPage';
 import { AddModifierGroupDialog } from '../modifiers/components/dialogs/AddModifierGroupDialog';
 import type { MenuItem } from '../types/menu.types';
-import type { ModifierSelectionType, ModifierRequirement, ModifierOption } from '../modifiers/types/modifier.types';
+import type { ModifierSelectionType, ModifierOption } from '../modifiers/types/modifier.types';
 import { menuItemApi } from '../services/menu.api';
 // Brand color constant
 const BRAND_COLOR = '#27ae60';
@@ -151,7 +151,7 @@ export function MenuPage() {
     name: string;
     description: string;
     selectionType: ModifierSelectionType;
-    requirement: ModifierRequirement;
+    is_required: boolean;
     options: ModifierOption[];
   }) => {
     console.log('New modifier group added:', groupData);
@@ -219,22 +219,6 @@ export function MenuPage() {
             >
               <Plus className="w-4 h-4 mr-2" />
               Add New Item
-            </Button>
-          )}
-          {activeTab === 'modifiers' && (
-            <Button
-              onClick={() => setShowAddModifierGroupDialog(true)}
-              className="text-white"
-              style={{ backgroundColor: BRAND_COLOR }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = BRAND_COLOR_HOVER;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = BRAND_COLOR;
-              }}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Create New Group
             </Button>
           )}
         </div>

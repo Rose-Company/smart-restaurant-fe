@@ -1027,8 +1027,8 @@ export function AddMenuItemDialog({
                                     }}
                                   >
                                     {modifier.selectionType === 'Single'
-                                      ? 'Single Select'
-                                      : 'Multi Select'}
+                                      ? 'single'
+                                      : 'multi'}
                                   </span>
                                 )}
                               </div>
