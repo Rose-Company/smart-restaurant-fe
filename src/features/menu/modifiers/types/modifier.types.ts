@@ -1,10 +1,11 @@
-export type ModifierSelectionType = 'Single Select' | 'Multi Select';
-export type ModifierRequirement = 'Required' | 'Optional';
+export type ModifierSelectionType = 'single' | 'multiple';
+export type ModifierStatus = 'active' | 'inactive';
 
 export interface ModifierOption {
   id: string;
   name: string;
   priceAdjustment: number;
+  status: ModifierStatus;
 }
 
 export interface ModifierGroup {
@@ -12,7 +13,8 @@ export interface ModifierGroup {
   name: string;
   description: string;
   selectionType: ModifierSelectionType;
-  requirement: ModifierRequirement;
+  is_required: boolean;
+  status: ModifierStatus;
   options: ModifierOption[];
   hiddenOptionsCount?: number;
 }
@@ -21,7 +23,7 @@ export interface ModifierGroupFormData {
   name: string;
   description: string;
   selectionType: ModifierSelectionType;
-  requirement: ModifierRequirement;
+  is_required: boolean;
   options: ModifierOption[];
 }
 
