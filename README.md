@@ -160,7 +160,70 @@ To add a new page (e.g. **Customers**):
 
 ---
 
-## 5. Next Steps (to connect with a real backend)
+## 5. Customer Menu (QR Code Ordering)
+
+The application includes a **separate customer-facing interface** for ordering food via QR codes. This is completely separated from the admin dashboard.
+
+### Customer App Structure
+
+- **Location**: `src/features/customer/`
+- **Routing**: Automatically detected when URL path starts with `/customer` or `/menu`
+- **URL Format**: `/customer/menu?token=<QR_TOKEN>&table=<TABLE_NUMBER>`
+
+### Features
+
+- ✅ **Responsive Mobile Design**: Optimized for mobile devices (primary use case)
+- ✅ **Menu Display**: Shows available menu items with images, descriptions, and prices
+- ✅ **Category Filtering**: Filter items by category (All, Appetizer, Main Course, Dessert, etc.)
+- ✅ **Search**: Search menu items by name or description
+- ✅ **Shopping Cart**: Add items to cart, adjust quantities, and view total
+- ✅ **QR Token Integration**: Loads menu based on QR token from scanned code
+- ✅ **Table Number Display**: Shows table number in header
+
+### Usage
+
+1. **For Development/Testing**:
+   - Navigate to `/customer/menu` (without token) to see mock menu data
+   - Navigate to `/customer/menu?token=test123&table=5` to test with token
+
+2. **For Production**:
+   - QR codes should link to: `/customer/menu?token=<GENERATED_TOKEN>&table=<TABLE_NUMBER>`
+   - The app will fetch menu items from API endpoint: `/api/customer/menu?token=<TOKEN>`
+
+### API Integration
+
+The customer menu API service is located at `src/features/customer/services/menu.api.ts`:
+
+```typescript
+customerMenuApi.fetchMenuByToken(token: string): Promise<CustomerMenuResponse>
+```
+
+**Response Format**:
+```typescript
+{
+  items: MenuItem[];
+  tableNumber?: string;
+  restaurantName?: string;
+}
+```
+
+### Separation from Admin
+
+- **Admin routes**: All routes except `/customer/*` and `/menu/*`
+- **Customer routes**: `/customer/*` and `/menu/*`
+- **No authentication required** for customer routes
+- **Separate components** in `src/features/customer/` folder
+- **Independent styling** optimized for mobile devices
+
+### Components
+
+- `CustomerMenuPage.tsx` - Main customer menu page with filtering, search, and cart
+- `CustomerApp.tsx` - Customer app wrapper that handles routing and URL params
+- `menu.api.ts` - API service for fetching menu by QR token
+
+---
+
+## 6. Next Steps (to connect with a real backend)
 
 The current implementation is **frontend-only**. To align fully with the assignment spec:
 
