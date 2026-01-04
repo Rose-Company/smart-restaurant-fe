@@ -1,13 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sidebar, type SidebarPageKey } from '../components/layout/Sidebar';
 import { TablesPage } from '../features/tables/pages/TablesPage';
 import { DashboardPage } from '../features/dashboard/pages/DashboardPage';
 import { MenuPage } from '../features/menu/pages/MenuPage';
 import LoginPage from '../features/auth/pages/LoginPage';
+import { CustomerApp } from '../features/customer/App';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentPage, setCurrentPage] = useState<SidebarPageKey>('tables');
+  const [isCustomerRoute, setIsCustomerRoute] = useState(false);
+
+  // Check if current route is customer route
+  useEffect(() => {
+    const path = window.location.pathname;
+    const isCustomer = path.startsWith('/customer') || path.startsWith('/menu');
+    setIsCustomerRoute(isCustomer);
+  }, []);
+
+  // Render customer app if on customer route
+  if (isCustomerRoute) {
+    return <CustomerApp />;
+  }
 
   // Show login page if not authenticated
   if (!isAuthenticated) {
