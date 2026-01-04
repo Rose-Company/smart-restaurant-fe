@@ -36,7 +36,11 @@ export default function App() {
         return <TablesPage />;
       case 'menu':
         return <MenuPage />;
-      // Các trang khác (qr-codes, customers, analytics, reports, settings)
+      case 'customers':
+        // Navigate to customer menu for testing
+        window.location.href = '/customer/menu?table=05&token=test-token';
+        return null;
+      // Các trang khác (qr-codes, analytics, reports, settings)
       // hiện tại chỉ là placeholder đơn giản.
         default:
         return (
