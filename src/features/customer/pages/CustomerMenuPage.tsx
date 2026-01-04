@@ -24,6 +24,28 @@ interface CartItem {
   modifierPrice?: number;
 }
 
+interface OrderHistoryItem {
+  id: string;
+  name: string;
+  quantity: number;
+  price: number;
+  status: 'Served' | 'Preparing' | 'Pending';
+}
+
+interface OrderRound {
+  roundNumber: number;
+  time: string;
+  items: OrderHistoryItem[];
+}
+
+interface OrderHistory {
+  tableNumber: string;
+  rounds: OrderRound[];
+  subtotal: number;
+  vat: number;
+  total: number;
+}
+
 interface CustomerMenuPageProps {
   tableToken?: string;
   tableNumber?: string;
@@ -42,6 +64,32 @@ export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick }: Cust
   const [loading, setLoading] = useState(true);
   const [showBanner, setShowBanner] = useState(true);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  
+  // Order history state
+  const [orderHistory, setOrderHistory] = useState<OrderHistory>({
+    tableNumber: tableNumber || '05',
+    rounds: [
+      {
+        roundNumber: 1,
+        time: '7:28 PM',
+        items: [
+          { id: '1', name: 'Truffle Burger', quantity: 1, price: 28.50, status: 'Served' },
+          { id: '2', name: 'Grilled Salmon', quantity: 1, price: 24.99, status: 'Served' },
+          { id: '3', name: 'Lobster Linguine', quantity: 1, price: 38.00, status: 'Served' },
+        ]
+      },
+      {
+        roundNumber: 2,
+        time: '7:28 PM',
+        items: [
+          { id: '4', name: 'Grilled Salmon', quantity: 2, price: 49.98, status: 'Preparing' },
+        ]
+      }
+    ],
+    subtotal: 141.47,
+    vat: 11.32,
+    total: 152.79
+  });
   
   // Item detail modal states
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
@@ -315,6 +363,45 @@ export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick }: Cust
     return cart.reduce((total, cartItem) => total + cartItem.quantity, 0);
   };
 
+  const handleConfirmOrder = (orderCart: CartItem[], customerName?: string) => {
+    // Convert cart items to order history items
+    const newOrderItems: OrderHistoryItem[] = orderCart.map((cartItem, index) => ({
+      id: `order-${Date.now()}-${index}`,
+      name: cartItem.item.name,
+      quantity: cartItem.quantity,
+      price: (cartItem.item.price + (cartItem.modifierPrice || 0)) * cartItem.quantity,
+      status: 'Pending' as const
+    }));
+
+    // Calculate new round
+    const newRoundNumber = orderHistory.rounds.length + 1;
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+
+    const newRound: OrderRound = {
+      roundNumber: newRoundNumber,
+      time: timeString,
+      items: newOrderItems
+    };
+
+    // Calculate totals
+    const newSubtotal = orderHistory.subtotal + getTotalPrice();
+    const newVat = newSubtotal * 0.08;
+    const newTotal = newSubtotal + newVat;
+
+    // Update order history
+    setOrderHistory({
+      tableNumber: orderHistory.tableNumber,
+      rounds: [...orderHistory.rounds, newRound],
+      subtotal: newSubtotal,
+      vat: newVat,
+      total: newTotal
+    });
+
+    // Clear cart after order
+    setCart([]);
+  };
+
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -491,6 +578,8 @@ export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick }: Cust
         onCheckout={handleCheckout}
         getTotalPrice={getTotalPrice}
         getTotalItems={getTotalItems}
+        orderHistory={orderHistory}
+        onConfirmOrder={handleConfirmOrder}
       />
     </div>
   );

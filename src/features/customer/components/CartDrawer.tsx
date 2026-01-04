@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { ShoppingCart, X, Plus, Minus, Phone, FileText } from 'lucide-react';
+import { ShoppingCart, X, Plus, Minus, Phone, FileText, CheckCircle } from 'lucide-react';
 import type { MenuItem } from '../../menu/types/menu.types';
+import { OrderSuccessModal } from './OrderSuccessModal';
 
 interface SelectedModifiers {
   [groupId: string]: string[];
@@ -46,6 +47,8 @@ interface CartDrawerProps {
   onAddNote?: (itemId: number) => void;
   getTotalPrice: () => number;
   getTotalItems: () => number;
+  orderHistory?: OrderHistory;
+  onConfirmOrder?: (cart: CartItem[], customerName?: string) => void;
 }
 
 export function CartDrawer({
@@ -58,12 +61,16 @@ export function CartDrawer({
   onCheckout,
   onAddNote,
   getTotalPrice,
-  getTotalItems
+  getTotalItems,
+  orderHistory: propOrderHistory,
+  onConfirmOrder
 }: CartDrawerProps) {
   const [activeTab, setActiveTab] = useState<'current' | 'history'>('current');
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [customerName, setCustomerName] = useState('');
 
-  // Mock order history data
-  const orderHistory: OrderHistory = {
+  // Mock order history data if not provided
+  const defaultOrderHistory: OrderHistory = {
     tableNumber: tableNumber || '05',
     rounds: [
       {
@@ -86,6 +93,21 @@ export function CartDrawer({
     subtotal: 141.47,
     vat: 11.32,
     total: 152.79
+  };
+
+  const orderHistory = propOrderHistory || defaultOrderHistory;
+
+  const handleConfirmOrder = () => {
+    if (onConfirmOrder) {
+      onConfirmOrder(cart, customerName);
+    }
+    setShowSuccessModal(true);
+    setCustomerName('');
+  };
+
+  const handleSuccessModalClose = () => {
+    setShowSuccessModal(false);
+    setActiveTab('history');
   };
 
   if (!isOpen) return null;
@@ -648,6 +670,8 @@ export function CartDrawer({
             <input
               type="text"
               placeholder="Your Name (Optional)"
+              value={customerName}
+              onChange={(e) => setCustomerName(e.target.value)}
               style={{
                 width: '100%',
                 padding: '12px 16px',
@@ -659,7 +683,7 @@ export function CartDrawer({
               }}
             />
             <button
-              onClick={onCheckout}
+              onClick={handleConfirmOrder}
               style={{
                 width: '100%',
                 backgroundColor: '#52b788',
@@ -811,6 +835,11 @@ export function CartDrawer({
           )}
         </div>
       </div>
+
+      <OrderSuccessModal
+        isOpen={showSuccessModal}
+        onClose={handleSuccessModalClose}
+      />
     </div>
   );
 }

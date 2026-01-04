@@ -6,3 +6,4 @@ export { MenuItemCard } from './MenuItemCard';
 export { ItemDetailModal } from './ItemDetailModal';
 export { CartDrawer } from './CartDrawer';
 export { BottomCartBar } from './BottomCartBar';
+export { OrderSuccessModal } from './OrderSuccessModal';
