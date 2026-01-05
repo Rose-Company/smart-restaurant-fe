@@ -18,7 +18,6 @@ interface CategoriesTableProps {
   onDragEnd: () => void;
   onToggleStatus: (id: number) => void;
   onEdit: (id: number) => void;
-  onDelete: (id: number) => void;
 }
 
 export function CategoriesTable({
@@ -28,8 +27,7 @@ export function CategoriesTable({
   onDragOver,
   onDragEnd,
   onToggleStatus,
-  onEdit,
-  onDelete,
+  onEdit
 }: CategoriesTableProps) {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200">
@@ -63,7 +61,6 @@ export function CategoriesTable({
                   onDragEnd={onDragEnd}
                   onToggleStatus={onToggleStatus}
                   onEdit={onEdit}
-                  onDelete={onDelete}
                 />
               ))
             )}

@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { ModifierGroupCard } from '../components/ModifierGroupCard';
 import { EditModifierGroupDialog } from '../components/dialogs/EditModifierGroupDialog';
 import { AddModifierGroupDialog } from '../components/dialogs/AddModifierGroupDialog';
-import { modifierGroupApi } from '../services/modifier.api';
 import type { 
   ModifierGroup, 
   ModifierSelectionType,
@@ -14,30 +13,38 @@ import { Button } from '../../../../components/ui/misc/button';
 
 const BRAND_COLOR = '#27ae60';
 
-export function ModifiersPage() {
-  const [modifierGroups, setModifierGroups] = useState<ModifierGroup[]>([]);
+type ModifierGroupPageProps = {
+  modifierGroups: ModifierGroup[];
+  onAddGroup: (groupData: {
+    name: string;
+    description: string;
+    selectionType: ModifierSelectionType;
+    is_required: boolean;
+    options: ModifierOption[];
+  }) => Promise<void>;
+  onUpdateGroup: (
+    id: number,
+    updatedGroupData: {
+      name: string;
+      description: string;
+      selectionType: ModifierSelectionType;
+      is_required: boolean;
+      status: ModifierStatus;
+      options: ModifierOption[];
+    }
+  ) => Promise<void>;
+  onDeleteGroup: (id: number) => Promise<void>;
+}
+
+export function ModifiersPage({
+  modifierGroups,
+  onAddGroup,
+  onUpdateGroup,
+  onDeleteGroup
+}: ModifierGroupPageProps) {
+
   const [editingGroup, setEditingGroup] = useState<ModifierGroup | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    loadModifierGroups();
-  }, []);
-
-  const loadModifierGroups = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const groups = await modifierGroupApi.list();
-      setModifierGroups(groups);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load modifier groups');
-      console.error('Error loading modifier groups:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const totalGroups = modifierGroups.length;
   const requiredGroups = modifierGroups.filter(g => g.is_required).length;
@@ -59,41 +66,7 @@ export function ModifiersPage() {
     options: ModifierOption[];
   }) => {
     try {
-      const newGroup = await modifierGroupApi.create({
-        name: groupData.name,
-        description: groupData.description,
-        selection_type: groupData.selectionType,
-        is_required: groupData.is_required,
-        status: 'active',
-      });
-
-      if (!newGroup || !newGroup.id) {
-        throw new Error('Failed to create modifier group: Invalid response');
-      }
-
-      for (const option of groupData.options) {
-        const trimmedName = (option.name || '').trim();
-        if (!trimmedName) {
-          console.warn('Skipping option with empty name:', option);
-          continue;
-        }
-        
-        const optionStatus = option.status && (option.status === 'active' || option.status === 'inactive') 
-          ? option.status 
-          : 'active';
-        
-        const requestData = {
-          name: trimmedName,
-          price_adjustment: option.priceAdjustment || 0,
-          status: optionStatus,
-        };
-        
-        console.log('Creating option with data:', requestData);
-        
-        await modifierGroupApi.addOption(newGroup.id, requestData);
-      }
-
-      await loadModifierGroups();
+      await onAddGroup(groupData);
       setIsAddDialogOpen(false);
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to create modifier group');
@@ -113,92 +86,7 @@ export function ModifiersPage() {
     }
   ) => {
     try {
-      const currentGroup = modifierGroups.find(g => g.id === id);
-      await modifierGroupApi.update(id, {
-        name: updatedGroupData.name,
-        description: updatedGroupData.description,
-        selection_type: updatedGroupData.selectionType,
-        is_required: updatedGroupData.is_required,
-        min_selections: 0,
-        max_selections: updatedGroupData.selectionType === 'single' ? 1 : 999,
-        display_order: 0,
-        status: updatedGroupData.status,
-      });
-
-      if (currentGroup) {
-        const existingOptions = currentGroup.options;
-        const updatedOptions = updatedGroupData.options;
-
-        const existingOptionIds = new Set(
-          existingOptions
-            .map(opt => Number(opt.id))
-            .filter(id => !isNaN(id))
-        );
-        
-        const updatedOptionIds = new Set(
-          updatedOptions
-            .map(opt => Number(opt.id))
-            .filter(id => !isNaN(id))
-        );
-
-        const newOptions = updatedOptions.filter(opt => {
-          const optId = Number(opt.id);
-          return isNaN(optId) || !existingOptionIds.has(optId);
-        });
-
-        const optionsToDelete = existingOptions.filter(opt => {
-          const optId = Number(opt.id);
-          return !isNaN(optId) && !updatedOptionIds.has(optId);
-        });
-
-        for (const option of existingOptions) {
-          const optId = Number(option.id);
-          if (!isNaN(optId) && updatedOptionIds.has(optId)) {
-            const updatedOption = updatedOptions.find(opt => Number(opt.id) === optId);
-            if (updatedOption) {
-              const trimmedName = updatedOption.name.trim();
-              if (trimmedName && (trimmedName !== option.name || updatedOption.priceAdjustment !== option.priceAdjustment || updatedOption.status !== option.status)) {
-                await modifierGroupApi.updateOption(optId, {
-                  name: trimmedName,
-                  price_adjustment: updatedOption.priceAdjustment,
-                  status: updatedOption.status || 'active',
-                });
-              }
-            }
-          }
-        }
-
-        for (const option of optionsToDelete) {
-          const optId = Number(option.id);
-          if (!isNaN(optId)) {
-            await modifierGroupApi.deleteOption(optId);
-          }
-        }
-
-        for (const option of newOptions) {
-          const trimmedName = (option.name || '').trim();
-          if (!trimmedName) {
-            console.warn('Skipping option with empty name:', option);
-            continue;
-          }
-          
-          const optionStatus = option.status && (option.status === 'active' || option.status === 'inactive') 
-            ? option.status 
-            : 'active';
-          
-          const requestData = {
-            name: trimmedName,
-            price_adjustment: option.priceAdjustment || 0,
-            status: optionStatus,
-          };
-          
-          console.log('Creating option with data:', requestData);
-          
-          await modifierGroupApi.addOption(id, requestData);
-        }
-      }
-
-      await loadModifierGroups();
+      await onUpdateGroup(id, updatedGroupData);
       setEditingGroup(null);
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to update modifier group');
@@ -209,33 +97,13 @@ export function ModifiersPage() {
   const handleDelete = async (id: number) => {
     if (confirm('Are you sure you want to delete this modifier group?')) {
       try {
-        await modifierGroupApi.delete(id);
-        await loadModifierGroups();
+        await onDeleteGroup(id);
       } catch (err) {
         alert(err instanceof Error ? err.message : 'Failed to delete modifier group');
         console.error('Error deleting modifier group:', err);
       }
     }
   };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center" style={{ minHeight: '400px' }}>
-        <p className="text-gray-500">Loading modifier groups...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center" style={{ minHeight: '400px' }}>
-        <p className="text-red-600 mb-4">{error}</p>
-        <Button onClick={loadModifierGroups} style={{ backgroundColor: BRAND_COLOR, color: 'white' }}>
-          Retry
-        </Button>
-      </div>
-    );
-  }
 
   return (
     <>
@@ -275,7 +143,7 @@ export function ModifiersPage() {
           <p className="text-base text-gray-900">{singleSelectGroups}</p>
         </div>
         <div className="bg-white rounded-lg shadow-sm border border-gray-200" style={{ padding: '16px' }}>
-          <p className="text-sm text-gray-600" style={{ marginBottom: '4px' }}>multiple Select</p>
+          <p className="text-sm text-gray-600" style={{ marginBottom: '4px' }}>Multiple Select</p>
           <p className="text-base text-gray-900">{multiSelectGroups}</p>
         </div>
       </div>

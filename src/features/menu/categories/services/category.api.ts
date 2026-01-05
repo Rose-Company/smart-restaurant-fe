@@ -15,6 +15,7 @@ export interface CreateCategoryRequest {
   description: string;
   is_active?: boolean;
   display_order?: number;
+  status: "active" | "inactive"
 }
 
 export interface UpdateCategoryRequest {
@@ -38,7 +39,7 @@ function mapCategoryResponseToCategory(response: CategoryResponse): Category {
 
 export const categoryApi = {
   list: async (): Promise<Category[]> => {
-    const response = await fetcher<any>("/admin/menu/categories");
+    const response = await fetcher<any>("/admin/menu/categories?page=1&page_size=20");
     const categories = response.data?.items || response.data || response;
     const categoryArray = Array.isArray(categories) ? categories : [];
     return categoryArray.map(mapCategoryResponseToCategory);
@@ -52,9 +53,10 @@ export const categoryApi = {
         description: data.description,
         is_active: data.is_active !== undefined ? data.is_active : true,
         display_order: data.display_order || 0,
+        status: data.status
       }),
     });
-    return mapCategoryResponseToCategory(response.data || response);
+    return mapCategoryResponseToCategory(response || response);
   },
 
   update: async (id: number, data: UpdateCategoryRequest): Promise<Category> => {
@@ -62,7 +64,7 @@ export const categoryApi = {
       method: "PUT",
       body: JSON.stringify(data),
     });
-    return mapCategoryResponseToCategory(response.data || response);
+    return mapCategoryResponseToCategory(response || response);
   },
 
   delete: async (id: number): Promise<void> => {
@@ -84,14 +86,14 @@ export const categoryApi = {
       method: "PATCH",
       body: JSON.stringify(requestData),
     });
-    return mapCategoryResponseToCategory(response.data || response);
+    return mapCategoryResponseToCategory(response || response);
   },
 
   updateOrder: async (id: number, displayOrder: number): Promise<Category> => {
-    const response = await fetcher<CategoryResponse>(`/admin/menu/categories/${id}/order`, {
-      method: "PATCH",
+    const response = await fetcher<CategoryResponse>(`/admin/menu/categories/${id}`, {
+      method: "PUT",
       body: JSON.stringify({ display_order: displayOrder }),
     });
-    return mapCategoryResponseToCategory(response.data || response);
+    return mapCategoryResponseToCategory(response || response);
   },
 };

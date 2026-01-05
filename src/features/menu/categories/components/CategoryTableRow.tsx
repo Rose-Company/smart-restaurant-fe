@@ -13,7 +13,6 @@ interface CategoryTableRowProps {
   onDragEnd: () => void;
   onToggleStatus: (id: number) => void;
   onEdit: (id: number) => void;
-  onDelete: (id: number) => void;
 }
 
 export function CategoryTableRow({
@@ -24,7 +23,6 @@ export function CategoryTableRow({
   onDragEnd,
   onToggleStatus,
   onEdit,
-  onDelete,
 }: CategoryTableRowProps) {
   return (
     <TableRow
@@ -101,22 +99,6 @@ export function CategoryTableRow({
             }}
           >
             <Edit className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onDelete(category.id)}
-            className="text-gray-600"
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#fef2f2';
-              e.currentTarget.style.color = '#dc2626';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '';
-              e.currentTarget.style.color = '';
-            }}
-          >
-            <Trash2 className="w-4 h-4" />
           </Button>
         </div>
       </TableCell>
