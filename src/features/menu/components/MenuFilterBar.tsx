@@ -3,6 +3,7 @@ import { Search, X } from 'lucide-react';
 import { Input } from '../../../components/ui/forms/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/forms/select';
 import { Button } from '../../../components/ui/misc/button';
+import { Category } from '../categories/types/category.types';
 
 interface MenuFilterBarProps {
   searchQuery: string;
@@ -14,6 +15,7 @@ interface MenuFilterBarProps {
   sortBy: string;
   onSortChange: (value: string) => void;
   onClearFilters: () => void;
+  categories: Pick<Category, 'id' | 'name' | 'isActive'>[];
 }
 
 export function MenuFilterBar({
@@ -26,6 +28,7 @@ export function MenuFilterBar({
   sortBy,
   onSortChange,
   onClearFilters,
+  categories
 }: MenuFilterBarProps) {
   const hasActiveFilters =
     searchQuery ||
@@ -56,11 +59,9 @@ export function MenuFilterBar({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Categories</SelectItem>
-              <SelectItem value="Appetizer">Appetizer</SelectItem>
-              <SelectItem value="Main Course">Main Course</SelectItem>
-              <SelectItem value="Dessert">Dessert</SelectItem>
-              <SelectItem value="Beverage">Beverage</SelectItem>
-              <SelectItem value="seafood">Sea Food</SelectItem>
+              {categories?.filter(category => category.isActive).map((category)=>(
+                <SelectItem value = {category.name}>{category.name}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
