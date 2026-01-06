@@ -23,6 +23,7 @@ import type {
 } from '../../types/menu.types';
 import { categoryApi } from '../../categories/services/category.api';
 import { modifierGroupApi } from '../../modifiers/services/modifier.api';
+import {Category} from '../../categories/types/category.types'
 
 // Brand color constant to avoid Tailwind arbitrary value issues
 const BRAND_COLOR = '#27ae60';
@@ -31,23 +32,25 @@ const BRAND_COLOR_HOVER = '#229954';
 interface AddMenuItemDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddItem: (item: Omit<MenuItem, 'id' | 'lastUpdate' | 'imageUrl'>) => void;
+  onAddItem: (item: Omit<MenuItem, 'id' | 'lastUpdate' | 'imageUrl'> & { categoryId: number }) => void | Promise<void>;
+  categories: Category[];
 }
 
 export function AddMenuItemDialog({
   isOpen,
   onClose,
   onAddItem,
+  categories
 }: AddMenuItemDialogProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [preparationTime, setPreparationTime] = useState('');
-  const [category, setCategory] = useState('');
+  const [categoryId, setCategoryId] = useState<string>('');
   const [chefRecommended, setChefRecommended] = useState(false);
   const [status, setStatus] = useState<
-    'Available' | 'Sold Out' | 'Unavailable'
-  >('Available');
+    'available' | 'sold_out' | 'unavailable'
+  >('available');
   const [images, setImages] = useState<UploadedImage[]>([]);
   const [modifiers, setModifiers] = useState<ModifierGroup[]>([]);
   const [isDragging, setIsDragging] = useState(false);
@@ -55,25 +58,15 @@ export function AddMenuItemDialog({
   const [showAttachDropdown, setShowAttachDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const attachDropdownRef = useRef<HTMLDivElement>(null);
-  const [categories, setCategories] = useState<Array<{ id: number; name: string }>>([]);
   const [availableGroups, setAvailableGroups] = useState<ModifierGroup[]>([]);
 
   // Load categories and modifier groups from backend
   useEffect(() => {
     if (isOpen) {
-      loadCategories();
       loadModifierGroups();
     }
   }, [isOpen]);
 
-  const loadCategories = async () => {
-    try {
-      const cats = await categoryApi.list();
-      setCategories(cats.filter(cat => cat.isActive).map(cat => ({ id: cat.id, name: cat.name })));
-    } catch (err) {
-      console.error('Error loading categories:', err);
-    }
-  };
 
   const loadModifierGroups = async () => {
     try {
@@ -239,9 +232,9 @@ export function AddMenuItemDialog({
     setDescription('');
     setPrice('');
     setPreparationTime('');
-    setCategory('');
+    setCategoryId('');
     setChefRecommended(false);
-    setStatus('Available');
+    setStatus('available');
     setImages([]);
     setModifiers([]);
     setIsDragging(false);
@@ -256,7 +249,7 @@ export function AddMenuItemDialog({
   };
 
   const handleSave = () => {
-    if (!name || !category || !price) {
+    if (!name || !categoryId || !price) {
       alert('Please fill in required fields: Name, Category, and Price');
       return;
     }
@@ -266,14 +259,14 @@ export function AddMenuItemDialog({
       description,
       price: parseFloat(price) || 0,
       preparationTime: parseInt(preparationTime) || 0,
-      category,
+      category:'',
+      categoryId: parseInt(categoryId),
       chefRecommended,
       status,
       images,
       modifiers,
     });
-
-    resetForm();
+    //resetForm();
   };
 
   return (
@@ -439,7 +432,7 @@ export function AddMenuItemDialog({
                       <Label htmlFor="category" className="text-sm font-medium text-gray-700">
                         Category <span className="text-red-500">*</span>
                       </Label>
-                      <Select value={category} onValueChange={setCategory}>
+                      <Select value={categoryId} onValueChange={setCategoryId}>
                         <SelectTrigger
                           style={{ backgroundColor: '#f3f3f5', borderColor: '#d1d5dc' }}
                           className="border"
@@ -448,7 +441,7 @@ export function AddMenuItemDialog({
                         </SelectTrigger>
                         <SelectContent>
                           {categories.map((cat) => (
-                            <SelectItem key={cat.id} value={cat.name}>
+                            <SelectItem key={cat.id} value={String(cat.id)}>
                               {cat.name}
                             </SelectItem>
                           ))}
@@ -485,20 +478,20 @@ export function AddMenuItemDialog({
                       <RadioGroup
                         value={status}
                         onValueChange={(value) =>
-                          setStatus(value as 'Available' | 'Sold Out' | 'Unavailable')
+                          setStatus(value as 'available' | 'sold_out' | 'unavailable')
                         }
                         className="flex gap-3"
                       >
                         <Label
                           htmlFor="status-available"
                           className="flex items-center justify-between p-3 rounded-lg border border-gray-200 cursor-pointer transition-all hover:border-gray-300 flex-1"
-                          style={status === 'Available' ? {
+                          style={status === 'available' ? {
                             borderColor: BRAND_COLOR,
                             backgroundColor: '#f0fdf4'
                           } : undefined}
                         >
                           <div className="flex items-center gap-2">
-                            <RadioGroupItem value="Available" id="status-available" />
+                            <RadioGroupItem value="available" id="status-available" />
                             <span className="text-sm font-medium text-gray-900">Available</span>
                           </div>
                           <span
@@ -510,13 +503,13 @@ export function AddMenuItemDialog({
                         <Label
                           htmlFor="status-sold-out"
                           className="flex items-center justify-between p-3 rounded-lg border border-gray-200 cursor-pointer transition-all hover:border-gray-300 flex-1"
-                          style={status === 'Sold Out' ? {
+                          style={status === 'sold_out' ? {
                             borderColor: '#ef4444',
                             backgroundColor: '#fef2f2'
                           } : undefined}
                         >
                           <div className="flex items-center gap-2">
-                            <RadioGroupItem value="Sold Out" id="status-sold-out" />
+                            <RadioGroupItem value="sold_out" id="status-sold-out" />
                             <span className="text-sm font-medium text-gray-900">Sold Out</span>
                           </div>
                           <span
@@ -528,13 +521,13 @@ export function AddMenuItemDialog({
                         <Label
                           htmlFor="status-unavailable"
                           className="flex items-center justify-between p-3 rounded-lg border border-gray-200 cursor-pointer transition-all hover:border-gray-300 flex-1"
-                          style={status === 'Unavailable' ? {
+                          style={status === 'unavailable' ? {
                             borderColor: '#6b7280',
                             backgroundColor: '#f9fafb'
                           } : undefined}
                         >
                           <div className="flex items-center gap-2">
-                            <RadioGroupItem value="Unavailable" id="status-unavailable" />
+                            <RadioGroupItem value="unavailable" id="status-unavailable" />
                             <span className="text-sm font-medium text-gray-900">Unavailable</span>
                           </div>
                           <span

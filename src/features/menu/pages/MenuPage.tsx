@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, act } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "../../../components/ui/misc/button";
 import {
@@ -15,13 +15,13 @@ import { CategoriesPage } from "../categories/pages/CategoriesPage";
 import { ModifiersPage } from "../modifiers/pages/ModifiersPage";
 import { AddModifierGroupDialog } from "../modifiers/components/dialogs/AddModifierGroupDialog";
 import { categoryApi } from "../categories/services/category.api";
-import { modifierGroupApi } from '../modifiers/services/modifier.api';
+import { modifierGroupApi } from "../modifiers/services/modifier.api";
 import type { MenuItem } from "../types/menu.types";
 import type {
   ModifierSelectionType,
   ModifierOption,
   ModifierGroup,
-  ModifierStatus
+  ModifierStatus,
 } from "../modifiers/types/modifier.types";
 import { menuItemApi } from "../services/menu.api";
 import { Category, CategoryFormData } from "../categories/types/category.types";
@@ -78,12 +78,7 @@ export function MenuPage() {
       name: raw.name,
       category: raw.category?.name || raw.category || "",
       price: raw.price,
-      status:
-        raw.status === "available"
-          ? "Available"
-          : raw.status === "sold_out"
-          ? "Sold Out"
-          : "Unavailable",
+      status: raw.status,
       lastUpdate:
         raw.last_update ||
         raw.updated_at ||
@@ -143,7 +138,7 @@ export function MenuPage() {
     } catch (err) {
       console.error("Error loading modifier groups: ", err);
     }
-  }
+  };
 
   // Modifier Group Handlers
   const handleAddModifierGroup = async (groupData: {
@@ -159,32 +154,34 @@ export function MenuPage() {
         description: groupData.description,
         selection_type: groupData.selectionType,
         is_required: groupData.is_required,
-        status: 'active',
+        status: "active",
       });
 
       if (!newGroup || !newGroup.id) {
-        throw new Error('Failed to create modifier group: Invalid response');
+        throw new Error("Failed to create modifier group: Invalid response");
       }
 
       for (const option of groupData.options) {
-        const trimmedName = (option.name || '').trim();
+        const trimmedName = (option.name || "").trim();
         if (!trimmedName) {
-          console.warn('Skipping option with empty name:', option);
+          console.warn("Skipping option with empty name:", option);
           continue;
         }
-        
-        const optionStatus = option.status && (option.status === 'active' || option.status === 'inactive') 
-          ? option.status 
-          : 'active';
-        
+
+        const optionStatus =
+          option.status &&
+          (option.status === "active" || option.status === "inactive")
+            ? option.status
+            : "active";
+
         const requestData = {
           name: trimmedName,
           price_adjustment: option.priceAdjustment || 0,
           status: optionStatus,
         };
-        
-        console.log('Creating option with data:', requestData);
-        
+
+        console.log("Creating option with data:", requestData);
+
         await modifierGroupApi.addOption(newGroup.id, requestData);
       }
 
@@ -207,14 +204,14 @@ export function MenuPage() {
     }
   ) => {
     try {
-      const currentGroup = modifierGroups.find(g => g.id === id);
+      const currentGroup = modifierGroups.find((g) => g.id === id);
       await modifierGroupApi.update(id, {
         name: updatedGroupData.name,
         description: updatedGroupData.description,
         selection_type: updatedGroupData.selectionType,
         is_required: updatedGroupData.is_required,
         min_selections: 0,
-        max_selections: updatedGroupData.selectionType === 'single' ? 1 : 999,
+        max_selections: updatedGroupData.selectionType === "single" ? 1 : 999,
         display_order: 0,
         status: updatedGroupData.status,
       });
@@ -225,22 +222,20 @@ export function MenuPage() {
 
         const existingOptionIds = new Set(
           existingOptions
-            .map(opt => Number(opt.id))
-            .filter(id => !isNaN(id))
-        );
-        
-        const updatedOptionIds = new Set(
-          updatedOptions
-            .map(opt => Number(opt.id))
-            .filter(id => !isNaN(id))
+            .map((opt) => Number(opt.id))
+            .filter((id) => !isNaN(id))
         );
 
-        const newOptions = updatedOptions.filter(opt => {
+        const updatedOptionIds = new Set(
+          updatedOptions.map((opt) => Number(opt.id)).filter((id) => !isNaN(id))
+        );
+
+        const newOptions = updatedOptions.filter((opt) => {
           const optId = Number(opt.id);
           return isNaN(optId) || !existingOptionIds.has(optId);
         });
 
-        const optionsToDelete = existingOptions.filter(opt => {
+        const optionsToDelete = existingOptions.filter((opt) => {
           const optId = Number(opt.id);
           return !isNaN(optId) && !updatedOptionIds.has(optId);
         });
@@ -249,14 +244,21 @@ export function MenuPage() {
         for (const option of existingOptions) {
           const optId = Number(option.id);
           if (!isNaN(optId) && updatedOptionIds.has(optId)) {
-            const updatedOption = updatedOptions.find(opt => Number(opt.id) === optId);
+            const updatedOption = updatedOptions.find(
+              (opt) => Number(opt.id) === optId
+            );
             if (updatedOption) {
               const trimmedName = updatedOption.name.trim();
-              if (trimmedName && (trimmedName !== option.name || updatedOption.priceAdjustment !== option.priceAdjustment || updatedOption.status !== option.status)) {
+              if (
+                trimmedName &&
+                (trimmedName !== option.name ||
+                  updatedOption.priceAdjustment !== option.priceAdjustment ||
+                  updatedOption.status !== option.status)
+              ) {
                 await modifierGroupApi.updateOption(optId, {
                   name: trimmedName,
                   price_adjustment: updatedOption.priceAdjustment,
-                  status: updatedOption.status || 'active',
+                  status: updatedOption.status || "active",
                 });
               }
             }
@@ -273,24 +275,26 @@ export function MenuPage() {
 
         // Add new options
         for (const option of newOptions) {
-          const trimmedName = (option.name || '').trim();
+          const trimmedName = (option.name || "").trim();
           if (!trimmedName) {
-            console.warn('Skipping option with empty name:', option);
+            console.warn("Skipping option with empty name:", option);
             continue;
           }
-          
-          const optionStatus = option.status && (option.status === 'active' || option.status === 'inactive') 
-            ? option.status 
-            : 'active';
-          
+
+          const optionStatus =
+            option.status &&
+            (option.status === "active" || option.status === "inactive")
+              ? option.status
+              : "active";
+
           const requestData = {
             name: trimmedName,
             price_adjustment: option.priceAdjustment || 0,
             status: optionStatus,
           };
-          
-          console.log('Creating option with data:', requestData);
-          
+
+          console.log("Creating option with data:", requestData);
+
           await modifierGroupApi.addOption(id, requestData);
         }
       }
@@ -349,10 +353,43 @@ export function MenuPage() {
     setShowAddDialog(true);
   };
 
-  const handleAddItem = (
-    newItem: Omit<MenuItem, "id" | "lastUpdate" | "imageUrl">
+  const handleAddItem = async (
+    newItem: Omit<MenuItem, "id" | "lastUpdate" | "imageUrl"> & {
+      categoryId: number;
+    }
   ) => {
-    // Implementation here
+    try {
+      // Convert base64 to File (primary first)
+      const imageFiles = await Promise.all(
+        [...(newItem.images || [])]
+          .sort((a, b) => (b.isPrimary ? 1 : 0) - (a.isPrimary ? 1 : 0))
+          .map(async (img) => {
+            const blob = await (await fetch(img.url)).blob();
+            return new File([blob], `image-${img.id}.jpg`, {
+              type: "image/jpeg",
+            });
+          })
+      );
+
+      await menuItemApi.create({
+        name: newItem.name,
+        description: newItem.description,
+        price: newItem.price,
+        preparation_time: newItem.preparationTime,
+        category_id: newItem.categoryId,
+        chef_recommended: newItem.chefRecommended,
+        status: newItem.status,
+        imageFiles: imageFiles.length > 0 ? imageFiles : undefined,
+        modifiers: newItem.modifiers?.map((mod) => ({
+          modifier_group_id: mod.id,
+        })),
+      });
+    } catch (error) {
+      console.error("Error creating menu item:", error);
+      alert("Failed to create menu item");
+    } finally {
+      // setIsLoading(false);
+    }
   };
 
   const handleEdit = async (id: number) => {
@@ -391,12 +428,7 @@ export function MenuPage() {
         name: updatedItem.name,
         price: updatedItem.price,
         category_id: categoryId,
-        status:
-          updatedItem.status === "Available"
-            ? "available"
-            : updatedItem.status === "Sold Out"
-            ? "sold_out"
-            : "unavailable",
+        status: updatedItem.status,
         preparation_time: updatedItem.preparationTime,
         description: updatedItem.description,
         chef_recommended: updatedItem.chefRecommended,
@@ -473,7 +505,7 @@ export function MenuPage() {
         description: newCategoryData.description,
         is_active: newCategoryData.isActive,
         display_order: categories.length + 1,
-        status: newCategoryData.isActive ? "active" : "inactive"
+        status: newCategoryData.isActive ? "active" : "inactive",
       });
       await loadCategories();
     } catch (err) {
@@ -667,7 +699,7 @@ export function MenuPage() {
           </TabsContent>
 
           <TabsContent value="modifiers" className="mt-0">
-            <ModifiersPage 
+            <ModifiersPage
               modifierGroups={modifierGroups}
               onAddGroup={handleAddModifierGroup}
               onUpdateGroup={handleUpdateModifierGroup}
@@ -683,6 +715,7 @@ export function MenuPage() {
           isOpen={showAddDialog}
           onClose={() => setShowAddDialog(false)}
           onAddItem={handleAddItem}
+          categories={categories}
         />
       )}
 
