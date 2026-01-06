@@ -27,7 +27,7 @@ export interface MenuItem {
   name: string;
   category: string;
   price: number;
-  status: 'Available' | 'Sold Out' | 'Unavailable';
+  status: 'available' | 'sold_out' | 'unavailable';
   lastUpdate: string;
   chefRecommended: boolean;
   imageUrl: string;
