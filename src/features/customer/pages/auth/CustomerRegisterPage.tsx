@@ -1,24 +1,29 @@
 import React, { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff, ArrowLeft, User, Phone, Utensils } from 'lucide-react';
-import { customerAuthAPI, RegisterData } from '../../services/auth.api';
+import { authCustomerApi, SignupRequest } from '../../services/auth.api';
+import { Sign } from 'crypto';
 
 interface CustomerRegisterPageProps {
   onBack?: () => void;
   onLoginClick?: () => void;
   onRegisterSuccess?: (email: string) => void;
+  onRequestOTPSuccess: (data: SignupRequest) => void;
+  otpToken?: string;
 }
 
-export function CustomerRegisterPage({ onBack, onLoginClick, onRegisterSuccess }: CustomerRegisterPageProps) {
+export function CustomerRegisterPage({ onBack, onLoginClick, onRegisterSuccess, onRequestOTPSuccess, otpToken }: CustomerRegisterPageProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [formData, setFormData] = useState<RegisterData & { confirmPassword: string }>({
-    name: '',
+  const [formData, setFormData] = useState<SignupRequest & { confirmPassword: string }>({
     email: '',
-    phone: '',
+    first_name: '',
+    last_name: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    role: 'end_user',
+    verify_token: ''
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -29,11 +34,16 @@ export function CustomerRegisterPage({ onBack, onLoginClick, onRegisterSuccess }
     setError('');
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.MouseEvent) => {
     e.preventDefault();
     setError('');
 
     // Validation
+    if (!formData.first_name || !formData.last_name || !formData.email || !formData.password) {
+      setError('Please fill in all required fields');
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       return;
@@ -48,17 +58,14 @@ export function CustomerRegisterPage({ onBack, onLoginClick, onRegisterSuccess }
 
     try {
       const { confirmPassword, ...registerData } = formData;
-      const response = await customerAuthAPI.register(registerData);
-      
-      if (response.success) {
-        if (onRegisterSuccess) {
-          onRegisterSuccess(formData.email);
-        }
+      const response = await authCustomerApi.requestOTP(registerData.email);
+      if (response.code === 200) {
+        onRequestOTPSuccess(formData);
       } else {
-        setError(response.message);
+        setError(response.error_detail || response.message || 'Failed to send OTP');
       }
-    } catch (err) {
-      setError('An error occurred. Please try again.');
+    } catch (err: any) {
+      setError(err.message || 'An error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -67,15 +74,7 @@ export function CustomerRegisterPage({ onBack, onLoginClick, onRegisterSuccess }
   const handleGoogleRegister = async () => {
     setLoading(true);
     try {
-      const response = await customerAuthAPI.loginWithGoogle('mock-google-token');
-      
-      if (response.success && response.user) {
-        if (onRegisterSuccess) {
-          onRegisterSuccess(response.user.email);
-        }
-      } else {
-        setError(response.message);
-      }
+      setError('Google registration not yet implemented');
     } catch (err) {
       setError('Google registration failed');
     } finally {
@@ -84,8 +83,8 @@ export function CustomerRegisterPage({ onBack, onLoginClick, onRegisterSuccess }
   };
 
   return (
-    <div style={{ 
-      minHeight: '100vh', 
+    <div style={{
+      minHeight: '100vh',
       backgroundColor: '#f5f5f5',
       display: 'flex',
       flexDirection: 'column'
@@ -114,10 +113,10 @@ export function CustomerRegisterPage({ onBack, onLoginClick, onRegisterSuccess }
             <ArrowLeft style={{ width: '24px', height: '24px', color: '#1f2937' }} />
           </button>
         )}
-        <div style={{ 
-          width: '40px', 
-          height: '40px', 
-          borderRadius: '12px', 
+        <div style={{
+          width: '40px',
+          height: '40px',
+          borderRadius: '12px',
           backgroundColor: '#52b788',
           display: 'flex',
           alignItems: 'center',
@@ -176,8 +175,8 @@ export function CustomerRegisterPage({ onBack, onLoginClick, onRegisterSuccess }
             </div>
           )}
 
-          <form onSubmit={handleSubmit}>
-            {/* Name */}
+          <div>
+            {/* First Name */}
             <div style={{ marginBottom: '16px' }}>
               <label style={{
                 display: 'block',
@@ -186,7 +185,7 @@ export function CustomerRegisterPage({ onBack, onLoginClick, onRegisterSuccess }
                 color: '#374151',
                 marginBottom: '8px'
               }}>
-                Full Name
+                First Name
               </label>
               <div style={{ position: 'relative' }}>
                 <User style={{
@@ -200,18 +199,60 @@ export function CustomerRegisterPage({ onBack, onLoginClick, onRegisterSuccess }
                 }} />
                 <input
                   type="text"
-                  name="name"
-                  value={formData.name}
+                  name="first_name"
+                  value={formData.first_name}
                   onChange={handleInputChange}
-                  required
-                  placeholder="Enter your full name"
+                  placeholder="Enter your first name"
                   style={{
                     width: '100%',
                     padding: '12px 12px 12px 44px',
                     border: '1px solid #d1d5db',
                     borderRadius: '8px',
                     fontSize: '15px',
-                    outline: 'none'
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = '#52b788'}
+                  onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+                />
+              </div>
+            </div>
+
+            {/* Last Name */}
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{
+                display: 'block',
+                fontSize: '14px',
+                fontWeight: '500',
+                color: '#374151',
+                marginBottom: '8px'
+              }}>
+                Last Name
+              </label>
+              <div style={{ position: 'relative' }}>
+                <User style={{
+                  position: 'absolute',
+                  left: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  width: '20px',
+                  height: '20px',
+                  color: '#9ca3af'
+                }} />
+                <input
+                  type="text"
+                  name="last_name"
+                  value={formData.last_name}
+                  onChange={handleInputChange}
+                  placeholder="Enter your last name"
+                  style={{
+                    width: '100%',
+                    padding: '12px 12px 12px 44px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '8px',
+                    fontSize: '15px',
+                    outline: 'none',
+                    boxSizing: 'border-box'
                   }}
                   onFocus={(e) => e.target.style.borderColor = '#52b788'}
                   onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
@@ -245,7 +286,6 @@ export function CustomerRegisterPage({ onBack, onLoginClick, onRegisterSuccess }
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  required
                   placeholder="Enter your email"
                   style={{
                     width: '100%',
@@ -253,48 +293,8 @@ export function CustomerRegisterPage({ onBack, onLoginClick, onRegisterSuccess }
                     border: '1px solid #d1d5db',
                     borderRadius: '8px',
                     fontSize: '15px',
-                    outline: 'none'
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = '#52b788'}
-                  onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
-                />
-              </div>
-            </div>
-
-            {/* Phone */}
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{
-                display: 'block',
-                fontSize: '14px',
-                fontWeight: '500',
-                color: '#374151',
-                marginBottom: '8px'
-              }}>
-                Phone Number (Optional)
-              </label>
-              <div style={{ position: 'relative' }}>
-                <Phone style={{
-                  position: 'absolute',
-                  left: '12px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  width: '20px',
-                  height: '20px',
-                  color: '#9ca3af'
-                }} />
-                <input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  placeholder="Enter your phone number"
-                  style={{
-                    width: '100%',
-                    padding: '12px 12px 12px 44px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
-                    fontSize: '15px',
-                    outline: 'none'
+                    outline: 'none',
+                    boxSizing: 'border-box'
                   }}
                   onFocus={(e) => e.target.style.borderColor = '#52b788'}
                   onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
@@ -328,7 +328,6 @@ export function CustomerRegisterPage({ onBack, onLoginClick, onRegisterSuccess }
                   name="password"
                   value={formData.password}
                   onChange={handleInputChange}
-                  required
                   placeholder="Create a password"
                   style={{
                     width: '100%',
@@ -336,7 +335,8 @@ export function CustomerRegisterPage({ onBack, onLoginClick, onRegisterSuccess }
                     border: '1px solid #d1d5db',
                     borderRadius: '8px',
                     fontSize: '15px',
-                    outline: 'none'
+                    outline: 'none',
+                    boxSizing: 'border-box'
                   }}
                   onFocus={(e) => e.target.style.borderColor = '#52b788'}
                   onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
@@ -392,7 +392,6 @@ export function CustomerRegisterPage({ onBack, onLoginClick, onRegisterSuccess }
                   name="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
-                  required
                   placeholder="Confirm your password"
                   style={{
                     width: '100%',
@@ -400,7 +399,8 @@ export function CustomerRegisterPage({ onBack, onLoginClick, onRegisterSuccess }
                     border: '1px solid #d1d5db',
                     borderRadius: '8px',
                     fontSize: '15px',
-                    outline: 'none'
+                    outline: 'none',
+                    boxSizing: 'border-box'
                   }}
                   onFocus={(e) => e.target.style.borderColor = '#52b788'}
                   onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
@@ -432,7 +432,7 @@ export function CustomerRegisterPage({ onBack, onLoginClick, onRegisterSuccess }
 
             {/* Submit Button */}
             <button
-              type="submit"
+              onClick={handleSubmit}
               disabled={loading}
               style={{
                 width: '100%',
@@ -466,7 +466,6 @@ export function CustomerRegisterPage({ onBack, onLoginClick, onRegisterSuccess }
 
             {/* Google Register */}
             <button
-              type="button"
               onClick={handleGoogleRegister}
               disabled={loading}
               style={{
@@ -488,14 +487,14 @@ export function CustomerRegisterPage({ onBack, onLoginClick, onRegisterSuccess }
               onMouseLeave={(e) => !loading && (e.currentTarget.style.backgroundColor = '#ffffff')}
             >
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M19.6 10.227c0-.709-.064-1.39-.182-2.045H10v3.868h5.382a4.6 4.6 0 01-1.996 3.018v2.51h3.232c1.891-1.742 2.982-4.305 2.982-7.35z" fill="#4285F4"/>
-                <path d="M10 20c2.7 0 4.964-.895 6.618-2.423l-3.232-2.509c-.895.6-2.04.955-3.386.955-2.605 0-4.81-1.76-5.595-4.123H1.064v2.59A9.996 9.996 0 0010 20z" fill="#34A853"/>
-                <path d="M4.405 11.9c-.2-.6-.314-1.24-.314-1.9 0-.66.114-1.3.314-1.9V5.51H1.064A9.996 9.996 0 000 10c0 1.614.386 3.14 1.064 4.49l3.34-2.59z" fill="#FBBC05"/>
-                <path d="M10 3.977c1.468 0 2.786.505 3.823 1.496l2.868-2.868C14.959.99 12.695 0 10 0 6.09 0 2.71 2.24 1.064 5.51l3.34 2.59C5.19 5.736 7.395 3.977 10 3.977z" fill="#EA4335"/>
+                <path d="M19.6 10.227c0-.709-.064-1.39-.182-2.045H10v3.868h5.382a4.6 4.6 0 01-1.996 3.018v2.51h3.232c1.891-1.742 2.982-4.305 2.982-7.35z" fill="#4285F4" />
+                <path d="M10 20c2.7 0 4.964-.895 6.618-2.423l-3.232-2.509c-.895.6-2.04.955-3.386.955-2.605 0-4.81-1.76-5.595-4.123H1.064v2.59A9.996 9.996 0 0010 20z" fill="#34A853" />
+                <path d="M4.405 11.9c-.2-.6-.314-1.24-.314-1.9 0-.66.114-1.3.314-1.9V5.51H1.064A9.996 9.996 0 000 10c0 1.614.386 3.14 1.064 4.49l3.34-2.59z" fill="#FBBC05" />
+                <path d="M10 3.977c1.468 0 2.786.505 3.823 1.496l2.868-2.868C14.959.99 12.695 0 10 0 6.09 0 2.71 2.24 1.064 5.51l3.34 2.59C5.19 5.736 7.395 3.977 10 3.977z" fill="#EA4335" />
               </svg>
               Sign up with Google
             </button>
-          </form>
+          </div>
 
           {/* Login Link */}
           <div style={{

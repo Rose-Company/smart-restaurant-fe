@@ -4,6 +4,7 @@ import { CustomerLoginPage } from './pages/auth/CustomerLoginPage';
 import { CustomerRegisterPage } from './pages/auth/CustomerRegisterPage';
 import { OTPVerificationPage } from './pages/auth/OTPVerificationPage';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { SignupRequest } from './services/auth.api';
 
 type AuthView = 'login' | 'register' | 'otp' | 'menu';
 
@@ -19,7 +20,7 @@ function CustomerAppContent() {
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('token') || undefined;
     const table = urlParams.get('table') || undefined;
-    
+
     setTableToken(token);
     setTableNumber(table);
 
@@ -39,6 +40,10 @@ function CustomerAppContent() {
     setCurrentView('otp');
   };
 
+  const handleRequestOTPSuccess = (data: SignupRequest) => {
+    setOtpEmail(data.email);
+    setCurrentView('otp');
+  };
   const handleOTPVerifySuccess = () => {
     // After OTP verification, redirect to login
     setCurrentView('login');
@@ -52,16 +57,17 @@ function CustomerAppContent() {
           onLoginSuccess={handleLoginSuccess}
         />
       );
-    
+
     case 'register':
       return (
         <CustomerRegisterPage
           onBack={() => setCurrentView('login')}
           onLoginClick={() => setCurrentView('login')}
           onRegisterSuccess={handleRegisterSuccess}
+          onRequestOTPSuccess={handleRequestOTPSuccess}
         />
       );
-    
+
     case 'otp':
       return (
         <OTPVerificationPage
@@ -70,16 +76,16 @@ function CustomerAppContent() {
           onVerifySuccess={handleOTPVerifySuccess}
         />
       );
-    
+
     case 'menu':
       return (
-        <CustomerMenuPage 
-          tableToken={tableToken} 
+        <CustomerMenuPage
+          tableToken={tableToken}
           tableNumber={tableNumber}
           onLoginClick={() => setCurrentView('login')}
         />
       );
-    
+
     default:
       return (
         <CustomerLoginPage
