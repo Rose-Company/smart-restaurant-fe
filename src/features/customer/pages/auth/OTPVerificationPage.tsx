@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ArrowLeft, Utensils, Mail } from 'lucide-react';
-import { customerAuthAPI, OTPVerificationData } from '../../services/auth.api';
+import { authCustomerApi } from '../../services/auth.api';
 
 interface OTPVerificationPageProps {
   email: string;
@@ -66,7 +66,7 @@ export function OTPVerificationPage({ email, onBack, onVerifySuccess }: OTPVerif
   const handlePaste = (e: React.ClipboardEvent) => {
     e.preventDefault();
     const pastedData = e.clipboardData.getData('text').slice(0, 6);
-    
+
     if (!/^\d+$/.test(pastedData)) {
       return;
     }
@@ -91,14 +91,10 @@ export function OTPVerificationPage({ email, onBack, onVerifySuccess }: OTPVerif
     setLoading(true);
 
     try {
-      const verificationData: OTPVerificationData = {
-        email,
-        otp: otpCode
-      };
 
-      const response = await customerAuthAPI.verifyOTP(verificationData);
-      
-      if (response.success) {
+      const response = await authCustomerApi.verifyOTP(email, otpCode);
+
+      if (response.data) {
         if (onVerifySuccess) {
           onVerifySuccess();
         }
@@ -124,9 +120,9 @@ export function OTPVerificationPage({ email, onBack, onVerifySuccess }: OTPVerif
     setError('');
 
     try {
-      const response = await customerAuthAPI.sendOTP(email);
-      
-      if (response.success) {
+      const response = await authCustomerApi.requestOTP(email);
+
+      if (response.data) {
         setResendCountdown(60);
         setCanResend(false);
         setOtp(['', '', '', '', '', '']);
@@ -144,7 +140,7 @@ export function OTPVerificationPage({ email, onBack, onVerifySuccess }: OTPVerif
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const otpCode = otp.join('');
-    
+
     if (otpCode.length !== 6) {
       setError('Please enter all 6 digits');
       return;
@@ -154,8 +150,8 @@ export function OTPVerificationPage({ email, onBack, onVerifySuccess }: OTPVerif
   };
 
   return (
-    <div style={{ 
-      minHeight: '100vh', 
+    <div style={{
+      minHeight: '100vh',
       backgroundColor: '#f5f5f5',
       display: 'flex',
       flexDirection: 'column'
@@ -184,10 +180,10 @@ export function OTPVerificationPage({ email, onBack, onVerifySuccess }: OTPVerif
             <ArrowLeft style={{ width: '24px', height: '24px', color: '#1f2937' }} />
           </button>
         )}
-        <div style={{ 
-          width: '40px', 
-          height: '40px', 
-          borderRadius: '12px', 
+        <div style={{
+          width: '40px',
+          height: '40px',
+          borderRadius: '12px',
           backgroundColor: '#52b788',
           display: 'flex',
           alignItems: 'center',

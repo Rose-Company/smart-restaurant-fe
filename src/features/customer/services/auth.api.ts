@@ -1,164 +1,59 @@
-// Customer Authentication API Service
-
-export interface RegisterData {
-  email: string;
-  password: string;
-  name?: string;
-  phone?: string;
-}
-
-export interface LoginData {
-  email: string;
-  password: string;
-}
-
-export interface AuthResponse {
-  success: boolean;
-  message: string;
-  user?: {
-    id: string;
+import { fetcher } from "../../../lib/fetcher";
+// Types
+export interface SignupRequest {
     email: string;
-    name: string;
-    phone?: string;
-    verified: boolean;
-  };
-  token?: string;
-  requiresOTP?: boolean;
+    first_name: string;
+    last_name: string;
+    password: string;
+    role: "end_user" | "admin";
+    verify_token: string;
 }
 
-export interface OTPVerificationData {
-  email: string;
-  otp: string;
+export interface LoginRequest {
+    email: string;
+    password: string;
 }
 
-class CustomerAuthAPI {
-  private baseURL = '/api/customer/auth';
+export interface ApiResponse<T = any> {
+    code: number;
+    message: string;
+    data?: T;
+    error_code?: string;
+    error_detail?: string;
+    internal?: string;
+}
 
-  // Register new customer
-  async register(data: RegisterData): Promise<AuthResponse> {
-    try {
-      // Mock API call - replace with actual API endpoint
-      await this.delay(1500);
-      
-      // Simulate successful registration
-      return {
-        success: true,
-        message: 'Registration successful. Please verify your email.',
-        requiresOTP: true,
-        user: {
-          id: '123',
-          email: data.email,
-          name: data.name || '',
-          phone: data.phone,
-          verified: false
+// Auth API functions
+export const authCustomerApi = {
+    requestOTP: async (email: string): Promise<ApiResponse> => {
+        return fetcher<ApiResponse>("/auth/request-signup-otp", {
+            method: "POST",
+            body: JSON.stringify({ email })
+        })
+    },
+
+    verifyOTP: async (email: string, otp: string): Promise<ApiResponse> => {
+        const res = await fetcher<ApiResponse>("/auth/validate-signup-otp", {
+            method: "POST",
+            body: JSON.stringify({ email, otp })
+        });
+        if (res.code !== 200) {
+            throw new Error(res.message || 'OTP không hợp lệ');
         }
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: 'Registration failed. Please try again.'
-      };
-    }
-  }
+        return res;
+    },
 
-  // Login customer
-  async login(data: LoginData): Promise<AuthResponse> {
-    try {
-      // Mock API call
-      await this.delay(1000);
-      
-      return {
-        success: true,
-        message: 'Login successful',
-        user: {
-          id: '123',
-          email: data.email,
-          name: 'John Doe',
-          verified: true
-        },
-        token: 'mock-jwt-token-123'
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: 'Invalid email or password'
-      };
-    }
-  }
+    signup: async (data: SignupRequest): Promise<ApiResponse<null>> => {
+        return fetcher<ApiResponse<null>>("/user/signup", {
+            method: "POST",
+            body: JSON.stringify(data),
+        });
+    },
+    login: async (data: LoginRequest): Promise<ApiResponse<string>> => {
+        return fetcher<ApiResponse<string>>("/user/login", {
+            method: "POST",
+            body: JSON.stringify(data),
+        });
+    },
 
-  // Login with Google
-  async loginWithGoogle(googleToken: string): Promise<AuthResponse> {
-    try {
-      // Mock API call
-      await this.delay(1000);
-      
-      return {
-        success: true,
-        message: 'Google login successful',
-        user: {
-          id: '456',
-          email: 'user@gmail.com',
-          name: 'Google User',
-          verified: true
-        },
-        token: 'mock-jwt-token-google'
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: 'Google login failed'
-      };
-    }
-  }
-
-  // Send OTP to email
-  async sendOTP(email: string): Promise<{ success: boolean; message: string }> {
-    try {
-      // Mock API call
-      await this.delay(1000);
-      
-      return {
-        success: true,
-        message: 'OTP sent to your email'
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: 'Failed to send OTP'
-      };
-    }
-  }
-
-  // Verify OTP
-  async verifyOTP(data: OTPVerificationData): Promise<AuthResponse> {
-    try {
-      // Mock API call
-      await this.delay(1000);
-      
-      // Simulate successful verification
-      return {
-        success: true,
-        message: 'Email verified successfully',
-        user: {
-          id: '123',
-          email: data.email,
-          name: 'John Doe',
-          verified: true
-        },
-        token: 'mock-jwt-token-verified'
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: 'Invalid OTP'
-      };
-    }
-  }
-
-  // Helper delay function for mock API
-  private delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
-}
-
-export const customerAuthAPI = new CustomerAuthAPI();
+};
