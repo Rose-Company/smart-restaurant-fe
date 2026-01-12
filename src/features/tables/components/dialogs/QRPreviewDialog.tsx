@@ -19,6 +19,8 @@ export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
   const { t } = useTranslation("table");
   const [showPDFPreview, setShowPDFPreview] = useState(false);
   const [qrUrl, setQrUrl] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [tableId, setTableId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [expire_at, setExpireAt] = useState('');
   const [create_at, setCreateAt] = useState('');
@@ -29,8 +31,9 @@ export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
       try {
         setLoading(true);
         const res = await getQRApi.fetch(table.id);
-
         setQrUrl(res.url);
+        setToken(res.token);
+        setTableId(res.table_id);
         setCreateAt(res.create_at);
         setExpireAt(res.expire_at);
       } catch (error) {
@@ -70,12 +73,10 @@ export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
     }
   };
   const handleDownloadPNG = async () => {
-    if (!qrUrl) return;
-
-    const token = extractToken(qrUrl);
+    if (!token || !tableId) return;
 
     try {
-      const blob = await downloadSingleQRApi.fetch(table.id, token);
+      const blob = await downloadSingleQRApi.fetch(tableId, token);
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
 
@@ -110,6 +111,8 @@ export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
       const res = await genQRApi.generate(table.id);
 
       setQrUrl(res.url);
+      setToken(res.token);
+      setTableId(res.table_id);
       setCreateAt(res.create_at);
       setExpireAt(res.expire_at);
 
