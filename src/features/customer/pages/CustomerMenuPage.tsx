@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { MenuItem } from '../../menu/types/menu.types';
-import { customerMenuApi } from '../services/menu.api';
+import { menuItemApi } from '../../menu/services/menu.api';
 import { useAuth } from '../context/AuthContext';
 import {
   CustomerHeader,
@@ -64,7 +64,7 @@ export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick }: Cust
   const [loading, setLoading] = useState(true);
   const [showBanner, setShowBanner] = useState(true);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  
+
   // Order history state
   const [orderHistory, setOrderHistory] = useState<OrderHistory>({
     tableNumber: tableNumber || '05',
@@ -90,7 +90,7 @@ export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick }: Cust
     vat: 11.32,
     total: 152.79
   });
-  
+
   // Item detail modal states
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [selectedModifiers, setSelectedModifiers] = useState<SelectedModifiers>({});
@@ -107,7 +107,7 @@ export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick }: Cust
             name: 'Grilled Salmon',
             category: 'Main Course',
             price: 24.99,
-            status: 'Available',
+            status: 'available',
             lastUpdate: '2025-12-20',
             chefRecommended: true,
             imageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400',
@@ -143,7 +143,7 @@ export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick }: Cust
             name: 'Caesar Salad',
             category: 'Appetizer',
             price: 12.50,
-            status: 'Available',
+            status: 'available',
             lastUpdate: '2025-12-22',
             chefRecommended: false,
             imageUrl: 'https://images.unsplash.com/photo-1546793665-c74683f339c1?w=400',
@@ -154,7 +154,7 @@ export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick }: Cust
             name: 'Beef Wellington',
             category: 'Main Course',
             price: 38.00,
-            status: 'Available',
+            status: 'available',
             lastUpdate: '2025-12-15',
             chefRecommended: true,
             imageUrl: 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400',
@@ -165,7 +165,7 @@ export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick }: Cust
             name: 'Chocolate Lava Cake',
             category: 'Dessert',
             price: 9.99,
-            status: 'Available',
+            status: 'available',
             lastUpdate: '2025-12-23',
             chefRecommended: true,
             imageUrl: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=400',
@@ -176,7 +176,7 @@ export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick }: Cust
             name: 'Lobster Bisque',
             category: 'Appetizer',
             price: 15.99,
-            status: 'Sold Out',
+            status: 'sold_out',
             lastUpdate: '2025-12-24',
             chefRecommended: false,
             imageUrl: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400',
@@ -187,7 +187,7 @@ export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick }: Cust
             name: 'Margherita Pizza',
             category: 'Main Course',
             price: 16.50,
-            status: 'Available',
+            status: 'available',
             lastUpdate: '2025-12-21',
             chefRecommended: false,
             imageUrl: 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400',
@@ -201,24 +201,24 @@ export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick }: Cust
         return;
       }
 
-    try {
-      setLoading(true);
-      const response = await customerMenuApi.fetchMenuByToken(tableToken);
-      setMenuItems(response.items);
-      const uniqueCategories = Array.from(new Set(response.items.map(item => item.category)));
-      setCategories(uniqueCategories);
-      
-      // Update table number if provided from API
-      if (response.tableNumber && !tableNumber) {
-        // Could update URL or state here if needed
+      try {
+        setLoading(true);
+        // const response = await customerMenuApi.fetchMenuByToken(tableToken);
+        // setMenuItems(response.items);
+        // const uniqueCategories = Array.from(new Set(response.items.map(item => item.category)));
+        // setCategories(uniqueCategories);
+
+        // // Update table number if provided from API
+        // if (response.tableNumber && !tableNumber) {
+        //   // Could update URL or state here if needed
+        // }
+      } catch (error) {
+        console.error('Failed to fetch menu:', error);
+        // Fallback to empty state or show error message
+        setMenuItems([]);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Failed to fetch menu:', error);
-      // Fallback to empty state or show error message
-      setMenuItems([]);
-    } finally {
-      setLoading(false);
-    }
     };
 
     fetchMenu();
@@ -226,7 +226,7 @@ export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick }: Cust
 
   // Filter items based on category and search
   useEffect(() => {
-    let filtered = menuItems.filter(item => item.status === 'Available');
+    let filtered = menuItems.filter(item => item.status === 'available');
 
     if (selectedCategory === 'Popular') {
       filtered = filtered.filter(item => item.chefRecommended);
@@ -282,7 +282,7 @@ export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick }: Cust
   const handleModifierChange = (groupId: string, optionId: string, selectionType: 'Single' | 'Multi' = 'Single') => {
     setSelectedModifiers(prev => {
       const newModifiers = { ...prev };
-      
+
       if (selectionType === 'Single') {
         // Radio button - replace selection
         newModifiers[groupId] = [optionId];
@@ -295,14 +295,14 @@ export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick }: Cust
           newModifiers[groupId] = [...currentSelections, optionId];
         }
       }
-      
+
       return newModifiers;
     });
   };
 
   const calculateItemPrice = (item: MenuItem, modifiers: SelectedModifiers) => {
     let total = item.price;
-    
+
     item.modifiers?.forEach(group => {
       const selectedOptions = modifiers[group.id] || [];
       selectedOptions.forEach(optionId => {
@@ -312,15 +312,15 @@ export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick }: Cust
         }
       });
     });
-    
+
     return total;
   };
 
   const addToCartWithModifiers = () => {
     if (!selectedItem) return;
-    
+
     const modifierPrice = calculateItemPrice(selectedItem, selectedModifiers) - selectedItem.price;
-    
+
     setCart(prevCart => [
       ...prevCart,
       {
@@ -330,7 +330,7 @@ export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick }: Cust
         modifierPrice
       }
     ]);
-    
+
     closeItemDetail();
   };
 
@@ -406,10 +406,10 @@ export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick }: Cust
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ 
-            width: '48px', 
-            height: '48px', 
-            border: '3px solid #e5e7eb', 
+          <div style={{
+            width: '48px',
+            height: '48px',
+            border: '3px solid #e5e7eb',
             borderTopColor: '#52b788',
             borderRadius: '50%',
             animation: 'spin 1s linear infinite',
@@ -435,7 +435,7 @@ export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick }: Cust
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f5', paddingBottom: '80px' }}>
-      <CustomerHeader 
+      <CustomerHeader
         onUserClick={() => {
           if (user) {
             setShowUserMenu(true);
@@ -449,7 +449,7 @@ export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick }: Cust
       {showUserMenu && (
         <>
           {/* Backdrop */}
-          <div 
+          <div
             onClick={() => setShowUserMenu(false)}
             style={{
               position: 'fixed',
@@ -460,7 +460,7 @@ export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick }: Cust
               zIndex: 999
             }}
           />
-          
+
           {/* Menu */}
           <div style={{
             position: 'fixed',
