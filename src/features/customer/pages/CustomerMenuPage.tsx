@@ -107,7 +107,7 @@ export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick }: Cust
             name: 'Grilled Salmon',
             category: 'Main Course',
             price: 24.99,
-            status: 'Available',
+            status: 'available',
             lastUpdate: '2025-12-20',
             chefRecommended: true,
             imageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400',
@@ -143,7 +143,7 @@ export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick }: Cust
             name: 'Caesar Salad',
             category: 'Appetizer',
             price: 12.50,
-            status: 'Available',
+            status: 'available',
             lastUpdate: '2025-12-22',
             chefRecommended: false,
             imageUrl: 'https://images.unsplash.com/photo-1546793665-c74683f339c1?w=400',
@@ -154,7 +154,7 @@ export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick }: Cust
             name: 'Beef Wellington',
             category: 'Main Course',
             price: 38.00,
-            status: 'Available',
+            status: 'available',
             lastUpdate: '2025-12-15',
             chefRecommended: true,
             imageUrl: 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400',
@@ -165,7 +165,7 @@ export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick }: Cust
             name: 'Chocolate Lava Cake',
             category: 'Dessert',
             price: 9.99,
-            status: 'Available',
+            status: 'available',
             lastUpdate: '2025-12-23',
             chefRecommended: true,
             imageUrl: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=400',
@@ -176,7 +176,7 @@ export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick }: Cust
             name: 'Lobster Bisque',
             category: 'Appetizer',
             price: 15.99,
-            status: 'Sold Out',
+            status: 'sold_out',
             lastUpdate: '2025-12-24',
             chefRecommended: false,
             imageUrl: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400',
@@ -187,7 +187,7 @@ export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick }: Cust
             name: 'Margherita Pizza',
             category: 'Main Course',
             price: 16.50,
-            status: 'Available',
+            status: 'available',
             lastUpdate: '2025-12-21',
             chefRecommended: false,
             imageUrl: 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400',
@@ -226,7 +226,7 @@ export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick }: Cust
 
   // Filter items based on category and search
   useEffect(() => {
-    let filtered = menuItems.filter(item => item.status === 'Available');
+    let filtered = menuItems.filter(item => item.status === 'available');
 
     if (selectedCategory === 'Popular') {
       filtered = filtered.filter(item => item.chefRecommended);

@@ -38,7 +38,7 @@ export default function App() {
         return <MenuPage />;
       case 'customers':
         // Navigate to customer menu for testing
-        window.location.href = '/customer/menu?table=05&token=test-token';
+        window.location.href = '/customer/menu';
         return null;
       // Các trang khác (qr-codes, analytics, reports, settings)
       // hiện tại chỉ là placeholder đơn giản.
