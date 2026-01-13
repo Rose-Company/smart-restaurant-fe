@@ -3,10 +3,11 @@ import { CustomerMenuPage } from './pages/CustomerMenuPage';
 import { CustomerLoginPage } from './pages/auth/CustomerLoginPage';
 import { CustomerRegisterPage } from './pages/auth/CustomerRegisterPage';
 import { OTPVerificationPage } from './pages/auth/OTPVerificationPage';
+import { CustomerAccountPage } from './pages/CustomerAccountPage';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SignupRequest } from './services/auth.api';
 
-type AuthView = 'login' | 'register' | 'otp' | 'menu';
+type AuthView = 'login' | 'register' | 'otp' | 'menu' | 'account';
 
 function CustomerAppContent() {
   const [currentView, setCurrentView] = useState<AuthView>('menu');
@@ -83,6 +84,14 @@ function CustomerAppContent() {
           tableToken={tableToken}
           tableNumber={tableNumber}
           onLoginClick={() => setCurrentView('login')}
+          onAccountClick={() => setCurrentView('account')}
+        />
+      );
+
+    case 'account':
+      return (
+        <CustomerAccountPage
+          onBack={() => setCurrentView('menu')}
         />
       );
 

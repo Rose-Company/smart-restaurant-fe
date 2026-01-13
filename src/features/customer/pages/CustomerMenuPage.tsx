@@ -50,9 +50,10 @@ interface CustomerMenuPageProps {
   tableToken?: string;
   tableNumber?: string;
   onLoginClick?: () => void;
+  onAccountClick?: () => void;
 }
 
-export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick }: CustomerMenuPageProps) {
+export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick, onAccountClick }: CustomerMenuPageProps) {
   const { user, logout } = useAuth();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [filteredItems, setFilteredItems] = useState<MenuItem[]>([]);
@@ -486,6 +487,30 @@ export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick }: Cust
                     {user.email}
                   </div>
                 </div>
+                <button
+                  onClick={() => {
+                    setShowUserMenu(false);
+                    if (onAccountClick) {
+                      onAccountClick();
+                    }
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    textAlign: 'left',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    color: '#1f2937',
+                    cursor: 'pointer',
+                    borderRadius: '8px'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                >
+                  Quản lý tài khoản
+                </button>
                 <button
                   onClick={() => {
                     logout();
