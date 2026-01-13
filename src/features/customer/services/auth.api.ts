@@ -67,7 +67,7 @@ export const authCustomerApi = {
     },
 
     // Account management
-    updateProfile: async (data: { name?: string; phone?: string; birthdate?: string }): Promise<ApiResponse> => {
+    updateProfile: async (data: { name?: string; phone?: string }): Promise<ApiResponse> => {
         return fetcher<ApiResponse>("/user/profile", {
             method: "PUT",
             body: JSON.stringify(data),

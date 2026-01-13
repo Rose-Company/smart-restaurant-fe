@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, User, Mail, Phone, Calendar, Lock, Save, CheckCircle, X } from 'lucide-react';
+import { ArrowLeft, User, Mail, Phone, Lock, Save, CheckCircle, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { authCustomerApi } from '../services/auth.api';
 import { OrderSuccessModal } from '../components/OrderSuccessModal';
@@ -20,8 +20,7 @@ export function CustomerAccountPage({ onBack }: CustomerAccountPageProps) {
   // Profile form state
   const [profileData, setProfileData] = useState({
     name: user?.name || '',
-    phone: user?.phone || '',
-    birthdate: user?.birthdate || ''
+    phone: user?.phone || ''
   });
 
   // Password reset state
@@ -39,15 +38,10 @@ export function CustomerAccountPage({ onBack }: CustomerAccountPageProps) {
     setLoading(true);
 
     try {
-      const updateData: any = {
+      const updateData = {
         name: profileData.name,
         phone: profileData.phone
       };
-
-      // Only include birthdate if it's being set for the first time
-      if (profileData.birthdate && !user?.birthdateUpdated) {
-        updateData.birthdate = profileData.birthdate;
-      }
 
       const response = await authCustomerApi.updateProfile(updateData);
       
@@ -56,9 +50,7 @@ export function CustomerAccountPage({ onBack }: CustomerAccountPageProps) {
         updateUser({
           ...user!,
           name: profileData.name,
-          phone: profileData.phone,
-          birthdate: updateData.birthdate || user?.birthdate,
-          birthdateUpdated: updateData.birthdate ? true : user?.birthdateUpdated
+          phone: profileData.phone
         });
         setSuccess('Profile updated successfully!');
         setIsEditing(false);
@@ -361,37 +353,6 @@ export function CustomerAccountPage({ onBack }: CustomerAccountPageProps) {
             />
           </div>
 
-          {/* Birthdate */}
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              fontSize: '14px',
-              fontWeight: '500',
-              color: '#374151',
-              marginBottom: '8px'
-            }}>
-              <Calendar style={{ width: '16px', height: '16px' }} />
-              Ngày sinh {user?.birthdateUpdated && <span style={{ color: '#9ca3af', fontSize: '12px' }}>(Chỉ cập nhật 1 lần)</span>}
-            </label>
-            <input
-              type="date"
-              value={profileData.birthdate}
-              onChange={(e) => setProfileData({ ...profileData, birthdate: e.target.value })}
-              disabled={!isEditing || user?.birthdateUpdated}
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '1px solid #e5e7eb',
-                borderRadius: '8px',
-                fontSize: '15px',
-                backgroundColor: (isEditing && !user?.birthdateUpdated) ? '#ffffff' : '#f9fafb',
-                color: user?.birthdateUpdated ? '#9ca3af' : '#1f2937'
-              }}
-            />
-          </div>
-
           {isEditing && (
             <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
               <button
@@ -399,8 +360,7 @@ export function CustomerAccountPage({ onBack }: CustomerAccountPageProps) {
                   setIsEditing(false);
                   setProfileData({
                     name: user?.name || '',
-                    phone: user?.phone || '',
-                    birthdate: user?.birthdate || ''
+                    phone: user?.phone || ''
                   });
                   setError('');
                 }}
