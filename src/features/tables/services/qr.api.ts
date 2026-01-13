@@ -5,8 +5,18 @@ export interface ApiResponse<T> {
     message: string;
     data: T;
 }
+
+export interface QRData {
+    table_id: number;
+    token: string;
+    create_at: string;
+    expire_at: string;
+}
+
 export interface GenerateQRData {
     url: string;
+    token: string;
+    table_id: number;
     create_at: string;
     expire_at: string;
 }
@@ -18,9 +28,19 @@ export const genQRApi = {
             {
                 method: "POST",
             }
-        ) as ApiResponse<GenerateQRData>;
+        ) as ApiResponse<QRData>;
 
-        return res.data;
+        // Generate URL from token and table_id
+        const baseUrl = window.location.origin; // or use your configured base URL
+        const url = `${baseUrl}/menu?table=${res.data.table_id}&token=${res.data.token}`;
+
+        return {
+            url,
+            token: res.data.token,
+            table_id: res.data.table_id,
+            create_at: res.data.create_at,
+            expire_at: res.data.expire_at,
+        };
     },
 };
 
@@ -31,9 +51,19 @@ export const getQRApi = {
             {
                 method: "GET",
             }
-        ) as ApiResponse<GenerateQRData>;
+        ) as ApiResponse<QRData>;
 
-        return res.data;
+        // Generate URL from token and table_id
+        const baseUrl = window.location.origin; // or use your configured base URL
+        const url = `${baseUrl}/menu?table=${res.data.table_id}&token=${res.data.token}`;
+
+        return {
+            url,
+            token: res.data.token,
+            table_id: res.data.table_id,
+            create_at: res.data.create_at,
+            expire_at: res.data.expire_at,
+        };
     },
 };
 

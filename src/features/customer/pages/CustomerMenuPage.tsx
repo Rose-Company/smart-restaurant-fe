@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { MenuItem } from '../../menu/types/menu.types';
-import { customerMenuApi } from '../services/menu.api';
+import { menuItemApi } from '../../menu/services/menu.api';
 import { useAuth } from '../context/AuthContext';
 import {
   CustomerHeader,
@@ -64,7 +64,7 @@ export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick }: Cust
   const [loading, setLoading] = useState(true);
   const [showBanner, setShowBanner] = useState(true);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  
+
   // Order history state
   const [orderHistory, setOrderHistory] = useState<OrderHistory>({
     tableNumber: tableNumber || '05',
@@ -90,7 +90,7 @@ export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick }: Cust
     vat: 11.32,
     total: 152.79
   });
-  
+
   // Item detail modal states
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [selectedModifiers, setSelectedModifiers] = useState<SelectedModifiers>({});
@@ -201,24 +201,24 @@ export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick }: Cust
         return;
       }
 
-    try {
-      setLoading(true);
-      const response = await customerMenuApi.fetchMenuByToken(tableToken);
-      setMenuItems(response.items);
-      const uniqueCategories = Array.from(new Set(response.items.map(item => item.category)));
-      setCategories(uniqueCategories);
-      
-      // Update table number if provided from API
-      if (response.tableNumber && !tableNumber) {
-        // Could update URL or state here if needed
+      try {
+        setLoading(true);
+        // const response = await customerMenuApi.fetchMenuByToken(tableToken);
+        // setMenuItems(response.items);
+        // const uniqueCategories = Array.from(new Set(response.items.map(item => item.category)));
+        // setCategories(uniqueCategories);
+
+        // // Update table number if provided from API
+        // if (response.tableNumber && !tableNumber) {
+        //   // Could update URL or state here if needed
+        // }
+      } catch (error) {
+        console.error('Failed to fetch menu:', error);
+        // Fallback to empty state or show error message
+        setMenuItems([]);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Failed to fetch menu:', error);
-      // Fallback to empty state or show error message
-      setMenuItems([]);
-    } finally {
-      setLoading(false);
-    }
     };
 
     fetchMenu();
@@ -282,7 +282,7 @@ export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick }: Cust
   const handleModifierChange = (groupId: string, optionId: string, selectionType: 'Single' | 'Multi' = 'Single') => {
     setSelectedModifiers(prev => {
       const newModifiers = { ...prev };
-      
+
       if (selectionType === 'Single') {
         // Radio button - replace selection
         newModifiers[groupId] = [optionId];
@@ -295,14 +295,14 @@ export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick }: Cust
           newModifiers[groupId] = [...currentSelections, optionId];
         }
       }
-      
+
       return newModifiers;
     });
   };
 
   const calculateItemPrice = (item: MenuItem, modifiers: SelectedModifiers) => {
     let total = item.price;
-    
+
     item.modifiers?.forEach(group => {
       const selectedOptions = modifiers[group.id] || [];
       selectedOptions.forEach(optionId => {
@@ -312,15 +312,15 @@ export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick }: Cust
         }
       });
     });
-    
+
     return total;
   };
 
   const addToCartWithModifiers = () => {
     if (!selectedItem) return;
-    
+
     const modifierPrice = calculateItemPrice(selectedItem, selectedModifiers) - selectedItem.price;
-    
+
     setCart(prevCart => [
       ...prevCart,
       {
@@ -330,7 +330,7 @@ export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick }: Cust
         modifierPrice
       }
     ]);
-    
+
     closeItemDetail();
   };
 
@@ -406,10 +406,10 @@ export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick }: Cust
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ 
-            width: '48px', 
-            height: '48px', 
-            border: '3px solid #e5e7eb', 
+          <div style={{
+            width: '48px',
+            height: '48px',
+            border: '3px solid #e5e7eb',
             borderTopColor: '#52b788',
             borderRadius: '50%',
             animation: 'spin 1s linear infinite',
@@ -435,7 +435,7 @@ export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick }: Cust
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f5', paddingBottom: '80px' }}>
-      <CustomerHeader 
+      <CustomerHeader
         onUserClick={() => {
           if (user) {
             setShowUserMenu(true);
@@ -449,7 +449,7 @@ export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick }: Cust
       {showUserMenu && (
         <>
           {/* Backdrop */}
-          <div 
+          <div
             onClick={() => setShowUserMenu(false)}
             style={{
               position: 'fixed',
@@ -460,7 +460,7 @@ export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick }: Cust
               zIndex: 999
             }}
           />
-          
+
           {/* Menu */}
           <div style={{
             position: 'fixed',
