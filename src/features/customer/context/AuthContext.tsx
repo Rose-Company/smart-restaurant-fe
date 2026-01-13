@@ -5,8 +5,6 @@ interface User {
   name: string;
   email: string;
   phone?: string;
-  birthdate?: string;
-  birthdateUpdated?: boolean;
 }
 
 interface AuthContextType {
