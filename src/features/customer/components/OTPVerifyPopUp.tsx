@@ -1,14 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, Utensils, Mail } from 'lucide-react';
-import { authCustomerApi } from '../../services/auth.api';
+import { X, Mail } from 'lucide-react';
 
-interface OTPVerificationPageProps {
+interface OTPVerificationPopupProps {
   email: string;
-  onBack?: () => void;
-  onVerifySuccess?: () => void;
+  isOpen: boolean;
+  onClose: () => void;
+  onVerify: (otpCode: string) => Promise<void>;
+  onResendOTP: () => Promise<void>;
 }
 
-export function OTPVerificationPage({ email, onBack, onVerifySuccess }: OTPVerificationPageProps) {
+export function OTPVerificationPopup({ email, isOpen, onClose, onVerify, onResendOTP }: OTPVerificationPopupProps) {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -17,12 +18,22 @@ export function OTPVerificationPage({ email, onBack, onVerifySuccess }: OTPVerif
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
-    // Focus first input on mount
-    inputRefs.current[0]?.focus();
-  }, []);
+    if (isOpen) {
+      // Focus first input when popup opens
+      setTimeout(() => {
+        inputRefs.current[0]?.focus();
+      }, 100);
+    } else {
+      // Reset state when popup closes
+      setOtp(['', '', '', '', '', '']);
+      setError('');
+      setResendCountdown(60);
+      setCanResend(false);
+    }
+  }, [isOpen]);
 
   useEffect(() => {
-    if (resendCountdown > 0) {
+    if (resendCountdown > 0 && isOpen) {
       const timer = setTimeout(() => {
         setResendCountdown(resendCountdown - 1);
       }, 1000);
@@ -30,7 +41,7 @@ export function OTPVerificationPage({ email, onBack, onVerifySuccess }: OTPVerif
     } else {
       setCanResend(true);
     }
-  }, [resendCountdown]);
+  }, [resendCountdown, isOpen]);
 
   const handleChange = (index: number, value: string) => {
     if (value.length > 1) {
@@ -91,21 +102,11 @@ export function OTPVerificationPage({ email, onBack, onVerifySuccess }: OTPVerif
     setLoading(true);
 
     try {
-
-      const response = await authCustomerApi.verifyOTP(email, otpCode);
-
-      if (response.data) {
-        if (onVerifySuccess) {
-          onVerifySuccess();
-        }
-      } else {
-        setError(response.message);
-        // Clear OTP on error
-        setOtp(['', '', '', '', '', '']);
-        inputRefs.current[0]?.focus();
-      }
-    } catch (err) {
-      setError('Verification failed. Please try again.');
+      await onVerify(otpCode);
+      // Parent component will handle closing the popup on success
+    } catch (err: any) {
+      setError(err.message || 'Verification failed. Please try again.');
+      // Clear OTP on error
       setOtp(['', '', '', '', '', '']);
       inputRefs.current[0]?.focus();
     } finally {
@@ -120,18 +121,13 @@ export function OTPVerificationPage({ email, onBack, onVerifySuccess }: OTPVerif
     setError('');
 
     try {
-      const response = await authCustomerApi.requestOTP(email);
-
-      if (response.data) {
-        setResendCountdown(60);
-        setCanResend(false);
-        setOtp(['', '', '', '', '', '']);
-        inputRefs.current[0]?.focus();
-      } else {
-        setError(response.message);
-      }
-    } catch (err) {
-      setError('Failed to resend OTP');
+      await onResendOTP();
+      setResendCountdown(60);
+      setCanResend(false);
+      setOtp(['', '', '', '', '', '']);
+      inputRefs.current[0]?.focus();
+    } catch (err: any) {
+      setError(err.message || 'Failed to resend OTP');
     } finally {
       setLoading(false);
     }
@@ -149,67 +145,64 @@ export function OTPVerificationPage({ email, onBack, onVerifySuccess }: OTPVerif
     handleVerify(otpCode);
   };
 
+  if (!isOpen) return null;
+
   return (
-    <div style={{
-      minHeight: '100vh',
-      backgroundColor: '#f5f5f5',
-      display: 'flex',
-      flexDirection: 'column'
-    }}>
-      {/* Header */}
-      <div style={{
-        backgroundColor: '#ffffff',
-        padding: '16px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-      }}>
-        {onBack && (
+    <>
+      {/* Backdrop */}
+      <div
+        style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '16px'
+        }}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            onClose();
+          }
+        }}
+      >
+        {/* Popup */}
+        <div
+          style={{
+            width: '100%',
+            maxWidth: '400px',
+            backgroundColor: '#ffffff',
+            borderRadius: '16px',
+            padding: '32px',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+            position: 'relative',
+            maxHeight: '90vh',
+            overflowY: 'auto'
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Close Button */}
           <button
-            onClick={onBack}
+            onClick={onClose}
             style={{
+              position: 'absolute',
+              right: '16px',
+              top: '16px',
               background: 'none',
               border: 'none',
               cursor: 'pointer',
               padding: '8px',
               display: 'flex',
-              alignItems: 'center'
+              alignItems: 'center',
+              borderRadius: '8px'
             }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           >
-            <ArrowLeft style={{ width: '24px', height: '24px', color: '#1f2937' }} />
+            <X style={{ width: '20px', height: '20px', color: '#6b7280' }} />
           </button>
-        )}
-        <div style={{
-          width: '40px',
-          height: '40px',
-          borderRadius: '12px',
-          backgroundColor: '#52b788',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
-          <Utensils style={{ width: '24px', height: '24px', color: '#ffffff' }} />
-        </div>
-        <span style={{ fontSize: '18px', fontWeight: '600', color: '#1f2937' }}>RestaurantOS</span>
-      </div>
 
-      {/* Content */}
-      <div style={{
-        flex: 1,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '24px'
-      }}>
-        <div style={{
-          width: '100%',
-          maxWidth: '400px',
-          backgroundColor: '#ffffff',
-          borderRadius: '16px',
-          padding: '32px',
-          boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-        }}>
           {/* Icon */}
           <div style={{
             width: '80px',
@@ -366,6 +359,6 @@ export function OTPVerificationPage({ email, onBack, onVerifySuccess }: OTPVerif
           </form>
         </div>
       </div>
-    </div>
+    </>
   );
 }
