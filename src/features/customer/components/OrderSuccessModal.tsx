@@ -4,10 +4,12 @@ import { CheckCircle, X } from 'lucide-react';
 interface OrderSuccessModalProps {
   isOpen: boolean;
   orderNumber?: string;
+  title?: string;
+  message?: string;
   onClose: () => void;
 }
 
-export function OrderSuccessModal({ isOpen, orderNumber, onClose }: OrderSuccessModalProps) {
+export function OrderSuccessModal({ isOpen, orderNumber, title, message, onClose }: OrderSuccessModalProps) {
   if (!isOpen) return null;
 
   return (
@@ -79,7 +81,7 @@ export function OrderSuccessModal({ isOpen, orderNumber, onClose }: OrderSuccess
           color: '#1f2937',
           marginBottom: '12px'
         }}>
-          Order Confirmed!
+          {title || 'Order Confirmed!'}
         </h2>
 
         {/* Message */}
@@ -89,9 +91,13 @@ export function OrderSuccessModal({ isOpen, orderNumber, onClose }: OrderSuccess
           marginBottom: '24px',
           lineHeight: '1.5'
         }}>
-          Your order has been successfully placed.{orderNumber && ` Order #${orderNumber}`}
-          <br />
-          We'll notify you when it's ready!
+          {message || (
+            <>
+              Your order has been successfully placed.{orderNumber && ` Order #${orderNumber}`}
+              <br />
+              We'll notify you when it's ready!
+            </>
+          )}
         </p>
 
         {/* OK Button */}

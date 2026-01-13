@@ -65,4 +65,41 @@ export const authCustomerApi = {
             }),
         });
     },
+
+    // Account management
+    updateProfile: async (data: { name?: string; phone?: string; birthdate?: string }): Promise<ApiResponse> => {
+        return fetcher<ApiResponse>("/user/profile", {
+            method: "PUT",
+            body: JSON.stringify(data),
+        });
+    },
+
+    requestPasswordResetOTP: async (email: string): Promise<ApiResponse> => {
+        return fetcher<ApiResponse>("/auth/request-password-reset-otp", {
+            method: "POST",
+            body: JSON.stringify({ email })
+        });
+    },
+
+    verifyPasswordResetOTP: async (email: string, otp: string): Promise<ApiResponse> => {
+        const res = await fetcher<ApiResponse>("/auth/validate-password-reset-otp", {
+            method: "POST",
+            body: JSON.stringify({ email, otp })
+        });
+        if (res.code !== 200) {
+            throw new Error(res.message || 'OTP không hợp lệ');
+        }
+        return res;
+    },
+
+    resetPassword: async (email: string, newPassword: string, resetToken: string): Promise<ApiResponse> => {
+        return fetcher<ApiResponse>("/user/reset-password", {
+            method: "POST",
+            body: JSON.stringify({ 
+                email, 
+                new_password: newPassword,
+                reset_token: resetToken 
+            })
+        });
+    },
 };
