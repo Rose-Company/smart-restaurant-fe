@@ -4,10 +4,12 @@ import { CustomerLoginPage } from './pages/auth/CustomerLoginPage';
 import { CustomerRegisterPage } from './pages/auth/CustomerRegisterPage';
 import { OTPVerificationPage } from './pages/auth/OTPVerificationPage';
 import { CustomerAccountPage } from './pages/CustomerAccountPage';
+import { OrderHistoryPage } from './pages/OrderHistoryPage';
+import { ReportListPage } from './pages/ReportListPage';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SignupRequest } from './services/auth.api';
 
-type AuthView = 'login' | 'register' | 'otp' | 'menu' | 'account';
+type AuthView = 'login' | 'register' | 'otp' | 'menu' | 'account' | 'orders' | 'reports';
 
 function CustomerAppContent() {
   const [currentView, setCurrentView] = useState<AuthView>('menu');
@@ -85,12 +87,28 @@ function CustomerAppContent() {
           tableNumber={tableNumber}
           onLoginClick={() => setCurrentView('login')}
           onAccountClick={() => setCurrentView('account')}
+          onOrdersClick={() => setCurrentView('orders')}
+          onReportsClick={() => setCurrentView('reports')}
         />
       );
 
     case 'account':
       return (
         <CustomerAccountPage
+          onBack={() => setCurrentView('menu')}
+        />
+      );
+
+    case 'orders':
+      return (
+        <OrderHistoryPage
+          onBack={() => setCurrentView('menu')}
+        />
+      );
+
+    case 'reports':
+      return (
+        <ReportListPage
           onBack={() => setCurrentView('menu')}
         />
       );
