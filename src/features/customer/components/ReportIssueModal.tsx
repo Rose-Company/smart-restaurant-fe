@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Upload, Camera } from 'lucide-react';
 import { ReportSuccessModal } from './ReportSuccessModal';
+import { useReports } from '../context/ReportsContext';
 
 interface ReportIssueModalProps {
   isOpen: boolean;
@@ -22,6 +23,7 @@ export function ReportIssueModal({ isOpen, onClose, orderNumber }: ReportIssueMo
   const [description, setDescription] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const { addReport } = useReports();
 
   if (!isOpen) return null;
 
@@ -30,6 +32,15 @@ export function ReportIssueModal({ isOpen, onClose, orderNumber }: ReportIssueMo
       alert('Please select an issue type and provide a description.');
       return;
     }
+    
+    // Add report to context
+    addReport({
+      orderNumber,
+      issueTypes: [selectedIssue],
+      description: description.trim(),
+      imageUrl: uploadedImage || undefined
+    });
+    
     setShowSuccess(true);
   };
 

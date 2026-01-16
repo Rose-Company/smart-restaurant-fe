@@ -1,25 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Calendar, Clock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 import { OrderDetailModal } from '../components/OrderDetailModal';
 import { ReportIssueModal } from '../components/ReportIssueModal';
-
-interface OrderItem {
-  id: string;
-  name: string;
-  quantity: number;
-  price: number;
-}
-
-interface Order {
-  id: string;
-  date: string;
-  time: string;
-  tableNumber: string;
-  items: OrderItem[];
-  totalPrice: number;
-  status: 'Completed' | 'Cancelled' | 'Pending';
-}
+import { ReorderSuccessModal } from '../components/ReorderSuccessModal';
+import type { MenuItem } from '../../menu/types/menu.types';
+import { findMenuItemByName } from '../data/menuData';
+import { MOCK_ORDERS, type Order, type OrderItem } from '../data/orderHistoryData';
 
 interface OrderHistoryPageProps {
   onBack?: () => void;
@@ -27,83 +15,18 @@ interface OrderHistoryPageProps {
 
 export function OrderHistoryPage({ onBack }: OrderHistoryPageProps) {
   const { user } = useAuth();
+  const { addToCart } = useCart();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [showReorderSuccessModal, setShowReorderSuccessModal] = useState(false);
+  const [reorderedItemCount, setReorderedItemCount] = useState(0);
 
   useEffect(() => {
-    // Mock data for orders
-    const mockOrders: Order[] = [
-      {
-        id: '1',
-        date: 'Jan 15, 2026',
-        time: '19:30',
-        tableNumber: '05',
-        items: [
-          { id: '1', name: 'Grilled Salmon', quantity: 1, price: 24.99 },
-          { id: '2', name: 'Tiramisu', quantity: 1, price: 8.50 },
-          { id: '3', name: 'Caesar Salad', quantity: 2, price: 21.01 }
-        ],
-        totalPrice: 54.50,
-        status: 'Completed'
-      },
-      {
-        id: '2',
-        date: 'Jan 12, 2026',
-        time: '13:15',
-        tableNumber: '12',
-        items: [
-          { id: '1', name: 'Beef Wellington', quantity: 1, price: 38.00 },
-          { id: '2', name: 'French Onion Soup', quantity: 1, price: 12.50 },
-          { id: '3', name: 'Chocolate Lava Cake', quantity: 1, price: 12.00 }
-        ],
-        totalPrice: 62.50,
-        status: 'Completed'
-      },
-      {
-        id: '3',
-        date: 'Jan 08, 2026',
-        time: '20:45',
-        tableNumber: '03',
-        items: [
-          { id: '1', name: 'Margherita Pizza', quantity: 1, price: 16.50 },
-          { id: '2', name: 'Garlic Bread', quantity: 1, price: 6.00 },
-          { id: '3', name: 'Tiramisu', quantity: 1, price: 25.00 }
-        ],
-        totalPrice: 47.50,
-        status: 'Completed'
-      },
-      {
-        id: '4',
-        date: 'Jan 05, 2026',
-        time: '18:00',
-        tableNumber: '08',
-        items: [
-          { id: '1', name: 'Sushi Platter', quantity: 1, price: 45.00 },
-          { id: '2', name: 'Miso Soup', quantity: 1, price: 8.00 },
-          { id: '3', name: 'Green Tea Ice Cream', quantity: 1, price: 8.00 }
-        ],
-        totalPrice: 61.00,
-        status: 'Completed'
-      },
-      {
-        id: '5',
-        date: 'Jan 02, 2026',
-        time: '12:30',
-        tableNumber: '15',
-        items: [
-          { id: '1', name: 'Club Sandwich', quantity: 1, price: 14.00 },
-          { id: '2', name: 'Iced Coffee', quantity: 1, price: 5.50 }
-        ],
-        totalPrice: 19.50,
-        status: 'Cancelled'
-      }
-    ];
-
     setTimeout(() => {
-      setOrders(mockOrders);
+      setOrders(MOCK_ORDERS);
       setLoading(false);
     }, 500);
   }, []);
@@ -141,7 +64,70 @@ export function OrderHistoryPage({ onBack }: OrderHistoryPageProps) {
   };
 
   const handleReorder = (order: Order) => {
-    alert(`Re-order feature for order #${order.id} coming soon!`);
+    // Add all items from the order to cart
+    order.items.forEach(orderItem => {
+      // Try to find the actual menu item by name
+      const actualMenuItem = findMenuItemByName(orderItem.name);
+      
+      // Convert order item to MenuItem format
+      const menuItem: MenuItem = actualMenuItem ? {
+        ...actualMenuItem,
+        // Keep the price from order history in case it's different
+        price: orderItem.price
+      } : {
+        // Fallback if item not found in menu
+        id: parseInt(orderItem.id),
+        name: orderItem.name,
+        price: orderItem.price,
+        imageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400',
+        category: 'Main Course',
+        status: 'available' as const,
+        lastUpdate: new Date().toISOString(),
+        chefRecommended: false,
+        description: '',
+        modifiers: []
+      };
+      
+      // Calculate modifier price if modifiers exist
+      let modifierPrice = 0;
+      if (orderItem.selectedModifiers && actualMenuItem?.modifiers) {
+        Object.entries(orderItem.selectedModifiers).forEach(([groupId, optionIds]) => {
+          const group = actualMenuItem.modifiers?.find(g => g.id === groupId);
+          if (group && optionIds) {
+            optionIds.forEach(optionId => {
+              const option = group.options?.find(opt => opt.id === optionId);
+              if (option && option.price) {
+                modifierPrice += option.price;
+              }
+            });
+          }
+        });
+      }
+      
+      // Add to cart with modifiers and modifier price
+      addToCart(menuItem, orderItem.quantity, orderItem.selectedModifiers, modifierPrice);
+    });
+    
+    // Show success modal
+    setReorderedItemCount(order.items.length);
+    setShowReorderSuccessModal(true);
+  };
+
+  const handleViewCart = () => {
+    setShowReorderSuccessModal(false);
+    // Navigate back to menu which will open cart automatically
+    if (onBack) {
+      onBack();
+      // Small delay to ensure navigation completes before opening cart
+      setTimeout(() => {
+        // Trigger cart drawer open event or directly manipulate if you have access
+        // For now, user can manually open cart from menu
+      }, 100);
+    }
+  };
+
+  const handleContinueBrowsing = () => {
+    setShowReorderSuccessModal(false);
   };
 
   const handleViewDetails = (order: Order) => {
@@ -377,12 +363,13 @@ export function OrderHistoryPage({ onBack }: OrderHistoryPageProps) {
               id: item.id,
               name: item.name,
               quantity: item.quantity,
-              price: item.price
+              price: item.price,
+              selectedModifiers: item.selectedModifiers
             })),
             subtotal: selectedOrder.totalPrice / 1.1, // Calculate subtotal before tax
             tax: selectedOrder.totalPrice - (selectedOrder.totalPrice / 1.1),
             total: selectedOrder.totalPrice,
-            paymentMethod: 'Credit Card •••• 4242',
+            paymentMethod: 'Cash',
             status: selectedOrder.status === 'Completed' ? 'Paid' : selectedOrder.status === 'Cancelled' ? 'Cancelled' : 'Pending'
           }}
           onReorder={() => handleReorder(selectedOrder)}
@@ -398,6 +385,14 @@ export function OrderHistoryPage({ onBack }: OrderHistoryPageProps) {
           orderNumber={`ORD-2026-${selectedOrder.id.padStart(3, '0')}`}
         />
       )}
+
+      {/* Reorder Success Modal */}
+      <ReorderSuccessModal
+        isOpen={showReorderSuccessModal}
+        itemCount={reorderedItemCount}
+        onViewCart={handleViewCart}
+        onContinue={handleContinueBrowsing}
+      />
     </div>
   );
 }

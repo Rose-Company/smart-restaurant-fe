@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Star, AlertCircle } from 'lucide-react';
+import { findMenuItemByName } from '../data/menuData';
 
 interface OrderDetailItem {
   id: string;
@@ -7,6 +8,9 @@ interface OrderDetailItem {
   quantity: number;
   price: number;
   rating?: number;
+  selectedModifiers?: {
+    [groupId: string]: string[];
+  };
 }
 
 interface OrderDetailModalProps {
@@ -195,32 +199,97 @@ export function OrderDetailModal({ isOpen, onClose, order, onReorder, onReportIs
               </h3>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {order.items.map((item) => (
+                {order.items.map((item) => {
+                  const menuItem = findMenuItemByName(item.name);
+                  return (
                   <div key={item.id} style={{
                     borderBottom: '1px solid #f3f4f6',
                     paddingBottom: '12px'
                   }}>
-                    {/* Item Name and Price */}
+                    {/* Item with Image */}
                     <div style={{
                       display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'flex-start',
+                      gap: '12px',
                       marginBottom: '12px'
                     }}>
-                      <span style={{
-                        fontSize: '16px',
-                        color: '#101828',
-                        letterSpacing: '-0.31px'
+                      {/* Item Image */}
+                      {menuItem?.imageUrl && (
+                        <img
+                          src={menuItem.imageUrl}
+                          alt={item.name}
+                          style={{
+                            width: '80px',
+                            height: '80px',
+                            borderRadius: '12px',
+                            objectFit: 'cover',
+                            flexShrink: 0
+                          }}
+                        />
+                      )}
+
+                      {/* Item Info */}
+                      <div style={{
+                        flex: 1,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between'
                       }}>
-                        {item.quantity}x {item.name}
-                      </span>
-                      <span style={{
-                        fontSize: '16px',
-                        color: '#101828',
-                        letterSpacing: '-0.31px'
-                      }}>
-                        ${item.price.toFixed(2)}
-                      </span>
+                        {/* Item Name and Price */}
+                        <div style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'flex-start'
+                        }}>
+                          <span style={{
+                            fontSize: '16px',
+                            color: '#101828',
+                            letterSpacing: '-0.31px',
+                            fontWeight: '500'
+                          }}>
+                            {item.quantity}x {item.name}
+                          </span>
+                          <span style={{
+                            fontSize: '16px',
+                            color: '#101828',
+                            letterSpacing: '-0.31px',
+                            fontWeight: '600'
+                          }}>
+                            ${item.price.toFixed(2)}
+                          </span>
+                        </div>
+
+                        {/* Modifiers if available */}
+                        {item.selectedModifiers && menuItem?.modifiers && (() => {
+                          const modifierTexts: string[] = [];
+                          
+                          Object.entries(item.selectedModifiers).forEach(([groupId, optionIds]) => {
+                            const group = menuItem.modifiers?.find(g => g.id === groupId);
+                            if (group && optionIds && optionIds.length > 0) {
+                              const selectedOptions = optionIds
+                                .map(optId => group.options?.find(opt => opt.id === optId)?.name)
+                                .filter(Boolean);
+                              
+                              if (selectedOptions.length > 0) {
+                                modifierTexts.push(`${group.name}: ${selectedOptions.join(', ')}`);
+                              }
+                            }
+                          });
+                          
+                          if (modifierTexts.length > 0) {
+                            return (
+                              <p style={{
+                                fontSize: '13px',
+                                color: '#6a7282',
+                                margin: '4px 0 8px 0',
+                                lineHeight: '1.4'
+                              }}>
+                                {modifierTexts.join(' • ')}
+                              </p>
+                            );
+                          }
+                          return null;
+                        })()}
+                      </div>
                     </div>
 
                     {/* Rating Section */}
@@ -267,7 +336,8 @@ export function OrderDetailModal({ isOpen, onClose, order, onReorder, onReportIs
                       </div>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Totals */}
