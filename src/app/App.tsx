@@ -3,6 +3,7 @@ import { Sidebar, type SidebarPageKey } from '../components/layout/Sidebar';
 import { TablesPage } from '../features/tables/pages/TablesPage';
 import { DashboardPage } from '../features/dashboard/pages/DashboardPage';
 import { MenuPage } from '../features/menu/pages/MenuPage';
+import { KitchenDisplayPage } from '../features/kitchen/pages/KitchenDisplayPage';
 import LoginPage from '../features/auth/pages/LoginPage';
 import { CustomerApp } from '../features/customer/App';
 
@@ -36,6 +37,8 @@ export default function App() {
         return <TablesPage />;
       case 'menu':
         return <MenuPage />;
+      case 'kitchen':
+        return <KitchenDisplayPage onBack={() => setCurrentPage('dashboard')} />;
       case 'customers':
         // Navigate to customer menu for testing
         window.location.href = '/customer/menu';
@@ -56,9 +59,14 @@ export default function App() {
     }
   };
 
+  // Check if current page should hide sidebar (like Kitchen Display System)
+  const shouldHideSidebar = currentPage === 'kitchen';
+
   return (
     <div className="flex h-screen bg-gray-50">
-      <Sidebar currentPage={currentPage} onNavigate={setCurrentPage} />
+      {!shouldHideSidebar && (
+        <Sidebar currentPage={currentPage} onNavigate={setCurrentPage} />
+      )}
       <div className="flex-1 flex flex-col overflow-hidden">{renderPage()}</div>
     </div>
   );
