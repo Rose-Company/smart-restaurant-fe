@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { ShoppingCart, X, Plus, Minus, Phone, FileText, CheckCircle } from 'lucide-react';
 import type { MenuItem } from '../../menu/types/menu.types';
 import { OrderSuccessModal } from './OrderSuccessModal';
+import { AVAILABLE_VOUCHERS, findVoucherByCode, type Voucher } from '../data/voucherData';
+import { DEFAULT_ORDER_HISTORY, type OrderHistory, type OrderHistoryItem, type OrderRound } from '../data/orderData';
 
 interface SelectedModifiers {
   [groupId: string]: string[];
@@ -12,28 +14,6 @@ interface CartItem {
   quantity: number;
   selectedModifiers?: SelectedModifiers;
   modifierPrice?: number;
-}
-
-interface OrderHistoryItem {
-  id: string;
-  name: string;
-  quantity: number;
-  price: number;
-  status: 'Served' | 'Preparing' | 'Pending';
-}
-
-interface OrderRound {
-  roundNumber: number;
-  time: string;
-  items: OrderHistoryItem[];
-}
-
-interface OrderHistory {
-  tableNumber: string;
-  rounds: OrderRound[];
-  subtotal: number;
-  vat: number;
-  total: number;
 }
 
 interface CartDrawerProps {
@@ -68,34 +48,50 @@ export function CartDrawer({
   const [activeTab, setActiveTab] = useState<'current' | 'history'>('current');
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [customerName, setCustomerName] = useState('');
+  const [voucherCode, setVoucherCode] = useState('');
+  const [appliedVoucher, setAppliedVoucher] = useState<Voucher | null>(null);
+  const [voucherError, setVoucherError] = useState('');
 
-  // Mock order history data if not provided
-  const defaultOrderHistory: OrderHistory = {
-    tableNumber: tableNumber || '05',
-    rounds: [
-      {
-        roundNumber: 1,
-        time: '7:28 PM',
-        items: [
-          { id: '1', name: 'Truffle Burger', quantity: 1, price: 28.50, status: 'Served' },
-          { id: '2', name: 'Grilled Salmon', quantity: 1, price: 24.99, status: 'Served' },
-          { id: '3', name: 'Lobster Linguine', quantity: 1, price: 38.00, status: 'Served' },
-        ]
-      },
-      {
-        roundNumber: 2,
-        time: '7:28 PM',
-        items: [
-          { id: '4', name: 'Grilled Salmon', quantity: 2, price: 49.98, status: 'Preparing' },
-        ]
-      }
-    ],
-    subtotal: 141.47,
-    vat: 11.32,
-    total: 152.79
+  const handleApplyVoucher = () => {
+    const voucher = findVoucherByCode(voucherCode);
+    
+    if (!voucher) {
+      setVoucherError('Invalid voucher code');
+      return;
+    }
+    
+    if (getTotalPrice() < voucher.minAmount) {
+      setVoucherError(`Minimum order amount is $${voucher.minAmount}`);
+      return;
+    }
+    
+    setAppliedVoucher(voucher);
+    setVoucherError('');
+    setVoucherCode('');
   };
 
-  const orderHistory = propOrderHistory || defaultOrderHistory;
+  const handleRemoveVoucher = () => {
+    setAppliedVoucher(null);
+    setVoucherCode('');
+    setVoucherError('');
+  };
+
+  const getDiscountAmount = () => {
+    if (!appliedVoucher) return 0;
+    if (appliedVoucher.type === 'percentage') {
+      return getTotalPrice() * (appliedVoucher.discount / 100);
+    }
+    return appliedVoucher.discount;
+  };
+
+  const getFinalTotal = () => {
+    const subtotal = getTotalPrice();
+    const vat = subtotal * 0.08;
+    const discount = getDiscountAmount();
+    return subtotal + vat - discount;
+  };
+
+  const orderHistory = propOrderHistory || DEFAULT_ORDER_HISTORY;
 
   const handleConfirmOrder = () => {
     if (onConfirmOrder) {
@@ -710,6 +706,111 @@ export function CartDrawer({
               borderTop: '1px solid #e5e7eb',
               backgroundColor: '#ffffff'
             }}>
+            {/* Voucher Section */}
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{
+                fontSize: '14px',
+                fontWeight: '500',
+                color: '#1f2937',
+                marginBottom: '8px',
+                display: 'block'
+              }}>
+                Voucher Code
+              </label>
+              {appliedVoucher ? (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '12px',
+                  backgroundColor: '#d1fae5',
+                  border: '1px solid #6ee7b7',
+                  borderRadius: '8px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <CheckCircle style={{ width: '18px', height: '18px', color: '#059669' }} />
+                    <span style={{ fontSize: '14px', fontWeight: '600', color: '#059669' }}>
+                      {appliedVoucher.code}
+                    </span>
+                  </div>
+                  <button
+                    onClick={handleRemoveVoucher}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: '#059669',
+                      fontSize: '13px',
+                      fontWeight: '500',
+                      textDecoration: 'underline'
+                    }}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input
+                      type="text"
+                      value={voucherCode}
+                      onChange={(e) => {
+                        setVoucherCode(e.target.value.toUpperCase());
+                        setVoucherError('');
+                      }}
+                      placeholder="Enter code"
+                      style={{
+                        flex: 1,
+                        padding: '10px 12px',
+                        fontSize: '14px',
+                        border: voucherError ? '1px solid #ef4444' : '1px solid #d1d5db',
+                        borderRadius: '8px',
+                        outline: 'none',
+                        transition: 'border-color 0.2s'
+                      }}
+                      onFocus={(e) => !voucherError && (e.target.style.borderColor = '#52b788')}
+                      onBlur={(e) => !voucherError && (e.target.style.borderColor = '#d1d5db')}
+                    />
+                    <button
+                      onClick={handleApplyVoucher}
+                      disabled={!voucherCode.trim()}
+                      style={{
+                        padding: '10px 20px',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#ffffff',
+                        backgroundColor: voucherCode.trim() ? '#52b788' : '#d1d5db',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: voucherCode.trim() ? 'pointer' : 'not-allowed',
+                        transition: 'background-color 0.2s'
+                      }}
+                      onMouseEnter={(e) => voucherCode.trim() && (e.currentTarget.style.backgroundColor = '#27ae60')}
+                      onMouseLeave={(e) => voucherCode.trim() && (e.currentTarget.style.backgroundColor = '#52b788')}
+                    >
+                      Apply
+                    </button>
+                  </div>
+                  {voucherError && (
+                    <p style={{
+                      fontSize: '12px',
+                      color: '#ef4444',
+                      margin: '6px 0 0 0'
+                    }}>
+                      {voucherError}
+                    </p>
+                  )}
+                  <p style={{
+                    fontSize: '12px',
+                    color: '#6b7280',
+                    margin: '6px 0 0 0'
+                  }}>
+                    Try: WELCOME10, SAVE20, FREESHIP
+                  </p>
+                </div>
+              )}
+            </div>
+
             <div style={{
               display: 'flex',
               alignItems: 'center',
@@ -752,6 +853,29 @@ export function CartDrawer({
                 ${orderHistory.vat.toFixed(2)}
               </span>
             </div>
+            {appliedVoucher && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '16px'
+              }}>
+                <span style={{
+                  fontSize: '15px',
+                  fontWeight: '500',
+                  color: '#059669'
+                }}>
+                  Discount ({appliedVoucher.code})
+                </span>
+                <span style={{
+                  fontSize: '15px',
+                  fontWeight: '600',
+                  color: '#059669'
+                }}>
+                  -${getDiscountAmount().toFixed(2)}
+                </span>
+              </div>
+            )}
             <div style={{
               display: 'flex',
               alignItems: 'center',
@@ -772,7 +896,7 @@ export function CartDrawer({
                 fontWeight: '700',
                 color: '#52b788'
               }}>
-                ${orderHistory.total.toFixed(2)}
+                ${(orderHistory.total - getDiscountAmount()).toFixed(2)}
               </span>
             </div>
             <div style={{ display: 'flex', gap: '12px' }}>

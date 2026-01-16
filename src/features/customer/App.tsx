@@ -7,6 +7,8 @@ import { CustomerAccountPage } from './pages/CustomerAccountPage';
 import { OrderHistoryPage } from './pages/OrderHistoryPage';
 import { ReportListPage } from './pages/ReportListPage';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ReportsProvider } from './context/ReportsContext';
+import { CartProvider } from './context/CartContext';
 import { SignupRequest } from './services/auth.api';
 
 type AuthView = 'login' | 'register' | 'otp' | 'menu' | 'account' | 'orders' | 'reports';
@@ -126,7 +128,11 @@ function CustomerAppContent() {
 export function CustomerApp() {
   return (
     <AuthProvider>
-      <CustomerAppContent />
+      <CartProvider>
+        <ReportsProvider>
+          <CustomerAppContent />
+        </ReportsProvider>
+      </CartProvider>
     </AuthProvider>
   );
 }

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import type { MenuItem } from '../../menu/types/menu.types';
 import { menuItemApi } from '../../menu/services/menu.api';
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
+import { MENU_ITEMS } from '../data/menuData';
 import {
   CustomerHeader,
   TableBadge,
@@ -57,12 +59,12 @@ interface CustomerMenuPageProps {
 
 export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick, onAccountClick, onOrdersClick, onReportsClick }: CustomerMenuPageProps) {
   const { user, logout } = useAuth();
+  const { cart, addToCart: addToCartContext, removeFromCart, updateQuantity, getTotalItems, getTotalPrice, clearCart } = useCart();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [filteredItems, setFilteredItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('Main Course');
   const [searchQuery, setSearchQuery] = useState('');
-  const [cart, setCart] = useState<CartItem[]>([]);
   const [showCart, setShowCart] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showBanner, setShowBanner] = useState(true);
@@ -103,102 +105,9 @@ export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick, onAcco
   useEffect(() => {
     const fetchMenu = async () => {
       if (!tableToken) {
-        // If no token, use mock data for development
-        const mockItems: MenuItem[] = [
-          {
-            id: 1,
-            name: 'Grilled Salmon',
-            category: 'Main Course',
-            price: 24.99,
-            status: 'available',
-            lastUpdate: '2025-12-20',
-            chefRecommended: true,
-            imageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400',
-            description: 'Fresh Atlantic salmon with herbs, lemon butter sauce and seasonal vegetables',
-            modifiers: [
-              {
-                id: 'size',
-                name: 'Size',
-                required: true,
-                selectionType: 'Single',
-                options: [
-                  { id: 'small', name: 'Small', price: 0 },
-                  { id: 'medium', name: 'Medium', price: 2.00 },
-                  { id: 'large', name: 'Large', price: 4.00 },
-                ]
-              },
-              {
-                id: 'toppings',
-                name: 'Toppings',
-                required: false,
-                selectionType: 'Multi',
-                options: [
-                  { id: 'cheese', name: 'Extra Cheese', price: 1.00 },
-                  { id: 'bacon', name: 'Bacon', price: 1.50 },
-                  { id: 'mushrooms', name: 'Mushrooms', price: 0.75 },
-                  { id: 'olives', name: 'Olives', price: 0.50 },
-                ]
-              }
-            ]
-          },
-          {
-            id: 2,
-            name: 'Caesar Salad',
-            category: 'Appetizer',
-            price: 12.50,
-            status: 'available',
-            lastUpdate: '2025-12-22',
-            chefRecommended: false,
-            imageUrl: 'https://images.unsplash.com/photo-1546793665-c74683f339c1?w=400',
-            description: 'Crisp romaine lettuce with Caesar dressing',
-          },
-          {
-            id: 3,
-            name: 'Beef Wellington',
-            category: 'Main Course',
-            price: 38.00,
-            status: 'available',
-            lastUpdate: '2025-12-15',
-            chefRecommended: true,
-            imageUrl: 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400',
-            description: 'Premium beef tenderloin wrapped in puff pastry',
-          },
-          {
-            id: 4,
-            name: 'Chocolate Lava Cake',
-            category: 'Dessert',
-            price: 9.99,
-            status: 'available',
-            lastUpdate: '2025-12-23',
-            chefRecommended: true,
-            imageUrl: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=400',
-            description: 'Warm chocolate cake with molten center',
-          },
-          {
-            id: 5,
-            name: 'Lobster Bisque',
-            category: 'Appetizer',
-            price: 15.99,
-            status: 'sold_out',
-            lastUpdate: '2025-12-24',
-            chefRecommended: false,
-            imageUrl: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400',
-            description: 'Rich and creamy lobster soup',
-          },
-          {
-            id: 6,
-            name: 'Margherita Pizza',
-            category: 'Main Course',
-            price: 16.50,
-            status: 'available',
-            lastUpdate: '2025-12-21',
-            chefRecommended: false,
-            imageUrl: 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400',
-            description: 'Classic Italian pizza with fresh mozzarella',
-          },
-        ];
-        setMenuItems(mockItems);
-        const uniqueCategories = Array.from(new Set(mockItems.map(item => item.category)));
+        // If no token, use shared mock data
+        setMenuItems(MENU_ITEMS);
+        const uniqueCategories = Array.from(new Set(MENU_ITEMS.map(item => item.category)));
         setCategories(uniqueCategories);
         setLoading(false);
         return;
@@ -250,17 +159,7 @@ export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick, onAcco
   }, [menuItems, selectedCategory, searchQuery]);
 
   const addToCart = (item: MenuItem) => {
-    setCart(prevCart => {
-      const existingItem = prevCart.find(cartItem => cartItem.item.id === item.id);
-      if (existingItem) {
-        return prevCart.map(cartItem =>
-          cartItem.item.id === item.id
-            ? { ...cartItem, quantity: cartItem.quantity + 1 }
-            : cartItem
-        );
-      }
-      return [...prevCart, { item, quantity: 1 }];
-    });
+    addToCartContext(item, 1);
   };
 
   const openItemDetail = (item: MenuItem) => {
@@ -322,49 +221,12 @@ export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick, onAcco
   const addToCartWithModifiers = () => {
     if (!selectedItem) return;
 
-    const modifierPrice = calculateItemPrice(selectedItem, selectedModifiers) - selectedItem.price;
-
-    setCart(prevCart => [
-      ...prevCart,
-      {
-        item: selectedItem,
-        quantity: itemQuantity,
-        selectedModifiers: { ...selectedModifiers },
-        modifierPrice
-      }
-    ]);
+    addToCartContext(selectedItem, itemQuantity, selectedModifiers);
 
     closeItemDetail();
   };
 
-  const removeFromCart = (itemId: number) => {
-    setCart(prevCart => prevCart.filter(cartItem => cartItem.item.id !== itemId));
-  };
 
-  const updateQuantity = (itemId: number, newQuantity: number) => {
-    if (newQuantity <= 0) {
-      removeFromCart(itemId);
-      return;
-    }
-    setCart(prevCart =>
-      prevCart.map(cartItem =>
-        cartItem.item.id === itemId
-          ? { ...cartItem, quantity: newQuantity }
-          : cartItem
-      )
-    );
-  };
-
-  const getTotalPrice = () => {
-    return cart.reduce((total, cartItem) => {
-      const itemPrice = cartItem.item.price + (cartItem.modifierPrice || 0);
-      return total + itemPrice * cartItem.quantity;
-    }, 0);
-  };
-
-  const getTotalItems = () => {
-    return cart.reduce((total, cartItem) => total + cartItem.quantity, 0);
-  };
 
   const handleConfirmOrder = (orderCart: CartItem[], customerName?: string) => {
     // Convert cart items to order history items
@@ -402,7 +264,7 @@ export function CustomerMenuPage({ tableToken, tableNumber, onLoginClick, onAcco
     });
 
     // Clear cart after order
-    setCart([]);
+    clearCart();
   };
 
   if (loading) {

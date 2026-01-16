@@ -1,19 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ArrowLeft, ChevronRight, MessageCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useReports, Report } from '../context/ReportsContext';
 
-type ReportStatus = 'Pending' | 'In Progress' | 'Resolved';
 type FilterTab = 'All' | 'Pending' | 'In Progress' | 'Completed';
-
-interface Report {
-  id: string;
-  orderNumber: string;
-  issueType: string;
-  description: string;
-  status: ReportStatus;
-  date: string;
-  hasNewReply?: boolean;
-}
 
 interface ReportListPageProps {
   onBack?: () => void;
@@ -21,49 +11,10 @@ interface ReportListPageProps {
 
 export function ReportListPage({ onBack }: ReportListPageProps) {
   const { user } = useAuth();
-  const [reports, setReports] = useState<Report[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { reports } = useReports();
   const [activeTab, setActiveTab] = useState<FilterTab>('All');
 
-  useEffect(() => {
-    // Mock data for reports
-    const mockReports: Report[] = [
-      {
-        id: '1',
-        orderNumber: 'ORD-2026-004',
-        issueType: 'Missing Item',
-        description: 'I ordered 2 cokes but only got 1 in my delivery bag...',
-        status: 'Pending',
-        date: 'Jan 15',
-        hasNewReply: false
-      },
-      {
-        id: '2',
-        orderNumber: 'ORD-2026-003',
-        issueType: 'Food Quality',
-        description: 'The burger was cold when it arrived. Not satisfied with the temperature...',
-        status: 'Resolved',
-        date: 'Jan 12',
-        hasNewReply: true
-      },
-      {
-        id: '3',
-        orderNumber: 'ORD-2026-001',
-        issueType: 'Wrong Item',
-        description: 'Ordered chicken salad but received caesar salad instead...',
-        status: 'In Progress',
-        date: 'Jan 08',
-        hasNewReply: false
-      }
-    ];
-
-    setTimeout(() => {
-      setReports(mockReports);
-      setLoading(false);
-    }, 500);
-  }, []);
-
-  const getStatusColor = (status: ReportStatus) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
       case 'Pending':
         return {
@@ -80,6 +31,11 @@ export function ReportListPage({ onBack }: ReportListPageProps) {
           bg: '#dcfce7',
           text: '#008236'
         };
+      default:
+        return {
+          bg: '#f3f4f6',
+          text: '#6b7280'
+        };
     }
   };
 
@@ -92,25 +48,6 @@ export function ReportListPage({ onBack }: ReportListPageProps) {
   const handleViewDetails = (report: Report) => {
     alert(`View details for ${report.orderNumber}`);
   };
-
-  if (loading) {
-    return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ 
-            width: '48px', 
-            height: '48px', 
-            border: '3px solid #e5e7eb', 
-            borderTopColor: '#52b788',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite',
-            margin: '0 auto 16px'
-          }} />
-          <p style={{ color: '#6b7280', fontSize: '16px' }}>Loading reports...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div style={{ 
@@ -245,7 +182,7 @@ export function ReportListPage({ onBack }: ReportListPageProps) {
                         margin: '0 0 8px 0',
                         letterSpacing: '-0.31px'
                       }}>
-                        {report.issueType}
+                        {report.issueTypes.join(', ')}
                       </h3>
                       <p style={{
                         fontSize: '14px',
