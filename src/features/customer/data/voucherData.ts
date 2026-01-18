@@ -6,10 +6,10 @@ export interface Voucher {
 }
 
 export const AVAILABLE_VOUCHERS: Voucher[] = [
-  { code: 'WELCOME10', discount: 10, type: 'percentage', minAmount: 0 },
-  { code: 'SAVE20', discount: 20, type: 'percentage', minAmount: 50 },
-  { code: 'FREESHIP', discount: 5, type: 'fixed', minAmount: 0 },
-  { code: 'VIP50', discount: 50, type: 'fixed', minAmount: 100 },
+  { code: 'WELCOME10', discount: 10, type: 'percentage', minAmount: 50 },
+  { code: 'SAVE20', discount: 20, type: 'percentage', minAmount: 100 },
+  { code: 'FREESHIP', discount: 5, type: 'fixed', minAmount: 10 },
+  { code: 'VIP50', discount: 50, type: 'fixed', minAmount: 200 },
 ];
 
 export function findVoucherByCode(code: string): Voucher | undefined {
