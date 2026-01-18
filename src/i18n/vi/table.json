@@ -76,43 +76,46 @@
 
   "qrPreview": {
     "header": {
-        "title": "Quản lý mã QR",
-        "subtitle": "Quản lý và tải mã QR cho bàn {{table}}"
+      "title": "Quản lý mã QR",
+      "subtitle": "Quản lý và tải mã QR cho bàn {{table}}"
     },
-
     "loading": {
-        "qr": "Đang tải mã QR...",
-        "failed": "Không thể tải mã QR"
+      "qr": "Đang tải mã QR...",
+      "failed": "Không thể tải mã QR"
     },
-
+    "expired": {
+      "title": "Mã QR đã hết hạn",
+      "subtitle": "Vui lòng tạo mã mới"
+    },
     "details": {
-        "title": "Thông tin mã QR",
-        "createdDate": "Ngày tạo",
-        "lastScanned": "Lần quét gần nhất",
-        "totalScans": "lượt quét",
-        "tokenStatus": "Trạng thái mã",
-        "active": "Đang hoạt động",
-        "expired": "Hết hạn"
+      "title": "Chi tiết mã QR",
+      "createdDate": "Ngày tạo",
+      "expiryDate": "Hết hạn lúc",
+      "lastScanned": "Quét lần cuối",
+      "totalScans": "lượt quét",
+      "tokenStatus": "Trạng thái mã",
+      "active": "Đang hoạt động",
+      "expired": "Đã hết hạn",
+      "expiredStatus": "Mã QR này đã hết hạn"
     },
-
     "actions": {
-        "downloadPNG": "PNG",
-        "downloadPDF": "PDF (In)",
-        "regenerate": "Tạo lại mã QR",
-        "regenerateWarning": "Cảnh báo: Mã QR cũ sẽ không còn hiệu lực"
+      "downloadPNG": "PNG",
+      "downloadPDF": "PDF (In)",
+      "regenerate": "Tạo lại mã QR",
+      "regenerateNew": "Tạo mã QR mới",
+      "regenerateWarning": "Cảnh báo: Mã QR cũ sẽ không còn hiệu lực",
+      "regenerateNewWarning": "Tạo mã QR mới cho bàn này"
     },
-
     "confirm": {
-        "title": "Tạo lại mã QR?",
-        "hasOrders": "Bàn này hiện đang có {{count}} đơn hàng đang hoạt động.",
-        "warning": "Việc tạo lại mã QR sẽ làm mã cũ không còn hiệu lực. Bạn có chắc chắn muốn tiếp tục?",
-        "yes": "Đồng ý",
-        "cancel": "Hủy"
+      "title": "Xác nhận tạo lại mã QR",
+      "hasOrders": "Bàn này hiện có {{count}} đơn hàng đang hoạt động.",
+      "warning": "Tạo lại mã QR sẽ vô hiệu hóa mã hiện tại và có thể ảnh hưởng đến khách hàng đang sử dụng.",
+      "yes": "Đồng ý, tạo lại",
+      "cancel": "Hủy bỏ"
     },
-
     "pdf": {
-        "title": "Xem trước PDF để in",
-        "subtitle": "Khổ A6 dọc (105mm × 148mm)"
-  }
+      "title": "Xem trước PDF in",
+      "subtitle": "Khổ A6 dọc (105mm × 148mm)"
+    }
   }
 }

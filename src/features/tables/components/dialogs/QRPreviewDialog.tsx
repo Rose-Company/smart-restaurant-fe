@@ -1,4 +1,4 @@
-import { X, Download, FileText, AlertTriangle, Calendar, Activity, CheckCircle2 } from 'lucide-react';
+import { X, Download, FileText, AlertTriangle, Calendar, Activity, CheckCircle2, XCircle } from 'lucide-react';
 import { Button } from '../../../../components/ui/misc/button';
 import { Badge } from '../../../../components/ui/data-display/badge';
 import type { Table } from '../../types/table.types';
@@ -7,6 +7,7 @@ import { PDFPreviewDialog } from './PDFPreviewDialog';
 import { QRCodeCanvas } from "qrcode.react";
 import { genQRApi, downloadSingleQRApi, getQRApi } from "../../services/qr.api";
 import { ConfirmDialog } from '../../components/dialogs/ConfirmDialog'
+
 interface QRPreviewDialogProps {
   table: Table;
   onClose: () => void;
@@ -14,7 +15,9 @@ interface QRPreviewDialogProps {
   create_at: string,
   expire_at: string,
 }
+
 import { useTranslation } from "react-i18next";
+
 export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
   const { t } = useTranslation("table");
   const [showPDFPreview, setShowPDFPreview] = useState(false);
@@ -26,12 +29,22 @@ export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
   const [create_at, setCreateAt] = useState('');
 
   const [showConfirmInactive, setShowConfirmInactive] = useState(false);
+
   useEffect(() => {
     const fetchQR = async () => {
       try {
         setLoading(true);
         const res = await getQRApi.fetch(table.id);
-        setQrUrl(res.url);
+        
+        // Build proper URL format
+        const fullUrl = `${window.location.origin}/menu?table=${res.table_id}&token=${res.token}`;
+        
+        console.log('QR URL Generated:', fullUrl);
+        console.log('Table ID:', res.table_id);
+        console.log('Token:', res.token);
+        console.log('Expires At:', res.expire_at);
+        
+        setQrUrl(fullUrl);
         setToken(res.token);
         setTableId(res.table_id);
         setCreateAt(res.create_at);
@@ -50,6 +63,7 @@ export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
     lastScan: '2 hours ago',
     totalScans: 47,
   };
+
   const formatDate = (iso: string) =>
     new Date(iso).toLocaleString("en-GB", {
       day: "2-digit",
@@ -63,15 +77,6 @@ export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
     ? new Date(expire_at).getTime() > Date.now()
     : false;
 
-  const extractToken = (url: string) => {
-    try {
-      const params = new URL(url).searchParams;
-      return params.get("token") || "";
-    } catch (error) {
-      console.error("Invalid URL", error);
-      return "";
-    }
-  };
   const handleDownloadPNG = async () => {
     if (!token || !tableId) return;
 
@@ -104,13 +109,22 @@ export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
     }
     RegenerateQR();
   }
+
   const RegenerateQR = async () => {
     try {
       setLoading(true);
 
       const res = await genQRApi.generate(table.id);
 
-      setQrUrl(res.url);
+      // Build proper URL format
+      const fullUrl = `${window.location.origin}/menu?table=${res.table_id}&token=${res.token}`;
+      
+      console.log('QR URL Regenerated:', fullUrl);
+      console.log('New Table ID:', res.table_id);
+      console.log('New Token:', res.token);
+      console.log('New Expires At:', res.expire_at);
+
+      setQrUrl(fullUrl);
       setToken(res.token);
       setTableId(res.table_id);
       setCreateAt(res.create_at);
@@ -146,18 +160,30 @@ export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
           {/* Left Side - QR Code Preview */}
           <div className="flex flex-col items-center justify-center space-y-6">
             <div className="w-full max-w-sm">
-              <div className="">
+              <div className="relative">
                 <div className="aspect-square bg-white rounded-lg flex items-center justify-center">
                   {loading && (
                     <span className="text-sm text-gray-500">{t("qrPreview.loading.qr")}</span>
                   )}
 
-                  {!loading && qrUrl && (
+                  {!loading && qrUrl && isActive && (
                     <QRCodeCanvas
                       value={qrUrl}
                       size={200}
                       level="H"
                     />
+                  )}
+
+                  {!loading && qrUrl && !isActive && (
+                    <div className="text-center p-6">
+                      <XCircle className="w-16 h-16 text-red-500 mx-auto mb-3" />
+                      <p className="text-red-600 font-semibold mb-1">
+                        {t("qrPreview.expired.title")}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {t("qrPreview.expired.subtitle")}
+                      </p>
+                    </div>
                   )}
 
                   {!loading && !qrUrl && (
@@ -196,6 +222,24 @@ export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
                     </div>
                   </div>
 
+                  {/* Expiry Date */}
+                  <div className="flex items-start gap-3 pb-4 border-b border-gray-100">
+                    <div className={`w-10 h-10 ${isActive ? 'bg-green-50' : 'bg-red-50'} rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5`}>
+                      <Calendar className={`w-5 h-5 ${isActive ? 'text-green-600' : 'text-red-600'}`} />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-gray-500 mb-0.5">{t("qrPreview.details.expiryDate")}</p>
+                      <p className={`${isActive ? 'text-gray-900' : 'text-red-600 font-semibold'}`}>
+                        {expire_at ? formatDate(expire_at) : "--"}
+                      </p>
+                      {!isActive && expire_at && (
+                        <p className="text-xs text-red-500 mt-1">
+                          {t("qrPreview.details.expiredStatus")}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
                   {/* Last Scan */}
                   <div className="flex items-start gap-3 pb-4 border-b border-gray-100">
                     <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -210,8 +254,12 @@ export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
 
                   {/* Token Status */}
                   <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <CheckCircle2 className="w-5 h-5 text-green-600" />
+                    <div className={`w-10 h-10 ${isActive ? 'bg-green-50' : 'bg-red-50'} rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5`}>
+                      {isActive ? (
+                        <CheckCircle2 className="w-5 h-5 text-green-600" />
+                      ) : (
+                        <XCircle className="w-5 h-5 text-red-600" />
+                      )}
                     </div>
                     <div className="flex-1">
                       <p className="text-sm text-gray-500 mb-1.5">{t("qrPreview.details.tokenStatus")}</p>
@@ -237,6 +285,7 @@ export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
                   onClick={handleDownloadPNG}
                   variant="outline"
                   className="border-[#2c3e50] text-[#2c3e50] hover:bg-[#2c3e50] hover:text-white"
+                  disabled={!isActive}
                 >
                   <Download className="w-4 h-4 mr-2" />
                   PNG
@@ -245,6 +294,7 @@ export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
                   onClick={handleOpenPDFPreview}
                   variant="outline"
                   className="border-[#2c3e50] text-[#2c3e50] hover:bg-[#2c3e50] hover:text-white"
+                  disabled={!isActive}
                 >
                   <FileText className="w-4 h-4 mr-2" />
                   PDF (Print)
@@ -258,10 +308,13 @@ export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
                   className="w-full border-orange-500 text-orange-600 hover:bg-orange-50"
                 >
                   <AlertTriangle className="w-4 h-4 mr-2" />
-                  Regenerate QR Code
+                  {isActive ? 'Regenerate QR Code' : 'Generate New QR Code'}
                 </Button>
                 <p className="text-xs text-gray-500 mt-2 text-center">
-                  Warning: Previous QR code will become invalid
+                  {isActive 
+                    ? 'Warning: Previous QR code will become invalid'
+                    : 'Generate a new QR code for this table'
+                  }
                 </p>
               </div>
             </div>
@@ -279,14 +332,14 @@ export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
       {showConfirmInactive && (
         <ConfirmDialog
           open={showConfirmInactive}
-          title= {t("qrPreview.confirm.title")}
+          title={t("qrPreview.confirm.title")}
           description={
             <>
               <p>
-                {t("qrPreview.confirm.hasOrders",{count:table.order_data?.active_orders})}
+                {t("qrPreview.confirm.hasOrders", { count: table.order_data?.active_orders })}
               </p>
               <p className="mt-2 text-red-600">
-               {t("qrPreview.confirm.warning")}
+                {t("qrPreview.confirm.warning")}
               </p>
             </>
           }
