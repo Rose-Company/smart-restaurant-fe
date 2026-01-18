@@ -77,32 +77,43 @@
       "title": "QR Code Management",
       "subtitle": "Manage and download QR code for table {{table}}"
     },
-
     "loading": {
       "qr": "Loading QR code...",
       "failed": "Failed to load QR code"
     },
-
+    "expired": {
+      "title": "QR Code Expired",
+      "subtitle": "Please regenerate a new code"
+    },
     "details": {
       "title": "QR Code Details",
       "createdDate": "Created Date",
+      "expiryDate": "Expires At",
       "lastScanned": "Last Scanned",
-      "totalScans": "scans",
+      "totalScans": "total scans",
       "tokenStatus": "Token Status",
       "active": "Active",
-      "expired": "Expired"
+      "expired": "Expired",
+      "expiredStatus": "This QR code has expired"
     },
-
     "actions": {
       "downloadPNG": "PNG",
       "downloadPDF": "PDF (Print)",
       "regenerate": "Regenerate QR Code",
-      "regenerateWarning": "Warning: The previous QR code will become invalid"
+      "regenerateNew": "Generate New QR Code",
+      "regenerateWarning": "Warning: Previous QR code will become invalid",
+      "regenerateNewWarning": "Generate a new QR code for this table"
     },
-
+    "confirm": {
+      "title": "Confirm QR Code Regeneration",
+      "hasOrders": "This table currently has {{count}} active order(s).",
+      "warning": "Regenerating the QR code will invalidate the current code and may affect customers currently using it.",
+      "yes": "Yes, Regenerate",
+      "cancel": "Cancel"
+    },
     "pdf": {
-        "title": "Print-Ready PDF Preview",
-        "subtitle": "A6 Portrait (105mm × 148mm)"
+      "title": "Print-Ready PDF Preview",
+      "subtitle": "A6 Portrait (105mm × 148mm)"
     }
   }
 }
