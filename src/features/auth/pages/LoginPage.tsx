@@ -1,27 +1,47 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff, Lock, ChefHat } from 'lucide-react';
+import { Eye, EyeOff, Lock, ChefHat, AlertCircle } from 'lucide-react';
 import { ImageWithFallback } from '../components/ImageWithFallback';
+import { authApi } from '../serivces/auth.api.ts';
 
 interface LoginPageProps {
-  onLogin?: () => void;
+  onLogin?: (token: string) => void;
 }
 
 export default function LoginPage({ onLogin }: LoginPageProps) {
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     role: 'manager',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Admin login:', formData);
-    
-    // For now, just call onLogin to show the dashboard
-    // In production, this should validate credentials first
-    if (onLogin) {
-      onLogin();
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      const response = await authApi.login({
+        email: formData.email,
+        password: formData.password,
+      });
+
+      if (response.code === 200 && response.message) {
+        // Store token (note: avoid localStorage in artifacts, use state management in production)
+        // For production, pass token to parent component via onLogin
+        if (onLogin) {
+          onLogin(response.message);
+        }
+      } else {
+        setError(response.message || 'Login failed. Please check your credentials.');
+      }
+    } catch (err: any) {
+      const errorMessage = err.response?.message || err.message || 'An error occurred. Please try again.';
+      setError(errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -30,11 +50,12 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
       ...formData,
       [e.target.name]: e.target.value,
     });
+    if (error) setError(null);
   };
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', width: '100%' }}>
-      {/* Left Half - Background Image with Overlay */}
+      {/* Left Half - Background Image */}
       <div className="hidden lg:flex" style={{ 
         width: '50%',
         position: 'relative',
@@ -46,14 +67,12 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
         />
         
-        {/* Dark Overlay */}
         <div style={{ 
           position: 'absolute', 
           inset: 0, 
           backgroundColor: 'rgba(0, 0, 0, 0.5)' 
         }}></div>
         
-        {/* Testimonial Quote */}
         <div style={{ 
           position: 'absolute', 
           inset: 0, 
@@ -161,8 +180,32 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
             </p>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          {/* Error Message */}
+          {error && (
+            <div style={{
+              marginBottom: '24px',
+              padding: '12px 16px',
+              backgroundColor: '#fef2f2',
+              border: '1px solid #fecaca',
+              borderRadius: '10px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px'
+            }}>
+              <AlertCircle style={{ width: '20px', height: '20px', color: '#dc2626', flexShrink: 0 }} />
+              <p style={{
+                fontSize: '14px',
+                color: '#991b1b',
+                lineHeight: '20px',
+                margin: 0
+              }}>
+                {error}
+              </p>
+            </div>
+          )}
+
+          {/* Form Container */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             {/* Role Selection */}
             <div>
               <label htmlFor="role" style={{ 
@@ -180,6 +223,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                 name="role"
                 value={formData.role}
                 onChange={handleInputChange}
+                disabled={isLoading}
                 style={{
                   width: '100%',
                   height: '48px',
@@ -190,11 +234,14 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                   outline: 'none',
                   fontSize: '16px',
                   backgroundColor: 'white',
-                  cursor: 'pointer'
+                  cursor: isLoading ? 'not-allowed' : 'pointer',
+                  opacity: isLoading ? 0.6 : 1
                 }}
                 onFocus={(e) => {
-                  e.target.style.borderColor = '#00bc7d';
-                  e.target.style.boxShadow = '0 0 0 3px rgba(0, 188, 125, 0.1)';
+                  if (!isLoading) {
+                    e.target.style.borderColor = '#00bc7d';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(0, 188, 125, 0.1)';
+                  }
                 }}
                 onBlur={(e) => {
                   e.target.style.borderColor = '#d1d5dc';
@@ -225,7 +272,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                 value={formData.email}
                 onChange={handleInputChange}
                 placeholder="admin@restaurant.com"
-                required
+                disabled={isLoading}
                 style={{
                   width: '100%',
                   height: '48px',
@@ -235,15 +282,24 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                   borderRadius: '10px',
                   outline: 'none',
                   fontSize: '16px',
-                  backgroundColor: 'white'
+                  backgroundColor: 'white',
+                  cursor: isLoading ? 'not-allowed' : 'text',
+                  opacity: isLoading ? 0.6 : 1
                 }}
                 onFocus={(e) => {
-                  e.target.style.borderColor = '#00bc7d';
-                  e.target.style.boxShadow = '0 0 0 3px rgba(0, 188, 125, 0.1)';
+                  if (!isLoading) {
+                    e.target.style.borderColor = '#00bc7d';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(0, 188, 125, 0.1)';
+                  }
                 }}
                 onBlur={(e) => {
                   e.target.style.borderColor = '#d1d5dc';
                   e.target.style.boxShadow = 'none';
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !isLoading) {
+                    handleSubmit(e);
+                  }
                 }}
               />
             </div>
@@ -268,7 +324,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                   value={formData.password}
                   onChange={handleInputChange}
                   placeholder="Enter your password"
-                  required
+                  disabled={isLoading}
                   style={{
                     width: '100%',
                     height: '48px',
@@ -278,20 +334,30 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                     borderRadius: '10px',
                     outline: 'none',
                     fontSize: '16px',
-                    backgroundColor: 'white'
+                    backgroundColor: 'white',
+                    cursor: isLoading ? 'not-allowed' : 'text',
+                    opacity: isLoading ? 0.6 : 1
                   }}
                   onFocus={(e) => {
-                    e.target.style.borderColor = '#00bc7d';
-                    e.target.style.boxShadow = '0 0 0 3px rgba(0, 188, 125, 0.1)';
+                    if (!isLoading) {
+                      e.target.style.borderColor = '#00bc7d';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(0, 188, 125, 0.1)';
+                    }
                   }}
                   onBlur={(e) => {
                     e.target.style.borderColor = '#d1d5dc';
                     e.target.style.boxShadow = 'none';
                   }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !isLoading) {
+                      handleSubmit(e);
+                    }
+                  }}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
+                  disabled={isLoading}
                   style={{
                     position: 'absolute',
                     right: '16px',
@@ -299,15 +365,16 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                     transform: 'translateY(-50%)',
                     background: 'none',
                     border: 'none',
-                    cursor: 'pointer',
+                    cursor: isLoading ? 'not-allowed' : 'pointer',
                     color: '#4a5565',
                     padding: '4px',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center'
+                    justifyContent: 'center',
+                    opacity: isLoading ? 0.6 : 1
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.color = '#101828';
+                    if (!isLoading) e.currentTarget.style.color = '#101828';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.color = '#4a5565';
@@ -328,14 +395,20 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
               alignItems: 'center', 
               justifyContent: 'space-between' 
             }}>
-              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+              <label style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                cursor: isLoading ? 'not-allowed' : 'pointer',
+                opacity: isLoading ? 0.6 : 1
+              }}>
                 <input
                   type="checkbox"
+                  disabled={isLoading}
                   style={{
                     width: '16px',
                     height: '16px',
                     marginRight: '8px',
-                    cursor: 'pointer',
+                    cursor: isLoading ? 'not-allowed' : 'pointer',
                     accentColor: '#00bc7d'
                   }}
                 />
@@ -349,19 +422,21 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                 </span>
               </label>
               <button 
-                type="button" 
+                type="button"
+                disabled={isLoading}
                 style={{
                   background: 'none',
                   border: 'none',
                   color: '#009966',
                   fontSize: '16px',
-                  cursor: 'pointer',
+                  cursor: isLoading ? 'not-allowed' : 'pointer',
                   lineHeight: '24px',
                   letterSpacing: '-0.3125px',
-                  textDecoration: 'none'
+                  textDecoration: 'none',
+                  opacity: isLoading ? 0.6 : 1
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.textDecoration = 'underline';
+                  if (!isLoading) e.currentTarget.style.textDecoration = 'underline';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.textDecoration = 'none';
@@ -373,28 +448,32 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
 
             {/* Submit Button */}
             <button
-              type="submit"
+              onClick={handleSubmit}
+              disabled={isLoading}
               style={{
                 width: '100%',
                 height: '48px',
-                backgroundColor: '#00bc7d',
+                backgroundColor: isLoading ? '#6ee7b7' : '#00bc7d',
                 color: 'white',
                 borderRadius: '10px',
                 border: 'none',
                 fontSize: '16px',
                 fontWeight: 400,
-                cursor: 'pointer',
+                cursor: isLoading ? 'not-allowed' : 'pointer',
                 boxShadow: '0px 4px 6px -1px rgba(0, 0, 0, 0.1), 0px 2px 4px -2px rgba(0, 0, 0, 0.1)',
-                transition: 'background-color 0.2s'
+                transition: 'background-color 0.2s',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#00a870';
+                if (!isLoading) e.currentTarget.style.backgroundColor = '#00a870';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#00bc7d';
+                if (!isLoading) e.currentTarget.style.backgroundColor = '#00bc7d';
               }}
             >
-              Access Dashboard
+              {isLoading ? 'Signing in...' : 'Access Dashboard'}
             </button>
 
             {/* Security Note */}
@@ -415,7 +494,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                 Secured with 256-bit encryption
               </span>
             </div>
-          </form>
+          </div>
 
           {/* Additional Info */}
           <div style={{ 
@@ -433,21 +512,23 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
             }}>
               Need help accessing your account?{' '}
               <button 
-                type="button" 
+                type="button"
+                disabled={isLoading}
                 style={{
                   background: 'none',
                   border: 'none',
                   color: '#009966',
                   fontSize: '16px',
                   fontWeight: 500,
-                  cursor: 'pointer',
+                  cursor: isLoading ? 'not-allowed' : 'pointer',
                   lineHeight: '24px',
                   letterSpacing: '-0.3125px',
                   textDecoration: 'none',
-                  padding: 0
+                  padding: 0,
+                  opacity: isLoading ? 0.6 : 1
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.textDecoration = 'underline';
+                  if (!isLoading) e.currentTarget.style.textDecoration = 'underline';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.textDecoration = 'none';
