@@ -5,3 +5,5 @@ dist/
 vite.config.timestamp-*.mjs
 
 
+echo ".env.local" >> .gitignore
+echo ".env" >> .gitignore
