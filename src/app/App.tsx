@@ -4,6 +4,7 @@ import { TablesPage } from '../features/tables/pages/TablesPage';
 import { DashboardPage } from '../features/dashboard/pages/DashboardPage';
 import { MenuPage } from '../features/menu/pages/MenuPage';
 import { KitchenDisplayPage } from '../features/kitchen/pages/KitchenDisplayPage';
+import { WaiterTaskFeedPage } from '../features/waiter/pages/WaiterTaskFeedPage';
 import LoginPage from '../features/auth/pages/LoginPage';
 import { CustomerApp } from '../features/customer/App';
 
@@ -39,6 +40,8 @@ export default function App() {
         return <MenuPage />;
       case 'kitchen':
         return <KitchenDisplayPage onBack={() => setCurrentPage('dashboard')} />;
+      case 'waiter':
+        return <WaiterTaskFeedPage />;
       case 'customers':
         // Navigate to customer menu for testing
         window.location.href = '/customer/menu';
@@ -60,7 +63,7 @@ export default function App() {
   };
 
   // Check if current page should hide sidebar (like Kitchen Display System)
-  const shouldHideSidebar = currentPage === 'kitchen';
+  const shouldHideSidebar = currentPage === 'kitchen' || currentPage === 'waiter';
 
   return (
     <div className="flex h-screen bg-gray-50">

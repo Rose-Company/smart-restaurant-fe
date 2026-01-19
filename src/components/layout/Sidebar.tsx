@@ -1,7 +1,7 @@
 import React from 'react';
-import { LayoutDashboard, Utensils, QrCode, Users, Settings, BarChart3, FileText, Menu, ChefHat } from 'lucide-react';
+import { LayoutDashboard, Utensils, QrCode, Users, Settings, BarChart3, FileText, Menu, ChefHat, ClipboardList } from 'lucide-react';
 import { useTranslation } from "react-i18next";
-export type SidebarPageKey = 'dashboard' | 'tables' | 'menu' | 'kitchen' | 'qr-codes' | 'customers' | 'analytics' | 'reports' | 'settings';
+export type SidebarPageKey = 'dashboard' | 'tables' | 'menu' | 'kitchen' | 'waiter' | 'qr-codes' | 'customers' | 'analytics' | 'reports' | 'settings';
 
 interface SidebarProps {
   currentPage: SidebarPageKey;
@@ -15,6 +15,7 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
     { icon: Utensils, label: t("sidebar.tables"), key: 'tables' },
     { icon: Menu, label: t("sidebar.menu"), key: 'menu' },
     { icon: ChefHat, label: t("sidebar.kitchen"), key: 'kitchen' },
+    { icon: ClipboardList, label: t("sidebar.waiter"), key: 'waiter' },
     { icon: QrCode, label: t("sidebar.qr"), key: 'qr-codes' },
     { icon: Users, label: t("sidebar.customers"), key: 'customers' },
     { icon: BarChart3, label: t("sidebar.analytics"), key: 'analytics' },
