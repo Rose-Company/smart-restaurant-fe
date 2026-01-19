@@ -47,4 +47,45 @@ export const customerMenuApi = {
       table_number: json.table_number,
     };
   },
+
+  fetchItemDetail: async (itemId: number): Promise<MenuItem> => {
+    const res = await fetch(`/api/menu/items/${itemId}`);
+
+    if (!res.ok) {
+      throw new Error('Failed to fetch item details');
+    }
+
+    const json = await res.json();
+
+    // Map API response to MenuItem type
+    const itemData = json.data;
+    return {
+      id: itemData.id,
+      name: itemData.name,
+      category: itemData.category,
+      price: itemData.price,
+      status: itemData.status.toLowerCase() === 'available' ? 'available' : 'unavailable',
+      lastUpdate: itemData.last_update,
+      chefRecommended: itemData.chef_recommended ?? false,
+      imageUrl: itemData.image_url,
+      description: itemData.description,
+      preparationTime: itemData.preparation_time,
+      images: itemData.images?.map((img: any) => ({
+        id: img.id,
+        url: img.url,
+        isPrimary: img.is_primary ?? false,
+      })),
+      modifiers: itemData.modifiers?.map((mod: any) => ({
+        id: String(mod.id),
+        name: mod.name,
+        required: mod.is_required ?? false,
+        selectionType: mod.selection_type?.toLowerCase() === 'multiple' ? 'Multi' : 'Single',
+        options: mod.options?.map((opt: any) => ({
+          id: String(opt.id),
+          name: opt.name,
+          price: opt.price_adjustment ?? 0,
+        })),
+      })),
+    };
+  },
 };

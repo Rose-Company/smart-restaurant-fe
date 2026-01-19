@@ -2,7 +2,7 @@ import { X, Download, FileText, AlertTriangle, Calendar, Activity, CheckCircle2,
 import { Button } from '../../../../components/ui/misc/button';
 import { Badge } from '../../../../components/ui/data-display/badge';
 import type { Table } from '../../types/table.types';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react'; // ⭐ Thêm useMemo
 import { PDFPreviewDialog } from './PDFPreviewDialog';
 import { QRCodeCanvas } from "qrcode.react";
 import { genQRApi, downloadSingleQRApi, getQRApi } from "../../services/qr.api";
@@ -35,15 +35,8 @@ export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
       try {
         setLoading(true);
         const res = await getQRApi.fetch(table.id);
-        
         // Build proper URL format
         const fullUrl = `${window.location.origin}/menu?table=${res.table_id}&token=${res.token}`;
-        
-        console.log('QR URL Generated:', fullUrl);
-        console.log('Table ID:', res.table_id);
-        console.log('Token:', res.token);
-        console.log('Expires At:', res.expire_at);
-        
         setQrUrl(fullUrl);
         setToken(res.token);
         setTableId(res.table_id);
@@ -55,7 +48,6 @@ export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
         setLoading(false);
       }
     };
-
     fetchQR();
   }, [table.id]);
 
@@ -73,9 +65,10 @@ export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
       minute: "2-digit",
     });
 
-  const isActive = expire_at
-    ? new Date(expire_at).getTime() > Date.now()
-    : false;
+  // ⭐ SỬA: Dùng useMemo để isActive tự động update khi expire_at thay đổi
+  const isActive = useMemo(() => {
+    return expire_at ? new Date(expire_at).getTime() > Date.now() : false;
+  }, [expire_at]);
 
   const handleDownloadPNG = async () => {
     if (!token || !tableId) return;
@@ -113,23 +106,16 @@ export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
   const RegenerateQR = async () => {
     try {
       setLoading(true);
-
       const res = await genQRApi.generate(table.id);
-
       // Build proper URL format
       const fullUrl = `${window.location.origin}/menu?table=${res.table_id}&token=${res.token}`;
       
-      console.log('QR URL Regenerated:', fullUrl);
-      console.log('New Table ID:', res.table_id);
-      console.log('New Token:', res.token);
-      console.log('New Expires At:', res.expire_at);
-
+      // ⭐ Cập nhật tất cả states
       setQrUrl(fullUrl);
       setToken(res.token);
       setTableId(res.table_id);
       setCreateAt(res.create_at);
-      setExpireAt(res.expire_at);
-
+      setExpireAt(res.expire_at); // ⭐ Cái này sẽ trigger useMemo update isActive
     } catch (error) {
       console.error("Failed to regenerate QR", error);
       alert("Failed to regenerate QR code");
@@ -168,6 +154,7 @@ export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
 
                   {!loading && qrUrl && isActive && (
                     <QRCodeCanvas
+                      key={token || expire_at || qrUrl}
                       value={qrUrl}
                       size={200}
                       level="H"

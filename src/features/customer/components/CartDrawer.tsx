@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { ShoppingCart, X, Plus, Minus, Phone, FileText, CheckCircle } from 'lucide-react';
+import { ShoppingCart, X, Plus, Minus, Phone, FileText, CheckCircle, AlertCircle } from 'lucide-react';
 import type { MenuItem } from '../../menu/types/menu.types';
+import { orderApi, type CreateOrderRequest } from '../services/order.api';
+import { formatPrice } from '../../../lib/currency';
 import { OrderSuccessModal } from './OrderSuccessModal';
 import { AVAILABLE_VOUCHERS, findVoucherByCode, type Voucher } from '../data/voucherData';
 import { DEFAULT_ORDER_HISTORY, type OrderHistory, type OrderHistoryItem, type OrderRound } from '../data/orderData';
@@ -14,6 +16,7 @@ interface CartItem {
   quantity: number;
   selectedModifiers?: SelectedModifiers;
   modifierPrice?: number;
+  notes?: string;
 }
 
 interface CartDrawerProps {
@@ -51,6 +54,78 @@ export function CartDrawer({
   const [voucherCode, setVoucherCode] = useState('');
   const [appliedVoucher, setAppliedVoucher] = useState<Voucher | null>(null);
   const [voucherError, setVoucherError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [orderError, setOrderError] = useState<string | null>(null);
+  const [apiOrderHistory, setApiOrderHistory] = useState<OrderHistory | null>(null);
+  const [loadingOrderHistory, setLoadingOrderHistory] = useState(false);
+
+  // Fetch order history when history tab is opened
+  React.useEffect(() => {
+    if (activeTab === 'history' && tableNumber && !loadingOrderHistory) {
+      setLoadingOrderHistory(true);
+      
+      const fetchOrderHistory = async () => {
+        try {
+          const tableId = parseInt(tableNumber, 10);
+          
+          const response = await orderApi.getOrdersList({
+            table_id: tableId,
+            page_size: 50
+          });
+
+          // Transform API response to OrderHistory format
+          const transformedHistory: OrderHistory = {
+            tableNumber: tableNumber,
+            subtotal: 0,
+            vat: 0,
+            total: 0,
+            rounds: response.items.map((order, index) => {
+              const subtotal = order.total_amount / 1.08;
+              const vat = subtotal * 0.08;
+              
+              return {
+                roundNumber: index + 1,
+                time: new Date(order.created_at).toLocaleTimeString('vi-VN', { 
+                  hour: '2-digit', 
+                  minute: '2-digit' 
+                }),
+                items: order.items.map(item => ({
+                  id: item.id.toString(),
+                  name: item.menu_item_name,
+                  quantity: item.quantity,
+                  price: item.subtotal,
+                  status: item.status === 'completed' ? 'Served' : item.status === 'preparing' ? 'Preparing' : 'Pending'
+                }))
+              };
+            })
+          };
+
+          // Calculate totals
+          if (transformedHistory.rounds.length > 0) {
+            const allItems = transformedHistory.rounds.flatMap(r => r.items);
+            const subtotal = allItems.reduce((sum, item) => sum + item.price, 0);
+            transformedHistory.subtotal = subtotal;
+            transformedHistory.vat = subtotal * 0.08;
+            transformedHistory.total = subtotal + transformedHistory.vat;
+          }
+
+          setApiOrderHistory(transformedHistory);
+        } catch (err) {
+          console.error('Failed to fetch order history:', err);
+          // Fall back to default order history with correct table number
+          const fallbackHistory: OrderHistory = {
+            ...DEFAULT_ORDER_HISTORY,
+            tableNumber: tableNumber
+          };
+          setApiOrderHistory(fallbackHistory);
+        } finally {
+          setLoadingOrderHistory(false);
+        }
+      };
+
+      fetchOrderHistory();
+    }
+  }, [activeTab, tableNumber]);
 
   const handleApplyVoucher = () => {
     const voucher = findVoucherByCode(voucherCode);
@@ -61,7 +136,7 @@ export function CartDrawer({
     }
     
     if (getTotalPrice() < voucher.minAmount) {
-      setVoucherError(`Minimum order amount is $${voucher.minAmount}`);
+      setVoucherError(`Minimum order amount is ${formatPrice(voucher.minAmount)}`);
       return;
     }
     
@@ -91,14 +166,65 @@ export function CartDrawer({
     return subtotal + vat - discount;
   };
 
-  const orderHistory = propOrderHistory || DEFAULT_ORDER_HISTORY;
+  const orderHistory = apiOrderHistory || propOrderHistory || DEFAULT_ORDER_HISTORY;
 
-  const handleConfirmOrder = () => {
-    if (onConfirmOrder) {
-      onConfirmOrder(cart, customerName);
+  const handleConfirmOrder = async () => {
+    setOrderError(null);
+    setIsLoading(true);
+
+    try {
+      // Get table ID from tableNumber (convert to number)
+      const cleanTableNumber = tableNumber?.trim();
+      const tableId = cleanTableNumber ? parseInt(cleanTableNumber, 10) : 0;
+
+      if (!cleanTableNumber || !tableId || isNaN(tableId)) {
+        setOrderError(`Please provide a valid table number`);
+        return;
+      }
+
+      // Transform cart items to API format
+      const orderItems = cart.map(cartItem => ({
+        menu_item_id: cartItem.item.id,
+        quantity: cartItem.quantity,
+        modifiers: (cartItem.selectedModifiers && Object.keys(cartItem.selectedModifiers).length > 0)
+          ? Object.entries(cartItem.selectedModifiers).flatMap(([groupId, optionIds]) => 
+              optionIds.map(optionId => {
+                const group = cartItem.item.modifiers?.find(m => m.id === groupId);
+                const option = group?.options?.find(o => o.id === optionId);
+                return {
+                  modifier_group_id: parseInt(groupId, 10),
+                  modifier_option_id: parseInt(optionId, 10),
+                  additional_price: option?.price || 0
+                };
+              })
+            )
+          : [],
+        notes: cartItem.notes || ''
+      }));
+
+      const createOrderRequest: CreateOrderRequest = {
+        table_id: tableId,
+        items: orderItems,
+        customer_notes: customerName || '',
+        dining_mode: 'in-restaurant'
+      };
+
+      // Call API
+      const response = await orderApi.createOrder(createOrderRequest);
+
+      // Call the callback if provided
+      if (onConfirmOrder) {
+        onConfirmOrder(cart, customerName);
+      }
+
+      setShowSuccessModal(true);
+      setCustomerName('');
+    } catch (err: any) {
+      console.error('Failed to create order:', err);
+      setOrderError(err.message || 'Failed to create order. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
-    setShowSuccessModal(true);
-    setCustomerName('');
   };
 
   const handleSuccessModalClose = () => {
@@ -317,7 +443,7 @@ export function CartDrawer({
                           margin: '0 0 4px 0',
                           fontWeight: '600'
                         }}>
-                          ${(cartItem.item.price + (cartItem.modifierPrice || 0)).toFixed(2)}
+                          {formatPrice(cartItem.item.price + (cartItem.modifierPrice || 0))}
                         </p>
                         {cartItem.selectedModifiers && Object.keys(cartItem.selectedModifiers).length > 0 && (
                           <div style={{ marginTop: '4px' }}>
@@ -491,7 +617,7 @@ export function CartDrawer({
                               fontWeight: '600',
                               color: '#52b788'
                             }}>
-                              ${item.price.toFixed(2)}
+                              {formatPrice(item.price)}
                             </span>
                             <button
                               style={{
@@ -570,7 +696,7 @@ export function CartDrawer({
                           fontWeight: '600',
                           color: '#1f2937'
                         }}>
-                          ${item.price.toFixed(2)}
+                          {formatPrice(item.price)}
                         </span>
                         <span style={{
                           fontSize: '13px',
@@ -616,7 +742,7 @@ export function CartDrawer({
                 fontWeight: '600',
                 color: '#1f2937'
               }}>
-                ${getTotalPrice().toFixed(2)}
+                {formatPrice(getTotalPrice())}
               </span>
             </div>
             <div style={{
@@ -637,7 +763,7 @@ export function CartDrawer({
                 fontWeight: '600',
                 color: '#1f2937'
               }}>
-                ${(getTotalPrice() * 0.08).toFixed(2)}
+                {formatPrice(getTotalPrice() * 0.08)}
               </span>
             </div>
             <div style={{
@@ -660,9 +786,31 @@ export function CartDrawer({
                 fontWeight: '700',
                 color: '#52b788'
               }}>
-                ${(getTotalPrice() * 1.08).toFixed(2)}
+                {formatPrice(getTotalPrice() * 1.08)}
               </span>
             </div>
+            {/* Error Message */}
+            {orderError && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '12px',
+                padding: '12px',
+                backgroundColor: '#fee2e2',
+                border: '1px solid #fca5a5',
+                borderRadius: '8px',
+                marginBottom: '12px'
+              }}>
+                <AlertCircle style={{ width: '18px', height: '18px', color: '#dc2626', flexShrink: 0, marginTop: '2px' }} />
+                <p style={{
+                  fontSize: '14px',
+                  color: '#dc2626',
+                  margin: 0
+                }}>
+                  {orderError}
+                </p>
+              </div>
+            )}
             <input
               type="text"
               placeholder="Your Name (Optional)"
@@ -680,22 +828,24 @@ export function CartDrawer({
             />
             <button
               onClick={handleConfirmOrder}
+              disabled={isLoading}
               style={{
                 width: '100%',
-                backgroundColor: '#52b788',
+                backgroundColor: isLoading ? '#9ca3af' : '#52b788',
                 color: '#ffffff',
                 border: 'none',
                 borderRadius: '12px',
                 padding: '16px',
                 fontSize: '16px',
                 fontWeight: '600',
-                cursor: 'pointer',
-                transition: 'background-color 0.2s'
+                cursor: isLoading ? 'not-allowed' : 'pointer',
+                transition: 'background-color 0.2s',
+                opacity: isLoading ? 0.8 : 1
               }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#40a574'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#52b788'}
+              onMouseEnter={(e) => !isLoading && (e.currentTarget.style.backgroundColor = '#40a574')}
+              onMouseLeave={(e) => !isLoading && (e.currentTarget.style.backgroundColor = '#52b788')}
             >
-              Confirm Order • ${(getTotalPrice() * 1.08).toFixed(2)}
+              {isLoading ? 'Processing...' : `Confirm Order • ${formatPrice(getTotalPrice() * 1.08)}`}
             </button>
           </div>
           )}
@@ -829,7 +979,7 @@ export function CartDrawer({
                 fontWeight: '600',
                 color: '#1f2937'
               }}>
-                ${orderHistory.subtotal.toFixed(2)}
+                {formatPrice(orderHistory.subtotal)}
               </span>
             </div>
             <div style={{
@@ -850,7 +1000,7 @@ export function CartDrawer({
                 fontWeight: '600',
                 color: '#1f2937'
               }}>
-                ${orderHistory.vat.toFixed(2)}
+                {formatPrice(orderHistory.vat)}
               </span>
             </div>
             {appliedVoucher && (
@@ -872,7 +1022,7 @@ export function CartDrawer({
                   fontWeight: '600',
                   color: '#059669'
                 }}>
-                  -${getDiscountAmount().toFixed(2)}
+                  -{formatPrice(getDiscountAmount())}
                 </span>
               </div>
             )}
@@ -896,7 +1046,7 @@ export function CartDrawer({
                 fontWeight: '700',
                 color: '#52b788'
               }}>
-                ${(orderHistory.total - getDiscountAmount()).toFixed(2)}
+                {formatPrice(orderHistory.total - getDiscountAmount())}
               </span>
             </div>
             <div style={{ display: 'flex', gap: '12px' }}>

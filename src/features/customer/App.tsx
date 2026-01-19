@@ -26,10 +26,17 @@ function CustomerAppContent() {
     const token = urlParams.get('token') || undefined;
     const table = urlParams.get('table') || undefined;
 
+    console.log('📋 [App.tsx] URL params extracted:', {
+      token,
+      table,
+      searchParams: window.location.search
+    });
+
     setTableToken(token);
     setTableNumber(table);
-
-    // If already authenticated, show menu directly
+    
+    console.log('📋 [App.tsx] State will be set:', { token, table });
+    
     if (isAuthenticated) {
       setCurrentView('menu');
     }
@@ -83,6 +90,7 @@ function CustomerAppContent() {
       );
 
     case 'menu':
+      console.log('📋 [App.tsx] Rendering CustomerMenuPage with:', { tableToken, tableNumber });
       return (
         <CustomerMenuPage
           tableToken={tableToken}

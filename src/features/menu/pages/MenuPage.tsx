@@ -292,9 +292,6 @@ export function MenuPage() {
             price_adjustment: option.priceAdjustment || 0,
             status: optionStatus,
           };
-
-          console.log("Creating option with data:", requestData);
-
           await modifierGroupApi.addOption(id, requestData);
         }
       }

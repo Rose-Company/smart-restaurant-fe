@@ -82,6 +82,13 @@ export function CustomerMenuPage({
 
   const [tableNumber, setTableNumber] = useState(initialTableNumber || '');
 
+  // Update tableNumber when initialTableNumber changes
+  useEffect(() => {
+    if (initialTableNumber) {
+      setTableNumber(initialTableNumber);
+    }
+  }, [initialTableNumber]);
+
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
   const [total, setTotal] = useState(0);
@@ -99,6 +106,7 @@ export function CustomerMenuPage({
   const [selectedModifiers, setSelectedModifiers] =
     useState<SelectedModifiers>({});
   const [itemQuantity, setItemQuantity] = useState(1);
+  const [loadingItemDetail, setLoadingItemDetail] = useState(false);
 
   // Order history state
   const [orderHistory, setOrderHistory] = useState<OrderHistory>({
@@ -121,10 +129,15 @@ export function CustomerMenuPage({
   ];
 
   useEffect(() => {
+    // CartDrawer state is already being passed to CartDrawer component
+  }, [showCart, tableNumber]);
+
+  useEffect(() => {
     const fetchMenu = async () => {
       const params = new URLSearchParams(window.location.search);
       const table = params.get('table') || tableNumber;
       const token = params.get('token') || tableToken;
+
 
       if (!table || !token) {
         setError('Missing table or token');
@@ -178,20 +191,32 @@ export function CustomerMenuPage({
     selectedCategory,
   ]);
 
-  const handleAddItem = (item: MenuItem) => {
-    if (item.modifiers?.length) {
-      setSelectedItem(item);
-      setItemQuantity(1);
-      // Initialize default selections for required modifiers
-      const initialModifiers: SelectedModifiers = {};
-      item.modifiers.forEach(group => {
-        if (group.required && group.options && group.options.length > 0) {
-          initialModifiers[group.id] = [group.options[0].id];
-        }
-      });
-      setSelectedModifiers(initialModifiers);
-    } else {
+  const handleAddItem = async (item: MenuItem) => {
+    try {
+      setLoadingItemDetail(true);
+      // Fetch detailed item information from API
+      const detailedItem = await customerMenuApi.fetchItemDetail(item.id);
+      
+      if (detailedItem.modifiers?.length) {
+        setSelectedItem(detailedItem);
+        setItemQuantity(1);
+        // Initialize default selections for required modifiers
+        const initialModifiers: SelectedModifiers = {};
+        detailedItem.modifiers.forEach(group => {
+          if (group.required && group.options && group.options.length > 0) {
+            initialModifiers[group.id] = [group.options[0].id];
+          }
+        });
+        setSelectedModifiers(initialModifiers);
+      } else {
+        addToCart(detailedItem, 1);
+      }
+    } catch (err) {
+      console.error('Failed to fetch item details:', err);
+      // Fallback: add item without modifiers if detail fetch fails
       addToCart(item, 1);
+    } finally {
+      setLoadingItemDetail(false);
     }
   };
 

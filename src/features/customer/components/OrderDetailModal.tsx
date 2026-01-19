@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Star, AlertCircle } from 'lucide-react';
 import { findMenuItemByName } from '../data/menuData';
+import { formatPrice } from '../../../lib/currency';
 
 interface OrderDetailItem {
   id: string;
@@ -41,8 +42,6 @@ export function OrderDetailModal({ isOpen, onClose, order, onReorder, onReportIs
 
   const handleRatingClick = (itemId: string, rating: number) => {
     setItemRatings({ ...itemRatings, [itemId]: rating });
-    // Here you would typically send the rating to the backend
-    console.log(`Rated item ${itemId} with ${rating} stars`);
   };
 
   const getStatusColor = () => {
@@ -254,7 +253,7 @@ export function OrderDetailModal({ isOpen, onClose, order, onReorder, onReportIs
                             letterSpacing: '-0.31px',
                             fontWeight: '600'
                           }}>
-                            ${item.price.toFixed(2)}
+                            {formatPrice(item.price)}
                           </span>
                         </div>
 
@@ -358,7 +357,7 @@ export function OrderDetailModal({ isOpen, onClose, order, onReorder, onReportIs
                     Subtotal
                   </span>
                   <span style={{ fontSize: '16px', color: '#364153', letterSpacing: '-0.31px' }}>
-                    ${order.subtotal.toFixed(2)}
+                    {formatPrice(order.subtotal)}
                   </span>
                 </div>
                 <div style={{
@@ -370,7 +369,7 @@ export function OrderDetailModal({ isOpen, onClose, order, onReorder, onReportIs
                     Tax (10%)
                   </span>
                   <span style={{ fontSize: '16px', color: '#364153', letterSpacing: '-0.31px' }}>
-                    ${order.tax.toFixed(2)}
+                    {formatPrice(order.tax)}
                   </span>
                 </div>
                 <div style={{
@@ -384,7 +383,7 @@ export function OrderDetailModal({ isOpen, onClose, order, onReorder, onReportIs
                     Total
                   </span>
                   <span style={{ fontSize: '16px', fontWeight: '700', color: '#27ae60', letterSpacing: '-0.31px' }}>
-                    ${order.total.toFixed(2)}
+                    {formatPrice(order.total)}
                   </span>
                 </div>
               </div>

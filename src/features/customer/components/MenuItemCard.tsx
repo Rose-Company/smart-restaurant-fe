@@ -1,6 +1,7 @@
 import React from 'react';
 import { Star, Plus } from 'lucide-react';
 import type { MenuItem } from '../../menu/types/menu.types';
+import { formatPrice } from '../../../lib/currency';
 
 interface MenuItemCardProps {
   item: MenuItem;
@@ -75,7 +76,7 @@ export function MenuItemCard({ item, onAddClick }: MenuItemCardProps) {
               fontWeight: '600', 
               color: '#52b788'
             }}>
-              ${item.price.toFixed(2)}
+              {formatPrice(item.price)}
             </span>
             <button
               onClick={() => onAddClick(item)}

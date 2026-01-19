@@ -1,5 +1,6 @@
 import React from 'react';
 import { ShoppingCart } from 'lucide-react';
+import { formatPrice } from '../../../lib/currency';
 
 interface BottomCartBarProps {
   itemCount: number;
@@ -39,12 +40,11 @@ export function BottomCartBar({ itemCount, totalPrice, onViewCart }: BottomCartB
           fontWeight: '500', 
           color: '#ffffff'
         }}>
-          {itemCount === 0 ? 'Your cart is empty' : `${itemCount} items • $${totalPrice.toFixed(2)}`}
+          {itemCount === 0 ? 'Your cart is empty' : `${itemCount} items • ${formatPrice(totalPrice)}`}
         </span>
       </div>
       <button
         onClick={onViewCart}
-        disabled={itemCount === 0}
         style={{
           backgroundColor: '#52b788',
           color: '#ffffff',
@@ -53,8 +53,7 @@ export function BottomCartBar({ itemCount, totalPrice, onViewCart }: BottomCartB
           padding: '12px 24px',
           fontSize: '15px',
           fontWeight: '600',
-          cursor: itemCount === 0 ? 'not-allowed' : 'pointer',
-          opacity: itemCount === 0 ? 0.5 : 1,
+          cursor: 'pointer',
           transition: 'all 0.2s'
         }}
       >

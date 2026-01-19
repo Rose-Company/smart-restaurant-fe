@@ -1,6 +1,7 @@
-import React from 'react';
-import { X, Plus, Minus } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Plus, Minus, Clock, Star } from 'lucide-react';
 import type { MenuItem, ModifierGroup } from '../../menu/types/menu.types';
+import { formatPrice } from '../../../lib/currency';
 
 interface SelectedModifiers {
   [groupId: string]: string[];
@@ -27,6 +28,22 @@ export function ItemDetailModal({
   onAddToCart,
   calculatePrice
 }: ItemDetailModalProps) {
+  const [imageIndex, setImageIndex] = useState(0);
+  const [itemNotes, setItemNotes] = useState('');
+
+  // Get primary or first image
+  const images = item.images && item.images.length > 0 ? item.images : [];
+  const primaryImage = images.find(img => img.isPrimary) || images[0];
+  const currentImage = images.length > 0 ? images[imageIndex] : null;
+
+  const handlePrevImage = () => {
+    setImageIndex(prev => prev === 0 ? images.length - 1 : prev - 1);
+  };
+
+  const handleNextImage = () => {
+    setImageIndex(prev => prev === images.length - 1 ? 0 : prev + 1);
+  };
+
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 100 }}>
       {/* Backdrop */}
@@ -80,9 +97,9 @@ export function ItemDetailModal({
         <div style={{
           flex: 1,
           overflowY: 'auto',
-          paddingBottom: '100px'
+          paddingBottom: '120px'
         }}>
-          {/* Hero Image */}
+          {/* Hero Image with Carousel */}
           <div style={{
             width: '100%',
             height: '280px',
@@ -93,7 +110,7 @@ export function ItemDetailModal({
             overflow: 'hidden'
           }}>
             <img
-              src={item.imageUrl}
+              src={currentImage?.url || item.imageUrl}
               alt={item.name}
               style={{
                 width: '100%',
@@ -101,35 +118,165 @@ export function ItemDetailModal({
                 objectFit: 'cover'
               }}
             />
+
+            {/* Chef Recommended Badge */}
+            {item.chefRecommended && (
+              <div style={{
+                position: 'absolute',
+                top: '16px',
+                left: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                backgroundColor: '#fef3c7',
+                padding: '8px 12px',
+                borderRadius: '20px'
+              }}>
+                <Star style={{ width: '16px', height: '16px', color: '#f59e0b', fill: '#f59e0b' }} />
+                <span style={{ fontSize: '13px', fontWeight: '600', color: '#92400e' }}>Chef Recommended</span>
+              </div>
+            )}
+
+            {/* Image Navigation */}
+            {images.length > 1 && (
+              <>
+                <button
+                  onClick={handlePrevImage}
+                  style={{
+                    position: 'absolute',
+                    left: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '50%',
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M12 4L8 10L12 16" stroke="#1f2937" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+
+                <button
+                  onClick={handleNextImage}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '50%',
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M8 4L12 10L8 16" stroke="#1f2937" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+
+                {/* Image Indicators */}
+                <div style={{
+                  position: 'absolute',
+                  bottom: '12px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  display: 'flex',
+                  gap: '6px'
+                }}>
+                  {images.map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setImageIndex(idx)}
+                      style={{
+                        width: '8px',
+                        height: '8px',
+                        borderRadius: '50%',
+                        backgroundColor: idx === imageIndex ? '#ffffff' : 'rgba(255, 255, 255, 0.5)',
+                        border: 'none',
+                        cursor: 'pointer'
+                      }}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
           </div>
 
           {/* Item Info */}
           <div style={{ padding: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-              <h2 style={{
-                fontSize: '24px',
-                fontWeight: '600',
-                color: '#1f2937',
-                margin: 0,
-                flex: 1
-              }}>
-                {item.name}
-              </h2>
+              <div style={{ flex: 1 }}>
+                <h2 style={{
+                  fontSize: '24px',
+                  fontWeight: '600',
+                  color: '#1f2937',
+                  margin: '0 0 4px 0'
+                }}>
+                  {item.name}
+                </h2>
+                {item.category && (
+                  <p style={{
+                    fontSize: '13px',
+                    color: '#9ca3af',
+                    margin: 0
+                  }}>
+                    {item.category}
+                  </p>
+                )}
+              </div>
               <span style={{
                 fontSize: '24px',
                 fontWeight: '700',
                 color: '#52b788',
                 marginLeft: '16px'
               }}>
-                ${item.price.toFixed(2)}
+                {formatPrice(item.price)}
               </span>
             </div>
 
+            {/* Meta Info */}
+            <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', flexWrap: 'wrap' }}>
+              {item.preparationTime && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Clock style={{ width: '16px', height: '16px', color: '#6b7280' }} />
+                  <span style={{ fontSize: '13px', color: '#6b7280' }}>
+                    {item.preparationTime} min
+                  </span>
+                </div>
+              )}
+              {item.status && (
+                <span style={{
+                  fontSize: '12px',
+                  fontWeight: '500',
+                  padding: '4px 10px',
+                  borderRadius: '6px',
+                  backgroundColor: item.status === 'available' ? '#dbeafe' : '#fee2e2',
+                  color: item.status === 'available' ? '#1e40af' : '#991b1b',
+                  textTransform: 'capitalize'
+                }}>
+                  {item.status}
+                </span>
+              )}
+            </div>
+
+            {/* Description */}
             {item.description && (
               <p style={{
                 fontSize: '15px',
                 color: '#6b7280',
-                lineHeight: '1.5',
+                lineHeight: '1.6',
                 margin: '0 0 24px 0'
               }}>
                 {item.description}
@@ -226,7 +373,7 @@ export function ItemDetailModal({
                             fontWeight: '600',
                             color: '#52b788'
                           }}>
-                            +${option.price.toFixed(2)}
+                            +{formatPrice(option.price)}
                           </span>
                         )}
                       </button>
@@ -235,6 +382,38 @@ export function ItemDetailModal({
                 </div>
               </div>
             ))}
+
+            {/* Special Instructions */}
+            <div style={{ marginBottom: '24px' }}>
+              <h3 style={{
+                fontSize: '16px',
+                fontWeight: '600',
+                color: '#1f2937',
+                margin: '0 0 12px 0'
+              }}>
+                Special Instructions (Optional)
+              </h3>
+              <textarea
+                value={itemNotes}
+                onChange={(e) => setItemNotes(e.target.value)}
+                placeholder="e.g., No onions, extra sauce on the side..."
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '10px',
+                  fontSize: '14px',
+                  color: '#1f2937',
+                  fontFamily: 'inherit',
+                  resize: 'vertical',
+                  minHeight: '80px',
+                  boxSizing: 'border-box',
+                  transition: 'border-color 0.2s'
+                }}
+                onFocus={(e) => e.currentTarget.style.borderColor = '#52b788'}
+                onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
+              />
+            </div>
 
             {/* Quantity Selector */}
             <div style={{
@@ -331,7 +510,7 @@ export function ItemDetailModal({
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#40a574'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#52b788'}
           >
-            Add to Order - ${(calculatePrice(item, selectedModifiers) * quantity).toFixed(2)}
+            Add to Order - {formatPrice(calculatePrice(item, selectedModifiers) * quantity)}
           </button>
         </div>
       </div>
