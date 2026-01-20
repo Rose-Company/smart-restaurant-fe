@@ -9,7 +9,10 @@ import LoginPage from '../features/auth/pages/LoginPage';
 import { CustomerApp } from '../features/customer/App';
 
 export default function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    // Check localStorage on initial load
+    return localStorage.getItem('admin_auth_token') ? true : false;
+  });
   const [currentPage, setCurrentPage] = useState<SidebarPageKey>('tables');
   const [isCustomerRoute, setIsCustomerRoute] = useState(false);
 
@@ -20,6 +23,19 @@ export default function App() {
     setIsCustomerRoute(isCustomer);
   }, []);
 
+  // Handle login - store token and set authenticated
+  const handleLogin = (token: string) => {
+    localStorage.setItem('admin_auth_token', token);
+    setIsAuthenticated(true);
+  };
+
+  // Handle logout - clear token and reset state
+  const handleLogout = () => {
+    localStorage.removeItem('admin_auth_token');
+    setIsAuthenticated(false);
+    setCurrentPage('tables');
+  };
+
   // Render customer app if on customer route
   if (isCustomerRoute) {
     return <CustomerApp />;
@@ -27,7 +43,7 @@ export default function App() {
 
   // Show login page if not authenticated
   if (!isAuthenticated) {
-    return <LoginPage onLogin={() => setIsAuthenticated(true)} />;
+    return <LoginPage onLogin={handleLogin} />;
   }
 
   const renderPage = () => {

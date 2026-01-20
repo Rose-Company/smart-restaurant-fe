@@ -2,7 +2,7 @@ import { X, Download, FileText, AlertTriangle, Calendar, Activity, CheckCircle2,
 import { Button } from '../../../../components/ui/misc/button';
 import { Badge } from '../../../../components/ui/data-display/badge';
 import type { Table } from '../../types/table.types';
-import React, { useState, useEffect, useMemo } from 'react'; // ⭐ Thêm useMemo
+import React, { useState, useEffect, useMemo } from 'react'; 
 import { PDFPreviewDialog } from './PDFPreviewDialog';
 import { QRCodeCanvas } from "qrcode.react";
 import { genQRApi, downloadSingleQRApi, getQRApi } from "../../services/qr.api";
@@ -31,25 +31,40 @@ export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
   const [showConfirmInactive, setShowConfirmInactive] = useState(false);
 
   useEffect(() => {
-    const fetchQR = async () => {
-      try {
-        setLoading(true);
-        const res = await getQRApi.fetch(table.id);
-        // Build proper URL format
-        const fullUrl = `${window.location.origin}/menu?table=${res.table_id}&token=${res.token}`;
-        setQrUrl(fullUrl);
-        setToken(res.token);
-        setTableId(res.table_id);
-        setCreateAt(res.create_at);
-        setExpireAt(res.expire_at);
-      } catch (error) {
-        console.error("Failed to fetch QR", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchQR();
-  }, [table.id]);
+  const fetchQR = async () => {
+    try {
+      setLoading(true);
+      const res = await getQRApi.fetch(table.id);
+
+      console.group("🟢 GET QR");
+      console.log("RAW response:", res);
+      console.log("expire_at (raw):", res.expire_at);
+      console.log("expire_at parsed:", new Date(res.expire_at).toString());
+      console.log("expire_at ts:", new Date(res.expire_at).getTime());
+      console.log("now ts:", Date.now());
+      console.log(
+        "isActive:",
+        new Date(res.expire_at).getTime() > Date.now()
+      );
+      console.groupEnd();
+
+      const fullUrl = `${window.location.origin}/menu?table=${res.table_id}&token=${res.token}`;
+
+      setQrUrl(fullUrl);
+      setToken(res.token);
+      setTableId(res.table_id);
+      setCreateAt(res.create_at);
+      setExpireAt(res.expire_at);
+    } catch (error) {
+      console.error("Failed to fetch QR", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchQR();
+}, [table.id]);
+
 
   const qrData = {
     lastScan: '2 hours ago',
@@ -65,10 +80,22 @@ export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
       minute: "2-digit",
     });
 
-  // ⭐ SỬA: Dùng useMemo để isActive tự động update khi expire_at thay đổi
   const isActive = useMemo(() => {
-    return expire_at ? new Date(expire_at).getTime() > Date.now() : false;
-  }, [expire_at]);
+  if (!expire_at) return false;
+
+  const parsed = new Date(expire_at);
+  const active = parsed.getTime() > Date.now();
+
+  console.group("🔵 FE RENDER CHECK");
+  console.log("expire_at state:", expire_at);
+  console.log("parsed:", parsed.toString());
+  console.log("expire_at ts:", parsed.getTime());
+  console.log("now ts:", Date.now());
+  console.log("isActive:", active);
+  console.groupEnd();
+
+  return active;
+}, [expire_at]);
 
   const handleDownloadPNG = async () => {
     if (!token || !tableId) return;
@@ -104,25 +131,36 @@ export function QRPreviewDialog({ table, onClose }: QRPreviewDialogProps) {
   }
 
   const RegenerateQR = async () => {
-    try {
-      setLoading(true);
-      const res = await genQRApi.generate(table.id);
-      // Build proper URL format
-      const fullUrl = `${window.location.origin}/menu?table=${res.table_id}&token=${res.token}`;
-      
-      // ⭐ Cập nhật tất cả states
-      setQrUrl(fullUrl);
-      setToken(res.token);
-      setTableId(res.table_id);
-      setCreateAt(res.create_at);
-      setExpireAt(res.expire_at); // ⭐ Cái này sẽ trigger useMemo update isActive
-    } catch (error) {
-      console.error("Failed to regenerate QR", error);
-      alert("Failed to regenerate QR code");
-    } finally {
-      setLoading(false);
-    }
-  };
+  try {
+    setLoading(true);
+    const res = await genQRApi.generate(table.id);
+
+    console.group("🟠 REGENERATE QR");
+    console.log("RAW response:", res);
+    console.log("expire_at (raw):", res.expire_at);
+    console.log("expire_at parsed:", new Date(res.expire_at).toString());
+    console.log("expire_at ts:", new Date(res.expire_at).getTime());
+    console.log("now ts:", Date.now());
+    console.log(
+      "isActive:",
+      new Date(res.expire_at).getTime() > Date.now()
+    );
+    console.groupEnd();
+
+    const fullUrl = `${window.location.origin}/menu?table=${res.table_id}&token=${res.token}`;
+
+    setQrUrl(fullUrl);
+    setToken(res.token);
+    setTableId(res.table_id);
+    setCreateAt(res.create_at);
+    setExpireAt(res.expire_at);
+  } catch (error) {
+    console.error("Failed to regenerate QR", error);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">

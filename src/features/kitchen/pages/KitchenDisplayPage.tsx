@@ -4,7 +4,8 @@ import { OrderCard } from '../components/OrderCard';
 import { OrderDetailModal } from '../components/OrderDetailModal';
 import { ItemSummaryModal } from '../components/ItemSummaryModal';
 import { kitchenApi } from '../services/kitchen.api';
-import type { TableOrder, KitchenStats, OrderFilterType } from '../types/kitchen.types';
+import { transformToTableOrder } from '../types/kitchen.types';
+import type { TableOrder, KitchenStats, OrderFilterType, KitchenOrder, OrderDetail } from '../types/kitchen.types';
 
 interface KitchenDisplayPageProps {
   onBack?: () => void;
@@ -16,20 +17,48 @@ export function KitchenDisplayPage({ onBack }: KitchenDisplayPageProps) {
   const [activeFilter, setActiveFilter] = useState<OrderFilterType>('all');
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<TableOrder | null>(null);
+  const [selectedOrderDetail, setSelectedOrderDetail] = useState<OrderDetail[]>([]);
   const [showItemSummary, setShowItemSummary] = useState(false);
 
   useEffect(() => {
     loadData();
-  }, []); // Only load once on mount
+  }, [activeFilter]); // Only load once on mount
 
   const loadData = async () => {
     try {
-      const [ordersData, statsData] = await Promise.all([
-        kitchenApi.list('all'), // Always fetch all orders
-        kitchenApi.stats()
-      ]);
-      setOrders(ordersData);
-      setStats(statsData);
+      // Build API params based on active filter
+      const params: any = { page: 1, page_size: 100 };
+
+      if (activeFilter === 'completed') {
+        // Filter by status completed
+        params.status = 'completed';
+      } else if (activeFilter === 'main-course') {
+        // Filter by category
+        params.category = 'maincourse';
+      } else if (activeFilter === 'appetizers') {
+        params.category = 'appetizer';
+      } else if (activeFilter === 'desserts') {
+        params.category = 'dessert';
+      } else if (activeFilter === 'beverages') {
+        params.category = 'beverage';
+      }
+      // For 'all', don't add any category/status filter
+
+      const response = await kitchenApi.list(params);
+      
+      // Transform API response to TableOrder format
+      const transformedOrders = response.data.items.map(transformToTableOrder);
+      
+      // Mark orders as 'delayed' if urgent (over 30 minutes)
+      const ordersWithDelayedStatus = transformedOrders.map(order => 
+        order.priority === 'urgent' ? { ...order, status: 'delayed' as const } : order
+      );
+      
+      setOrders(ordersWithDelayedStatus);
+      
+      // Calculate stats from orders
+      const stats = calculateStats(response.data.items);
+      setStats(stats);
     } catch (error) {
       console.error('Failed to load kitchen data:', error);
     } finally {
@@ -37,78 +66,67 @@ export function KitchenDisplayPage({ onBack }: KitchenDisplayPageProps) {
     }
   };
 
-  const handleStartOrder = async (orderId: string) => {
-    try {
-      await kitchenApi.updateStatus(orderId, 'preparing');
-      // Update local state without reload
-      setOrders(prevOrders =>
-        prevOrders.map(order =>
-          order.id === orderId ? { ...order, status: 'preparing' } : order
+  const calculateStats = (orders: KitchenOrder[]): KitchenStats => {
+    const activeOrders = orders.filter(o => o.status !== 'completed').length;
+    const pendingOrders = orders.filter(o => o.status === 'pending').length;
+    const completedToday = orders.filter(o => o.status === 'completed').length;
+    
+    // Calculate average prep time from order timestamps
+    const now = new Date();
+    const avgMins = orders.length > 0 
+      ? Math.round(
+          orders
+            .filter(o => o.status === 'processing' || o.status === 'completed')
+            .reduce((sum, o) => {
+              const createdDate = new Date(o.created_at);
+              return sum + (now.getTime() - createdDate.getTime()) / 60000;
+            }, 0) / Math.max(orders.filter(o => o.status !== 'pending').length, 1)
         )
-      );
+      : 0;
+
+    return {
+      avgPrepTime: avgMins > 0 ? `${avgMins}m` : '12m',
+      isConnected: true,
+      activeOrders,
+      pendingOrders,
+      completedToday
+    };
+  };
+
+  const handleStartOrder = async (orderId: string) => {
+    try {      // First transition: pending → confirmed
+      await kitchenApi.updateStatus(orderId, 'confirmed');
+      await kitchenApi.updateStatus(orderId, 'preparing');
+      // Reload data from API
+      await loadData();
     } catch (error) {
       console.error('Failed to start order:', error);
     }
   };
 
   const handleCompleteOrder = async (orderId: string) => {
-    try {
-      await kitchenApi.updateStatus(orderId, 'completed');
-      // Update local state without reload
-      setOrders(prevOrders =>
-        prevOrders.map(order =>
-          order.id === orderId ? { ...order, status: 'completed' } : order
-        )
-      );
-      setSelectedOrder(null);
-    } catch (error) {
-      console.error('Failed to complete order:', error);
-    }
+    // TODO: Implement when needed
+    console.log('Complete order:', orderId);
   };
 
   const handleUpdateItem = async (orderId: string, itemId: string, isDone: boolean) => {
-    // Update item status in local state
-    setOrders(prevOrders => 
-      prevOrders.map(order => {
-        if (order.id === orderId) {
-          return {
-            ...order,
-            items: order.items.map(item => 
-              item.id === itemId 
-                ? { ...item, status: isDone ? 'done' : 'pending' }
-                : item
-            )
-          };
-        }
-        return order;
-      })
-    );
-
-    // Update selected order if it's the same
-    if (selectedOrder?.id === orderId) {
-      setSelectedOrder(prev => prev ? {
-        ...prev,
-        items: prev.items.map(item => 
-          item.id === itemId 
-            ? { ...item, status: isDone ? 'done' : 'pending' }
-            : item
-        )
-      } : null);
-    }
-
-    // Call API to persist change
-    try {
-      await kitchenApi.markItemDone(orderId, itemId);
-    } catch (error) {
-      console.error('Failed to update item:', error);
-    }
+    // TODO: Implement when needed
+    console.log('Update item:', orderId, itemId, isDone);
   };
 
   const handleQuickUpdate = (selections: Array<{ orderId: string; itemId: string }>) => {
-    // Update multiple items at once
-    selections.forEach(({ orderId, itemId }) => {
-      handleUpdateItem(orderId, itemId, true);
-    });
+    // TODO: Implement when needed
+    console.log('Quick update:', selections);
+  };
+
+  const handleOrderCardClick = async (order: TableOrder) => {
+    try {
+      const orderDetail = await kitchenApi.detail(order.id);
+      setSelectedOrderDetail([orderDetail]);
+      setSelectedOrder(order);
+    } catch (error) {
+      console.error('Failed to fetch order details:', error);
+    }
   };
 
   if (loading) {
@@ -136,6 +154,11 @@ export function KitchenDisplayPage({ onBack }: KitchenDisplayPageProps) {
 
   // Filter orders based on active filter and item status
   const displayOrders = orders.filter(order => {
+    // Skip orders with no items
+    if (order.items.length === 0) {
+      return false;
+    }
+    
     // For completed tab, show only completed orders
     if (activeFilter === 'completed') {
       return order.status === 'completed';
@@ -146,21 +169,8 @@ export function KitchenDisplayPage({ onBack }: KitchenDisplayPageProps) {
       return false;
     }
     
-    // Filter by category
-    if (activeFilter === 'main-course') {
-      return order.items.some(item => item.category === 'Main Course' && item.status !== 'done');
-    }
-    if (activeFilter === 'appetizers') {
-      return order.items.some(item => item.category === 'Appetizer' && item.status !== 'done');
-    }
-    if (activeFilter === 'desserts') {
-      return order.items.some(item => item.category === 'Dessert' && item.status !== 'done');
-    }
-    if (activeFilter === 'beverages') {
-      return order.items.some(item => item.category === 'Beverage' && item.status !== 'done');
-    }
-    
-    // For 'all', exclude orders where all items are done
+    // For other filters (appetizers, desserts, beverages, main-course, all),
+    // exclude orders where all items are done
     return order.items.some(item => item.status !== 'done');
   });
 
@@ -391,7 +401,7 @@ export function KitchenDisplayPage({ onBack }: KitchenDisplayPageProps) {
                 order={order}
                 onStart={handleStartOrder}
                 onDone={handleCompleteOrder}
-                onClick={setSelectedOrder}
+                onClick={handleOrderCardClick}
                 activeFilter={activeFilter}
               />
             ))}
@@ -413,6 +423,7 @@ export function KitchenDisplayPage({ onBack }: KitchenDisplayPageProps) {
       {/* Item Summary Modal */}
       <ItemSummaryModal
         orders={orders}
+        orderDetails={[]}
         isOpen={showItemSummary}
         onClose={() => setShowItemSummary(false)}
         onQuickUpdate={handleQuickUpdate}

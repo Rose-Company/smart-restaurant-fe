@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
-import type { TableOrder } from '../types/kitchen.types';
+import type { TableOrder, OrderDetail } from '../types/kitchen.types';
 import { QuickUpdateModal } from './QuickUpdateModal';
 
 interface ItemSummary {
@@ -18,20 +18,23 @@ interface ItemSummary {
 
 interface ItemSummaryModalProps {
   orders: TableOrder[];
+  orderDetails: OrderDetail[];
   isOpen: boolean;
   onClose: () => void;
   onQuickUpdate: (selections: Array<{ orderId: string; itemId: string }>) => void;
 }
 
-export function ItemSummaryModal({ orders, isOpen, onClose, onQuickUpdate }: ItemSummaryModalProps) {
+export function ItemSummaryModal({ orders, orderDetails, isOpen, onClose, onQuickUpdate }: ItemSummaryModalProps) {
   const [selectedItem, setSelectedItem] = useState<ItemSummary | null>(null);
   
   if (!isOpen) return null;
 
-  // Aggregate items from all orders
+  // Aggregate items from all orders (using TableOrder items, not OrderDetail)
   const itemSummaryMap = new Map<string, ItemSummary>();
 
   orders.forEach(order => {
+    if (!order.items) return;
+
     order.items
       .filter(item => item.status !== 'done') // Only count items not yet completed
       .forEach(item => {
