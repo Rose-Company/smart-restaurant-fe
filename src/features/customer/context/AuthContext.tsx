@@ -42,13 +42,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = (userData: User, userToken: string) => {
+    // Ensure token is a plain string without quotes or JSON encoding
+    let cleanToken = userToken;
+    
+    // Remove outer quotes if present
+    while (cleanToken.startsWith('"') || cleanToken.startsWith("'")) {
+      cleanToken = cleanToken.slice(1);
+    }
+    while (cleanToken.endsWith('"') || cleanToken.endsWith("'")) {
+      cleanToken = cleanToken.slice(0, -1);
+    }
+    
+    // Try to parse if it's JSON-encoded
+    try {
+      if (cleanToken.startsWith('{') || cleanToken.startsWith('[')) {
+        const parsed = JSON.parse(cleanToken);
+        cleanToken = parsed.token || parsed.message || cleanToken;
+      }
+    } catch {
+      // Not JSON, continue with cleaning
+    }
+    
+    // Final check for remaining quotes
+    cleanToken = cleanToken.replace(/^["']|["']$/g, '');
+    
+    console.log('[AuthContext.login] Setting token:', {
+      original: userToken.substring(0, 50) + '...',
+      cleaned: cleanToken.substring(0, 50) + '...',
+      hasQuotes: cleanToken.includes('"'),
+      startsWithBearer: cleanToken.startsWith('Bearer ')
+    });
+
     setUser(userData);
-    setToken(userToken);
+    setToken(cleanToken);
     setIsAuthenticated(true);
 
-    // Persist to localStorage
+    // Persist to localStorage (plain string, no JSON.stringify)
     localStorage.setItem('customer_user', JSON.stringify(userData));
-    localStorage.setItem('customer_token', userToken);
+    localStorage.setItem('customer_token', cleanToken);
+    localStorage.setItem('auth_token', cleanToken);
   };
 
   const logout = () => {

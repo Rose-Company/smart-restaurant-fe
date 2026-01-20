@@ -6,7 +6,7 @@ interface OrderItemWithStatus {
   id: string;
   name: string;
   quantity: number;
-  status: 'ready' | 'served' | 'cooking';
+  status: 'pending' | 'completed';
   modifiers?: string[];
   note?: string;
   price: number;
@@ -43,7 +43,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       id: '1',
       name: 'Grilled Salmon',
       quantity: 1,
-      status: 'ready',
+      status: 'completed',
       modifiers: ['No Butter', 'Extra Lemon'],
       price: 24.99,
       modifierPrice: 1.50
@@ -52,7 +52,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       id: '2',
       name: 'Burger',
       quantity: 2,
-      status: 'ready',
+      status: 'completed',
       modifiers: ['Medium Rare', 'No Onions'],
       price: 16.50,
       modifierPrice: 2.00
@@ -61,14 +61,14 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       id: '3',
       name: 'Coke',
       quantity: 2,
-      status: 'served',
+      status: 'completed',
       price: 3.50
     },
     {
       id: '4',
       name: 'Caesar Salad',
       quantity: 1,
-      status: 'served',
+      status: 'completed',
       price: 10.50
     }
   ];
@@ -309,7 +309,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                           }}>
                             {item.name}
                           </span>
-                          {item.status === 'served' && (
+                          {item.status === 'pending' && (
                             <CheckCircle style={{ 
                               width: '18px', 
                               height: '18px', 

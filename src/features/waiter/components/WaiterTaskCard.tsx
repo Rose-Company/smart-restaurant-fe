@@ -1,46 +1,54 @@
 import React from 'react';
 import { Clock, ChefHat, MessageCircle, Receipt } from 'lucide-react';
 import { WaiterTask } from '../types/waiter.types';
-
+import { formatPrice } from '../../../lib/utils';
 interface WaiterTaskCardProps {
-  task: WaiterTask;
+  task: WaiterTask & { isHelpNeeded?: boolean; isReadyToBill?: boolean };
   onComplete: (taskId: string, taskType: string) => void;
 }
 
 export const WaiterTaskCard: React.FC<WaiterTaskCardProps> = ({ task, onComplete }) => {
   const getTaskConfig = () => {
-    switch (task.type) {
-      case 'kitchen_ready':
-        return {
-          icon: ChefHat,
-          iconBg: 'rgba(0, 166, 62, 0.2)',
-          borderColor: '#00c950',
-          label: 'Kitchen Ready',
-          buttonText: 'SERVE',
-          buttonBg: '#00a63e',
-          buttonShadow: '0px 4px 6px -1px rgba(0, 166, 62, 0.3), 0px 2px 4px -2px rgba(0, 166, 62, 0.3)'
-        };
-      case 'customer_request':
-        return {
-          icon: MessageCircle,
-          iconBg: 'rgba(245, 73, 0, 0.2)',
-          borderColor: '#ff6900',
-          label: 'Customer Request',
-          buttonText: 'ACCEPT',
-          buttonBg: '#f54900',
-          buttonShadow: '0px 4px 6px -1px rgba(245, 73, 0, 0.3), 0px 2px 4px -2px rgba(245, 73, 0, 0.3)'
-        };
-      case 'payment_request':
-        return {
-          icon: Receipt,
-          iconBg: 'rgba(231, 0, 11, 0.2)',
-          borderColor: '#fb2c36',
-          label: 'Payment Request',
-          buttonText: 'BILL',
-          buttonBg: '#e7000b',
-          buttonShadow: '0px 4px 6px -1px rgba(231, 0, 11, 0.3), 0px 2px 4px -2px rgba(231, 0, 11, 0.3)'
-        };
+    // Determine color based on table status
+    let baseColor = { icon: ChefHat, iconBg: 'rgba(0, 166, 62, 0.2)', borderColor: '#00c950', label: 'Kitchen Ready', buttonText: 'SERVE', buttonBg: '#00a63e', buttonShadow: '0px 4px 6px -1px rgba(0, 166, 62, 0.3), 0px 2px 4px -2px rgba(0, 166, 62, 0.3)' };
+
+    // Override color based on status flags
+    if (task.isReadyToBill) {
+      // Red when ready to bill
+      baseColor = {
+        icon: Receipt,
+        iconBg: 'rgba(231, 0, 11, 0.2)',
+        borderColor: '#fb2c36',
+        label: 'Ready to Bill',
+        buttonText: 'BILL',
+        buttonBg: '#e7000b',
+        buttonShadow: '0px 4px 6px -1px rgba(231, 0, 11, 0.3), 0px 2px 4px -2px rgba(231, 0, 11, 0.3)'
+      };
+    } else if (task.isHelpNeeded) {
+      // Orange when help needed
+      baseColor = {
+        icon: MessageCircle,
+        iconBg: 'rgba(245, 73, 0, 0.2)',
+        borderColor: '#ff6900',
+        label: 'Help Needed',
+        buttonText: 'ASSIST',
+        buttonBg: '#f54900',
+        buttonShadow: '0px 4px 6px -1px rgba(245, 73, 0, 0.3), 0px 2px 4px -2px rgba(245, 73, 0, 0.3)'
+      };
+    } else {
+      // Green for normal kitchen ready
+      baseColor = {
+        icon: ChefHat,
+        iconBg: 'rgba(0, 166, 62, 0.2)',
+        borderColor: '#00c950',
+        label: 'Kitchen Ready',
+        buttonText: 'SERVE',
+        buttonBg: '#00a63e',
+        buttonShadow: '0px 4px 6px -1px rgba(0, 166, 62, 0.3), 0px 2px 4px -2px rgba(0, 166, 62, 0.3)'
+      };
     }
+
+    return baseColor;
   };
 
   const config = getTaskConfig();
@@ -215,7 +223,7 @@ export const WaiterTaskCard: React.FC<WaiterTaskCardProps> = ({ task, onComplete
               margin: 0,
               letterSpacing: '0.0703px'
             }}>
-              ${task.totalAmount.toFixed(2)}
+              {formatPrice(task.totalAmount)}
             </p>
           </div>
         )}

@@ -35,7 +35,15 @@ function CustomerAppContent() {
   }, [isAuthenticated]);
 
   const handleLoginSuccess = (user: any) => {
-    login(user, '');
+    // user có thể là token string hoặc object
+    // Nếu là token string, lưu vào both auth_token và customer_token để serve API sử dụng
+    if (typeof user === 'string') {
+      localStorage.setItem('auth_token', user);
+      localStorage.setItem('customer_token', user);
+      login({ id: '', name: '', email: '' }, user);
+    } else {
+      login(user, '');
+    }
     setCurrentView('menu');
   };
 

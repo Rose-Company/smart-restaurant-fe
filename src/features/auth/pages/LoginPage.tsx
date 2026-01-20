@@ -28,11 +28,11 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
         password: formData.password,
       });
 
-      if (response.code === 200 && response.message) {
+      if (response.code === 200 && response.data) {
         // Store token (note: avoid localStorage in artifacts, use state management in production)
         // For production, pass token to parent component via onLogin
         if (onLogin) {
-          onLogin(response.message);
+          onLogin(response.data);
         }
       } else {
         setError(response.message || 'Login failed. Please check your credentials.');

@@ -4,7 +4,7 @@ import { WaiterTask, TaskItem } from '../types/waiter.types';
 import { EditItemModal } from './EditItemModal';
 
 interface OrderItemWithStatus extends TaskItem {
-  status: 'ready' | 'served' | 'cooking';
+  status: 'pending' | 'completed';
   modifiers?: string[];
   note?: string;
   price: number;
@@ -39,7 +39,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
       id: '1',
       name: 'Grilled Salmon',
       quantity: 1,
-      status: 'ready',
+      status: 'pending',
       modifiers: ['No Butter', 'Extra Lemon'],
       price: 24.99,
       modifierPrice: 1.50 // Extra lemon modifier
@@ -48,7 +48,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
       id: '2',
       name: 'Burger',
       quantity: 2,
-      status: 'ready',
+      status: 'pending',
       modifiers: ['Medium Rare', 'No Onions'],
       price: 16.50,
       modifierPrice: 2.00 // Medium rare modifier per item
@@ -57,21 +57,21 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
       id: '3',
       name: 'Coke',
       quantity: 2,
-      status: 'served',
+      status: 'completed',
       price: 3.50
     },
     {
       id: '4',
       name: 'Caesar Salad',
       quantity: 1,
-      status: 'served',
+      status: 'completed',
       price: 10.50
     },
     {
       id: '5',
       name: 'Lava Cake',
       quantity: 1,
-      status: 'cooking',
+      status: 'pending',
       price: 9.99
     }
   ]);
@@ -81,7 +81,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
   const handleMarkServed = (itemId: string) => {
     setOrderItems(prev => 
       prev.map(item => 
-        item.id === itemId ? { ...item, status: 'served' as const } : item
+        item.id === itemId ? { ...item, status: 'completed' as const } : item
       )
     );
     onMarkServed(itemId);
@@ -90,7 +90,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
   const handleUndoServed = (itemId: string) => {
     setOrderItems(prev => 
       prev.map(item => 
-        item.id === itemId ? { ...item, status: 'ready' as const } : item
+        item.id === itemId ? { ...item, status: 'pending' as const } : item
       )
     );
     onUndoServed(itemId);
@@ -104,9 +104,8 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
     );
   };
 
-  const readyItems = orderItems.filter(item => item.status === 'ready');
-  const servedItems = orderItems.filter(item => item.status === 'served');
-  const cookingItems = orderItems.filter(item => item.status === 'cooking');
+  const readyItems = orderItems.filter(item => item.status === 'pending');
+  const servedItems = orderItems.filter(item => item.status === 'completed');
 
   // Bill calculations
   const calculateSubtotal = () => {
@@ -592,7 +591,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                     {servedItems.map((item) => (
                       <button
                         key={item.id}
-                        onClick={() => handleUndoServed(item.id)}
+                  
                         style={{
                           background: 'rgba(16, 24, 40, 0.5)',
                           border: '1px solid #1e2939',
@@ -636,148 +635,6 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                           Tap to undo
                         </span>
                       </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Cooking Section */}
-              {cookingItems.length > 0 && (
-                <div>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    marginBottom: '16px'
-                  }}>
-                    <ChefHat style={{ width: '20px', height: '20px', color: '#ff8904', transform: 'rotate(93deg)' }} />
-                    <h2 style={{
-                      color: '#ff8904',
-                      fontSize: '20px',
-                      fontWeight: 'bold',
-                      lineHeight: '28px',
-                      margin: 0,
-                      letterSpacing: '-0.4492px'
-                    }}>
-                      Cooking
-                    </h2>
-                    <span style={{
-                      color: '#99a1af',
-                      fontSize: '14px',
-                      lineHeight: '20px',
-                      letterSpacing: '-0.1504px'
-                    }}>
-                      ({cookingItems.length})
-                    </span>
-                  </div>
-
-                  <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '12px'
-                  }}>
-                    {cookingItems.map((item) => (
-                      <div
-                        key={item.id}
-                        style={{
-                          background: 'rgba(16, 24, 40, 0.5)',
-                          borderLeft: '4px solid #ff6900',
-                          borderRadius: '14px',
-                          padding: '20px 24px',
-                          display: 'flex',
-                          alignItems: 'start',
-                          justifyContent: 'space-between',
-                          gap: '16px'
-                        }}
-                      >
-                        <div style={{ flex: 1 }}>
-                          <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '12px',
-                            marginBottom: '8px'
-                          }}>
-                            <ChefHat style={{ width: '26px', height: '26px', color: '#ff8904', transform: 'rotate(93deg)' }} />
-                            <span style={{
-                              color: '#99a1af',
-                              fontSize: '18px',
-                              lineHeight: '28px',
-                              letterSpacing: '-0.4395px'
-                            }}>
-                              {item.quantity}x {item.name}
-                            </span>
-                          </div>
-
-                          {item.modifiers && item.modifiers.length > 0 && (
-                            <div style={{
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: '4px',
-                              marginLeft: '38px'
-                            }}>
-                              {item.modifiers.map((modifier, idx) => (
-                                <span
-                                  key={idx}
-                                  style={{
-                                    color: '#fdc700',
-                                    fontSize: '13px',
-                                    fontWeight: 500,
-                                    lineHeight: '18px'
-                                  }}
-                                >
-                                  • {modifier}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-
-                          {item.note && (
-                            <div style={{
-                              marginTop: '8px',
-                              marginLeft: '38px',
-                              padding: '6px 10px',
-                              background: 'rgba(21, 93, 252, 0.1)',
-                              border: '1px solid rgba(21, 93, 252, 0.3)',
-                              borderRadius: '6px'
-                            }}>
-                              <span style={{
-                                color: '#51a2ff',
-                                fontSize: '12px',
-                                lineHeight: '16px',
-                                fontStyle: 'italic'
-                              }}>
-                                📝 {item.note}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-
-                        <button
-                          onClick={() => setEditingItem(item)}
-                          style={{
-                            width: '44px',
-                            height: '44px',
-                            background: '#155dfc',
-                            border: 'none',
-                            borderRadius: '10px',
-                            boxShadow: '0px 4px 8px rgba(21, 93, 252, 0.3)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            flexShrink: 0,
-                            transition: 'all 0.2s'
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.transform = 'scale(1.05)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.transform = 'scale(1)';
-                          }}
-                        >
-                          <Edit3 style={{ width: '20px', height: '20px', color: '#ffffff' }} />
-                        </button>
-                      </div>
                     ))}
                   </div>
                 </div>
@@ -847,10 +704,10 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                             }}>
                               {item.name}
                             </span>
-                            {item.status === 'served' && (
+                            {item.status === 'pending' && (
                               <CheckCircle style={{ width: '16px', height: '16px', color: '#00c950' }} />
                             )}
-                            {item.status === 'cooking' && (
+                            {item.status === 'completed' && (
                               <ChefHat style={{ width: '16px', height: '16px', color: '#ff8904' }} />
                             )}
                           </div>

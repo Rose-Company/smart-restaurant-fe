@@ -5,6 +5,7 @@ import { DashboardPage } from '../features/dashboard/pages/DashboardPage';
 import { MenuPage } from '../features/menu/pages/MenuPage';
 import { KitchenDisplayPage } from '../features/kitchen/pages/KitchenDisplayPage';
 import { WaiterTaskFeedPage } from '../features/waiter/pages/WaiterTaskFeedPage';
+import { SettingsPage } from '../features/settings/pages/SettingsPage';
 import { StaffPage } from '../features/staff/pages/StaffPage';
 import { MyProfilePage } from '../features/profile/pages/MyProfilePage';
 import { AnalyticsPage } from '../features/analytics/pages/AnalyticsPage';
@@ -97,6 +98,8 @@ export default function App() {
         return <KitchenDisplayPage onBack={() => handlePageChange('dashboard')} />;
       case 'waiter':
         return <WaiterTaskFeedPage />;
+      case 'settings':
+        return <SettingsPage onLogout={handleLogout} />;
       case 'staff':
         return <StaffPage />;
       case 'profile':
@@ -107,7 +110,7 @@ export default function App() {
         // Navigate to customer menu for testing
         window.location.href = '/customer/menu';
         return null;
-      // Các trang khác (qr-codes, analytics, reports, settings)
+      // Các trang khác (qr-codes, analytics, reports)
       // hiện tại chỉ là placeholder đơn giản.
         default:
         return (

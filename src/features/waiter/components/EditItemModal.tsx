@@ -5,7 +5,7 @@ interface OrderItemWithStatus {
   id: string;
   name: string;
   quantity: number;
-  status: 'ready' | 'served' | 'cooking';
+  status: 'pending' | 'completed';
   modifiers?: string[];
   note?: string;
   price: number;
@@ -159,25 +159,21 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({
             </div>
             <div style={{
               padding: '8px 12px',
-              background: item.status === 'ready' 
+              background: item.status === 'pending' 
                 ? 'rgba(0, 201, 80, 0.1)' 
-                : item.status === 'cooking'
-                ? 'rgba(255, 105, 0, 0.1)'
                 : 'rgba(153, 161, 175, 0.1)',
               borderRadius: '8px',
               width: 'fit-content'
             }}>
               <span style={{
-                color: item.status === 'ready' 
+                color: item.status === 'pending' 
                   ? '#05df72' 
-                  : item.status === 'cooking'
-                  ? '#ff8904'
                   : '#99a1af',
                 fontSize: '12px',
                 fontWeight: 600,
                 textTransform: 'capitalize'
               }}>
-                {item.status === 'ready' ? 'Sẵn sàng phục vụ' : item.status === 'cooking' ? 'Đang nấu' : 'Đã phục vụ'}
+                {item.status === 'pending' ? 'Sẵn sàng phục vụ' : 'Đã phục vụ'}
               </span>
             </div>
           </div>
