@@ -37,6 +37,31 @@ export interface Table {
   updated_at: string;
 }
 
+// Bill info in table detail
+export interface BillInfo {
+  id: number;
+  bill_number: string;
+  order_id: number;
+  restaurant_id: number;
+  table_id: number;
+  customer_id: number | null;
+  subtotal: number;
+  tax_amount: number;
+  tax_rate: number;
+  discount_amount: number;
+  discount_code: string | null;
+  service_charge: number;
+  total_amount: number;
+  status: 'pending' | 'completed' | 'cancelled';
+  type: 'generated' | 'manual';
+  payment_method: string | null;
+  requested_by: string;
+  requested_by_id: number | null;
+  created_at: string;
+  updated_at: string;
+  paid_at: string | null;
+}
+
 // Table detail response (different structure from list response)
 export interface TableDetail {
   id: number;
@@ -48,10 +73,34 @@ export interface TableDetail {
   total_bill: number;
   order_items: OrderItem[];
   all_orders_count: number;
+  bill?: BillInfo;
   created_at: string;
 }
 
+// Payment request/response
+export interface PaymentRequest {
+  bill_id: number;
+  amount: number;
+  method: 'cash' | 'vnpay';
+  received_amount?: number;
+  change_amount?: number;
+}
 
+export interface PaymentResponse {
+  id?: number;
+  payment_id?: string;
+  bill_id: number;
+  bill_number?: string;
+  amount: number;
+  method: 'cash' | 'vnpay';
+  status: 'pending' | 'completed' | 'failed';
+  vnpay_url?: string;
+  received_amount?: number;
+  change_amount?: number;
+  created_at: string;
+  updated_at?: string;
+  processed_at?: string | null;
+}
 
 export interface TablesResponse {
   total: number;
@@ -296,6 +345,65 @@ export const serveApi = {
       throw error;
     }
   },
+
+  /**
+   * Process payment for a bill
+   * POST /api/payments
+   */
+  processPayment: async (
+    billId: number,
+    amount: number,
+    method: 'cash' | 'vnpay',
+    token?: string,
+    receivedAmount?: number,
+    changeAmount?: number
+  ): Promise<PaymentResponse | null> => {
+    try {
+      const authToken = token || localStorage.getItem('admin_auth_token') || '';
+
+      if (!authToken) {
+        console.warn('[serveApi.processPayment] No admin token found');
+        return null;
+      }
+
+      const requestBody: PaymentRequest = {
+        bill_id: billId,
+        amount,
+        method
+      };
+
+      // Add cash-specific fields if provided
+      if (method === 'cash') {
+        if (receivedAmount !== undefined) {
+          requestBody.received_amount = receivedAmount;
+        }
+        if (changeAmount !== undefined) {
+          requestBody.change_amount = changeAmount;
+        }
+      }
+
+      const res = await fetch(`/api/payments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!res.ok) {
+        console.error('Failed to process payment:', res.status);
+        return null;
+      }
+
+      const payment: PaymentResponse = await res.json();
+      console.log('💳 Payment processed successfully:', payment);
+      return payment;
+    } catch (error) {
+      console.error('Error processing payment:', error);
+      return null;
+    }
+  }
 
 
 };

@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { X, CreditCard, Wallet, DollarSign, Printer, ChevronRight, CheckCircle } from 'lucide-react';
 import { WaiterTask } from '../types/waiter.types';
-import { TableDetail } from '../services/serve.api';
+import { TableDetail, serveApi } from '../services/serve.api';
 import { formatPrice } from '../../../lib/utils';
 
 interface OrderItemWithStatus {
@@ -23,7 +23,7 @@ interface PaymentModalProps {
   onPaymentComplete: () => void;
 }
 
-type PaymentMethod = 'cash' | 'card' | 'e-wallet';
+type PaymentMethod = 'cash' | 'vnpay';
 
 export const PaymentModal: React.FC<PaymentModalProps> = ({
   task,
@@ -39,12 +39,13 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   const [appliedVoucher, setAppliedVoucher] = useState<{ code: string; discount: number; type: 'percentage' | 'fixed' } | null>(null);
   const [sliderPosition, setSliderPosition] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const sliderRef = useRef<HTMLDivElement>(null);
+  const isProcessingRef = useRef(false);
 
   // Get order items from tableDetail or use mock fallback
   const getOrderItems = (): OrderItemWithStatus[] => {
     if (tableDetail && tableDetail.order_items && tableDetail.order_items.length > 0) {
-      // Map order items from API
       return tableDetail.order_items.map(item => ({
         id: String(item.id),
         name: item.item_name,
@@ -56,7 +57,6 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       }));
     }
 
-    // Mock fallback data if no bill
     return [
       {
         id: '1',
@@ -93,12 +93,10 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     ];
   };
 
-  // Mock order items - in real app, fetch from API
   const orderItems: OrderItemWithStatus[] = getOrderItems();
 
   if (!isOpen) return null;
 
-  // Calculate totals
   const calculateSubtotal = () => {
     return orderItems.reduce((total, item) => {
       const itemPrice = item.price + (item.modifierPrice || 0);
@@ -106,7 +104,6 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     }, 0);
   };
 
-  // Use real values from tableDetail if available, otherwise calculate from items
   const subtotal = calculateSubtotal();
   const vat = subtotal * 0.08;
   const serviceCharge = 0;
@@ -121,16 +118,6 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   }
   
   const total = subtotal + vat + serviceCharge - discount;
-
-  console.log('💳 PaymentModal: Totals calculated:', {
-    hasTableDetail: !!tableDetail,
-    subtotal,
-    vat,
-    serviceCharge,
-    discount,
-    total,
-    itemCount: orderItems.length
-  });
 
   const handleApplyVoucher = () => {
     const code = voucherCode.toUpperCase();
@@ -187,11 +174,109 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     };
   }, [isDragging, sliderPosition]);
 
-  const handlePaymentConfirm = () => {
+  const downloadBillPDF = async (billId: number, billNumber: string, token: string) => {
+    try {
+      console.log('📥 Downloading bill PDF:', billNumber);
+      
+      const pdfUrl = `/api/bills/${billId}?format=pdf`;
+      
+      const response = await fetch(pdfUrl, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        console.error('❌ Failed to download PDF:', response.status);
+        return;
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${billNumber}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      console.log('✅ Bill PDF downloaded:', billNumber);
+    } catch (error) {
+      console.error('❌ Error downloading bill PDF:', error);
+    }
+  };
+
+  const handlePaymentConfirm = async () => {
+    // Use ref to prevent duplicate API calls
+    if (isProcessingRef.current) return;
+    isProcessingRef.current = true;
+    
     setIsDragging(false);
     setSliderPosition(0);
-    onPaymentComplete();
-    onClose();
+    setIsProcessingPayment(true);
+
+    try {
+      // Get bill ID from tableDetail.bill or fallback to table ID
+      const billId = tableDetail?.bill?.id || tableDetail?.id || 0;
+      const billNumber = tableDetail?.bill?.bill_number || `BILL-${billId}`;
+      const token = localStorage.getItem('admin_auth_token');
+
+      if (billId === 0 || !token) {
+        console.error('❌ Missing bill ID or token');
+        isProcessingRef.current = false;
+        setIsProcessingPayment(false);
+        return;
+      }
+
+      console.log('💰 Processing payment:', {
+        billId,
+        amount: total,
+        method: selectedPaymentMethod
+      });
+
+      // For cash payment, automatically set received_amount = total, change_amount = 0
+      const receivedAmount = selectedPaymentMethod === 'cash' ? total : undefined;
+      const changeAmount = selectedPaymentMethod === 'cash' ? 0 : undefined;
+
+      const payment = await serveApi.processPayment(
+        billId,
+        total,
+        selectedPaymentMethod as 'cash' | 'vnpay',
+        token,
+        receivedAmount,
+        changeAmount
+      );
+
+      if (payment) {
+        console.log('✅ Payment successful:', payment);
+        
+        // Download bill PDF using bill info from payment response or tableDetail
+        const actualBillId = payment.bill_id || billId;
+        const finalBillNumber = payment.bill_number || billNumber;
+        await downloadBillPDF(actualBillId, finalBillNumber, token);
+        
+        // If vnpay payment, redirect to VNPay URL
+        if (selectedPaymentMethod === 'vnpay' && payment.vnpay_url) {
+          console.log('🔗 Redirecting to VNPay:', payment.vnpay_url);
+          // Redirect browser to VNPay payment page
+          window.location.href = payment.vnpay_url;
+          return;
+        } else {
+          // For cash payment, complete immediately
+          onPaymentComplete();
+          onClose();
+        }
+      } else {
+        console.error('❌ Payment failed');
+        isProcessingRef.current = false;
+        setIsProcessingPayment(false);
+      }
+    } catch (error) {
+      console.error('❌ Error processing payment:', error);
+      isProcessingRef.current = false;
+      setIsProcessingPayment(false);
+    }
   };
 
   return (
@@ -284,7 +369,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
           </div>
         </div>
 
-        {/* Content */}
+        {/* Content - Scrollable area */}
         <div style={{
           flex: 1,
           overflowY: 'auto',
@@ -573,7 +658,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
+              gridTemplateColumns: 'repeat(2, 1fr)',
               gap: '12px'
             }}>
               <button
@@ -613,12 +698,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               </button>
 
               <button
-                onClick={() => setSelectedPaymentMethod('card')}
+                onClick={() => setSelectedPaymentMethod('vnpay')}
                 style={{
-                  background: selectedPaymentMethod === 'card' 
+                  background: selectedPaymentMethod === 'vnpay' 
                     ? 'linear-gradient(135deg, #00a63e, #008236)' 
                     : '#2a3f4f',
-                  border: selectedPaymentMethod === 'card' 
+                  border: selectedPaymentMethod === 'vnpay' 
                     ? 'none' 
                     : '1px solid #4a5565',
                   borderRadius: '12px',
@@ -629,7 +714,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   gap: '8px',
                   cursor: 'pointer',
                   transition: 'all 0.2s',
-                  boxShadow: selectedPaymentMethod === 'card'
+                  boxShadow: selectedPaymentMethod === 'vnpay'
                     ? '0px 8px 20px rgba(0, 166, 62, 0.3)'
                     : 'none'
                 }}
@@ -644,43 +729,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   fontSize: '14px',
                   fontWeight: 'bold'
                 }}>
-                  CARD
-                </span>
-              </button>
-
-              <button
-                onClick={() => setSelectedPaymentMethod('e-wallet')}
-                style={{
-                  background: selectedPaymentMethod === 'e-wallet' 
-                    ? 'linear-gradient(135deg, #00a63e, #008236)' 
-                    : '#2a3f4f',
-                  border: selectedPaymentMethod === 'e-wallet' 
-                    ? 'none' 
-                    : '1px solid #4a5565',
-                  borderRadius: '12px',
-                  padding: '20px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '8px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  boxShadow: selectedPaymentMethod === 'e-wallet'
-                    ? '0px 8px 20px rgba(0, 166, 62, 0.3)'
-                    : 'none'
-                }}
-              >
-                <Wallet style={{
-                  width: '32px',
-                  height: '32px',
-                  color: '#ffffff'
-                }} />
-                <span style={{
-                  color: '#ffffff',
-                  fontSize: '14px',
-                  fontWeight: 'bold'
-                }}>
-                  E-WALLET
+                  VNPAY
                 </span>
               </button>
             </div>
@@ -771,10 +820,11 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             style={{
               position: 'relative',
               height: '64px',
-              background: 'linear-gradient(135deg, #00a63e, #008236)',
+              background: isProcessingPayment ? '#999999' : 'linear-gradient(135deg, #00a63e, #008236)',
               borderRadius: '32px',
               overflow: 'hidden',
-              cursor: 'pointer'
+              cursor: isProcessingPayment ? 'not-allowed' : 'pointer',
+              opacity: isProcessingPayment ? 0.7 : 1
             }}
           >
             {/* Background Track */}
@@ -790,16 +840,16 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 color: '#ffffff',
                 fontSize: '13px',
                 fontWeight: 'bold',
-                opacity: 1 - sliderPosition / 100
+                opacity: isProcessingPayment ? 1 : (1 - sliderPosition / 100)
               }}>
-                Slide to Confirm Payment →
+                {isProcessingPayment ? 'Processing Payment...' : 'Slide to Confirm Payment →'}
               </span>
             </div>
 
             {/* Slider Button */}
             <div
-              onMouseDown={handleSliderStart}
-              onTouchStart={handleSliderStart}
+              onMouseDown={!isProcessingPayment ? handleSliderStart : undefined}
+              onTouchStart={!isProcessingPayment ? handleSliderStart : undefined}
               style={{
                 position: 'absolute',
                 top: '8px',
@@ -811,17 +861,28 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                cursor: 'grab',
+                cursor: isProcessingPayment ? 'not-allowed' : 'grab',
                 boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.3)',
                 transition: isDragging ? 'none' : 'left 0.3s ease-out',
                 transform: 'translateX(0)'
               }}
             >
-              <ChevronRight style={{ 
-                width: '24px', 
-                height: '24px', 
-                color: '#00a63e' 
-              }} />
+              {isProcessingPayment ? (
+                <div style={{
+                  width: '24px',
+                  height: '24px',
+                  border: '3px solid #00a63e',
+                  borderTop: '3px solid transparent',
+                  borderRadius: '50%',
+                  animation: 'spin 1s linear infinite'
+                }} />
+              ) : (
+                <ChevronRight style={{ 
+                  width: '24px', 
+                  height: '24px', 
+                  color: '#00a63e' 
+                }} />
+              )}
             </div>
           </div>
 
@@ -947,6 +1008,15 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             to {
               opacity: 1;
               transform: translate(-50%, -50%) scale(1);
+            }
+          }
+
+          @keyframes spin {
+            from {
+              transform: rotate(0deg);
+            }
+            to {
+              transform: rotate(360deg);
             }
           }
         `}
