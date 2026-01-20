@@ -299,4 +299,46 @@ export const orderApi = {
     const json = await res.json();
     return json.data;
   },
+
+  // Call Staff - Customer calls for waiter assistance
+  callStaff: async (tableId: number): Promise<{ code: number; message: string }> => {
+    const res = await fetch(`/api/orders/tables/${tableId}/call-staff`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!res.ok) {
+      throw new Error('Failed to call staff');
+    }
+
+    const json = await res.json();
+    return json;
+  },
+
+  // Request Bill - Customer requests the bill
+  requestBill: async (
+    tableId: number,
+    options?: { requested_by?: string }
+  ): Promise<{ code: number; message: string; data?: { id: number; table_id: number } }> => {
+    const res = await fetch('/api/bills', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        table_id: tableId,
+        type: 'generated',
+        requested_by: options?.requested_by || 'customer',
+      }),
+    });
+
+    if (!res.ok) {
+      throw new Error('Failed to request bill');
+    }
+
+    const json = await res.json();
+    return json;
+  },
 };

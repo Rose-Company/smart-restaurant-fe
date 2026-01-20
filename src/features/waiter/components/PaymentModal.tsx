@@ -1,6 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { X, CreditCard, Wallet, DollarSign, Printer, ChevronRight, CheckCircle } from 'lucide-react';
 import { WaiterTask } from '../types/waiter.types';
+import { TableDetail } from '../services/serve.api';
+import { formatPrice } from '../../../lib/utils';
 
 interface OrderItemWithStatus {
   id: string;
@@ -15,6 +17,7 @@ interface OrderItemWithStatus {
 
 interface PaymentModalProps {
   task: WaiterTask;
+  tableDetail?: TableDetail;
   isOpen: boolean;
   onClose: () => void;
   onPaymentComplete: () => void;
@@ -24,6 +27,7 @@ type PaymentMethod = 'cash' | 'card' | 'e-wallet';
 
 export const PaymentModal: React.FC<PaymentModalProps> = ({
   task,
+  tableDetail,
   isOpen,
   onClose,
   onPaymentComplete
@@ -37,41 +41,60 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const sliderRef = useRef<HTMLDivElement>(null);
 
-  // Mock order items - in real app, fetch from API
-  const orderItems: OrderItemWithStatus[] = [
-    {
-      id: '1',
-      name: 'Grilled Salmon',
-      quantity: 1,
-      status: 'ready',
-      modifiers: ['No Butter', 'Extra Lemon'],
-      price: 24.99,
-      modifierPrice: 1.50
-    },
-    {
-      id: '2',
-      name: 'Burger',
-      quantity: 2,
-      status: 'ready',
-      modifiers: ['Medium Rare', 'No Onions'],
-      price: 16.50,
-      modifierPrice: 2.00
-    },
-    {
-      id: '3',
-      name: 'Coke',
-      quantity: 2,
-      status: 'served',
-      price: 3.50
-    },
-    {
-      id: '4',
-      name: 'Caesar Salad',
-      quantity: 1,
-      status: 'served',
-      price: 10.50
+  // Get order items from tableDetail or use mock fallback
+  const getOrderItems = (): OrderItemWithStatus[] => {
+    if (tableDetail && tableDetail.order_items && tableDetail.order_items.length > 0) {
+      // Map order items from API
+      return tableDetail.order_items.map(item => ({
+        id: String(item.id),
+        name: item.item_name,
+        quantity: item.quantity,
+        status: item.status === 'completed' ? 'served' : 'ready',
+        price: item.unit_price,
+        modifiers: [],
+        note: ''
+      }));
     }
-  ];
+
+    // Mock fallback data if no bill
+    return [
+      {
+        id: '1',
+        name: 'Grilled Salmon',
+        quantity: 1,
+        status: 'ready',
+        modifiers: ['No Butter', 'Extra Lemon'],
+        price: 24.99,
+        modifierPrice: 1.50
+      },
+      {
+        id: '2',
+        name: 'Burger',
+        quantity: 2,
+        status: 'ready',
+        modifiers: ['Medium Rare', 'No Onions'],
+        price: 16.50,
+        modifierPrice: 2.00
+      },
+      {
+        id: '3',
+        name: 'Coke',
+        quantity: 2,
+        status: 'served',
+        price: 3.50
+      },
+      {
+        id: '4',
+        name: 'Caesar Salad',
+        quantity: 1,
+        status: 'served',
+        price: 10.50
+      }
+    ];
+  };
+
+  // Mock order items - in real app, fetch from API
+  const orderItems: OrderItemWithStatus[] = getOrderItems();
 
   if (!isOpen) return null;
 
@@ -83,18 +106,31 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     }, 0);
   };
 
+  // Use real values from tableDetail if available, otherwise calculate from items
   const subtotal = calculateSubtotal();
+  const vat = subtotal * 0.08;
+  const serviceCharge = 0;
   
   let discount = 0;
   if (appliedVoucher) {
     if (appliedVoucher.type === 'percentage') {
-      discount = subtotal * (appliedVoucher.discount / 100);
+      discount = (subtotal + vat + serviceCharge) * (appliedVoucher.discount / 100);
     } else {
       discount = appliedVoucher.discount;
     }
   }
   
-  const total = subtotal - discount;
+  const total = subtotal + vat + serviceCharge - discount;
+
+  console.log('💳 PaymentModal: Totals calculated:', {
+    hasTableDetail: !!tableDetail,
+    subtotal,
+    vat,
+    serviceCharge,
+    discount,
+    total,
+    itemCount: orderItems.length
+  });
 
   const handleApplyVoucher = () => {
     const code = voucherCode.toUpperCase();
@@ -345,9 +381,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                           fontSize: '14px',
                           lineHeight: '20px'
                         }}>
-                          ${item.price.toFixed(2)}
+                          {formatPrice(item.price)}
                           {item.modifierPrice && item.modifierPrice > 0 && (
-                            <> + ${item.modifierPrice.toFixed(2)}</>
+                            <> + {formatPrice(item.modifierPrice)}</>
                           )}
                         </div>
                       </div>
@@ -359,7 +395,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                         lineHeight: '26px',
                         marginLeft: '16px'
                       }}>
-                        ${itemTotal.toFixed(2)}
+                        {formatPrice(itemTotal)}
                       </div>
                     </div>
 
@@ -400,7 +436,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               fontWeight: 'bold',
               lineHeight: '28px'
             }}>
-              ${subtotal.toFixed(2)}
+              {formatPrice(subtotal)}
             </span>
           </div>
 
@@ -725,7 +761,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               fontWeight: 'bold',
               lineHeight: '40px'
             }}>
-              ${total.toFixed(2)}
+              {formatPrice(total)}
             </span>
           </div>
 

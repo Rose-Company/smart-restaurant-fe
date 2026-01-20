@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ChefHat, MessageCircle, Receipt, Bell } from 'lucide-react';
 import { WaiterTask, TaskFilterType } from '../types/waiter.types';
 import { waiterApi } from '../services/waiter.api';
+import { serveApi, Table, TableDetail } from '../services/serve.api';
 import { WaiterTaskCard } from '../components/WaiterTaskCard';
 import { SuccessNotification } from '../components/SuccessNotification';
 import { OrderDetailModal } from '../components/OrderDetailModal';
@@ -10,25 +11,125 @@ import { TableMapModal } from '../components/TableMapModal';
 
 export const WaiterTaskFeedPage: React.FC = () => {
   const [tasks, setTasks] = useState<WaiterTask[]>([]);
+  const [tables, setTables] = useState<Table[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<TaskFilterType>('all');
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
   const [selectedTask, setSelectedTask] = useState<WaiterTask | null>(null);
+  const [selectedTableDetail, setSelectedTableDetail] = useState<TableDetail | null>(null);
   const [paymentTask, setPaymentTask] = useState<WaiterTask | null>(null);
+  const [paymentTableDetail, setPaymentTableDetail] = useState<TableDetail | null>(null);
   const [showTableMap, setShowTableMap] = useState(false);
 
   useEffect(() => {
     loadTasks();
   }, [activeFilter]);
 
+  /**
+   * Transform Table from API to WaiterTask format
+   */
+  const transformTableToTask = (table: Table): WaiterTask => {
+    let taskType: 'kitchen_ready' | 'customer_request' | 'payment_request';
+    
+    if (table.is_ready_to_bill) {
+      taskType = 'payment_request';
+    } else if (table.is_help_needed) {
+      taskType = 'customer_request';
+    } else {
+      taskType = 'kitchen_ready';
+    }
+
+    return {
+      id: String(table.id),
+      tableNumber: table.table_number,
+      type: taskType,
+      status: 'pending',
+      createdAt: new Date(table.updated_at),
+      items: table.orders?.[0]?.items?.map(item => ({
+        id: String(item.id),
+        name: item.item_name,
+        quantity: item.quantity,
+        unitPrice: item.unit_price,
+        status: item.status
+      })) || [],
+      totalAmount: table.total_bill,
+      //capacity: table.capacity,
+      //location: table.location,
+      //tableStatus: table.status,
+      //activeOrdersCount: table.active_orders_count,
+      //guestCount: 0,
+      //isHelpNeeded: table.is_help_needed,
+      //isReadyToBill: table.is_ready_to_bill
+    };
+  };
+
+  /**
+   * Load tasks from API based on active filter
+   */
   const loadTasks = async () => {
     try {
       setLoading(true);
-      const data = await waiterApi.list(activeFilter);
-      setTasks(data);
+      
+      let tablesData: Table[] = [];
+      
+      // Get token
+      const token = localStorage.getItem('admin_auth_token');
+      if (!token) {
+        console.log('No admin token found, using fallback mock data');
+        const mockData = await waiterApi.list(activeFilter);
+        setTasks(mockData);
+        return;
+      }
+
+      // Fetch tables based on active filter with correct parameters
+      switch (activeFilter) {
+        case 'kitchen':
+          // Kitchen tab: occupied tables (excluding help needed and ready to bill)
+          tablesData = await serveApi.getTablesList(
+            { status: 'occupied' },
+            token
+          ).then(res => res.items);
+          // Filter out help needed and ready to bill from kitchen view
+          tablesData = tablesData.filter(t => !t.is_help_needed && !t.is_ready_to_bill);
+          break;
+          
+        case 'requests':
+          // Requests tab: occupied tables with help needed
+          tablesData = await serveApi.getTablesList(
+            { status: 'occupied', is_help_needed: true },
+            token
+          ).then(res => res.items);
+          break;
+          
+        case 'payment':
+          // Payment tab: occupied tables ready for billing
+          tablesData = await serveApi.getTablesList(
+            { status: 'occupied', is_ready_to_bill: true },
+            token
+          ).then(res => res.items);
+          break;
+          
+        default:
+          // All tab: all occupied tables
+          tablesData = await serveApi.getTablesList(
+            { status: 'occupied' },
+            token
+          ).then(res => res.items);
+      }
+      
+      // Transform tables to tasks
+      const transformedTasks = tablesData.map(transformTableToTask);
+      setTasks(transformedTasks);
     } catch (error) {
       console.error('Failed to load tasks:', error);
+      // Fallback to mock data if API fails
+      try {
+        const mockData = await waiterApi.list(activeFilter);
+        setTasks(mockData);
+      } catch (mockError) {
+        console.error('Failed to load mock tasks:', mockError);
+      }
     } finally {
       setLoading(false);
     }
@@ -48,13 +149,55 @@ export const WaiterTaskFeedPage: React.FC = () => {
       // Open order detail modal for kitchen ready tasks
       const task = tasks.find(t => t.id === taskId);
       if (task) {
+        console.log('🔄 handleCompleteTask called', { taskId, taskType, task });
         setSelectedTask(task);
+        
+        // Fetch table detail for order items mapping
+        try {
+          const tableId = parseInt(task.id);
+          const token = localStorage.getItem('admin_auth_token');
+          
+          if (token) {
+            console.log('🍽️ Fetching order detail for table:', tableId);
+            const tableDetail = await serveApi.getTableDetail(tableId, token);
+            
+            if (tableDetail) {
+              console.log('✅ Order detail received:', tableDetail);
+              setSelectedTableDetail(tableDetail);
+            } else {
+              console.log('❌ No table detail returned');
+            }
+          }
+        } catch (error) {
+          console.error('❌ Failed to fetch table details:', error);
+        }
       }
     } else if (taskType === 'payment_request') {
       // Open payment modal for payment requests
       const task = tasks.find(t => t.id === taskId);
       if (task) {
+        console.log('💳 handleCompleteTask called for payment_request', { taskId, taskType, task });
         setPaymentTask(task);
+        
+        // Fetch table detail for payment modal
+        try {
+          const tableId = parseInt(task.id);
+          const token = localStorage.getItem('admin_auth_token');
+          
+          if (token) {
+            console.log('🧾 Fetching order detail for table:', tableId);
+            const tableDetail = await serveApi.getTableDetail(tableId, token);
+            
+            if (tableDetail) {
+              console.log('✅ Order detail received for payment:', tableDetail);
+              setPaymentTableDetail(tableDetail);
+            } else {
+              console.log('❌ No table detail returned');
+            }
+          }
+        } catch (error) {
+          console.error('❌ Failed to fetch table details:', error);
+        }
       }
     } else {
       // For other requests, complete normally
@@ -486,14 +629,19 @@ export const WaiterTaskFeedPage: React.FC = () => {
       {selectedTask && (
         <OrderDetailModal
           task={selectedTask}
+          tableDetail={selectedTableDetail || undefined}
           isOpen={!!selectedTask}
-          onClose={() => setSelectedTask(null)}
+          onClose={() => {
+            setSelectedTask(null);
+            setSelectedTableDetail(null);
+          }}
           onMarkServed={handleMarkServed}
           onUndoServed={handleUndoServed}
           onCheckout={() => {
             // Close order detail modal and open payment modal
             setPaymentTask(selectedTask);
             setSelectedTask(null);
+            setSelectedTableDetail(null);
           }}
         />
       )}
@@ -502,14 +650,19 @@ export const WaiterTaskFeedPage: React.FC = () => {
       {paymentTask && (
         <PaymentModal
           task={paymentTask}
+          tableDetail={paymentTableDetail || undefined}
           isOpen={!!paymentTask}
-          onClose={() => setPaymentTask(null)}
+          onClose={() => {
+            setPaymentTask(null);
+            setPaymentTableDetail(null);
+          }}
           onPaymentComplete={() => {
             // Remove task from list after payment
             if (paymentTask) {
               setTasks(prev => prev.filter(t => t.id !== paymentTask.id));
             }
             setPaymentTask(null);
+            setPaymentTableDetail(null);
             // Show success notification
             setNotificationMessage('Payment completed successfully');
             setShowNotification(true);

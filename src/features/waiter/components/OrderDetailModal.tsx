@@ -1,18 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Users, Clock, CheckCircle, ChefHat, Edit3 } from 'lucide-react';
 import { WaiterTask, TaskItem } from '../types/waiter.types';
+import { TableDetail } from '../services/serve.api';
 import { EditItemModal } from './EditItemModal';
+import { formatPrice } from '../../../lib/utils';
 
-interface OrderItemWithStatus extends TaskItem {
-  status: 'ready' | 'served' | 'cooking';
+// UI-friendly representation of order item
+interface UIOrderItem {
+  id: string;
+  name: string;
+  quantity: number;
+  status: 'pending' | 'completed';
   modifiers?: string[];
   note?: string;
   price: number;
-  modifierPrice?: number; // Additional price from modifiers
 }
 
 interface OrderDetailModalProps {
   task: WaiterTask;
+  tableDetail?: TableDetail;
   isOpen: boolean;
   onClose: () => void;
   onMarkServed: (itemId: string) => void;
@@ -22,6 +28,7 @@ interface OrderDetailModalProps {
 
 export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
   task,
+  tableDetail,
   isOpen,
   onClose,
   onMarkServed,
@@ -29,59 +36,56 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
   onCheckout
 }) => {
   const [activeTab, setActiveTab] = useState<'items' | 'bill'>('items');
-  const [editingItem, setEditingItem] = useState<OrderItemWithStatus | null>(null);
+  const [editingItem, setEditingItem] = useState<UIOrderItem | null>(null);
   const [voucherCode, setVoucherCode] = useState<string>('');
   const [appliedVoucher, setAppliedVoucher] = useState<{ code: string; discount: number; type: 'percentage' | 'fixed' } | null>(null);
 
-  // Initialize with mock data - in real app, this would come from API
-  const [orderItems, setOrderItems] = useState<OrderItemWithStatus[]>([
-    {
-      id: '1',
-      name: 'Grilled Salmon',
-      quantity: 1,
-      status: 'ready',
-      modifiers: ['No Butter', 'Extra Lemon'],
-      price: 24.99,
-      modifierPrice: 1.50 // Extra lemon modifier
-    },
-    {
-      id: '2',
-      name: 'Burger',
-      quantity: 2,
-      status: 'ready',
-      modifiers: ['Medium Rare', 'No Onions'],
-      price: 16.50,
-      modifierPrice: 2.00 // Medium rare modifier per item
-    },
-    {
-      id: '3',
-      name: 'Coke',
-      quantity: 2,
-      status: 'served',
-      price: 3.50
-    },
-    {
-      id: '4',
-      name: 'Caesar Salad',
-      quantity: 1,
-      status: 'served',
-      price: 10.50
-    },
-    {
-      id: '5',
-      name: 'Lava Cake',
-      quantity: 1,
-      status: 'cooking',
-      price: 9.99
+  // Get order items from real API data
+  const getOrderItems = (): UIOrderItem[] => {
+    if (tableDetail && 'order_items' in tableDetail && tableDetail.order_items && tableDetail.order_items.length > 0) {
+      return tableDetail.order_items.map(item => ({
+        id: String(item.id),
+        name: item.item_name,
+        quantity: item.quantity,
+        status: item.status,
+        price: item.unit_price,
+        modifiers: [],
+        note: ''
+      }));
     }
-  ]);
+    // Return empty array if no real data available
+    return [];
+  };
+
+  const [orderItems, setOrderItems] = useState<UIOrderItem[]>(getOrderItems());
+
+  // Update orderItems when tableDetail changes
+  useEffect(() => {
+    if (tableDetail && 'order_items' in tableDetail && tableDetail.order_items && tableDetail.order_items.length > 0) {
+      const items = tableDetail.order_items.map(item => ({
+        id: String(item.id),
+        name: item.item_name,
+        quantity: item.quantity,
+        status: item.status,
+        price: item.unit_price,
+        modifiers: [],
+        note: ''
+      }));
+      console.log('📦 OrderDetailModal: Mapped order items from tableDetail:', {
+        itemCount: items.length,
+        items: items,
+        tableDetail: tableDetail
+      });
+      setOrderItems(items);
+    }
+  }, [tableDetail]);
 
   if (!isOpen) return null;
 
   const handleMarkServed = (itemId: string) => {
     setOrderItems(prev => 
       prev.map(item => 
-        item.id === itemId ? { ...item, status: 'served' as const } : item
+        item.id === itemId ? { ...item, status: 'completed' as const } : item
       )
     );
     onMarkServed(itemId);
@@ -90,13 +94,13 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
   const handleUndoServed = (itemId: string) => {
     setOrderItems(prev => 
       prev.map(item => 
-        item.id === itemId ? { ...item, status: 'ready' as const } : item
+        item.id === itemId ? { ...item, status: 'pending' as const } : item
       )
     );
     onUndoServed(itemId);
   };
 
-  const handleSaveItem = (updatedItem: OrderItemWithStatus) => {
+  const handleSaveItem = (updatedItem: UIOrderItem) => {
     setOrderItems(prev => 
       prev.map(item => 
         item.id === updatedItem.id ? updatedItem : item
@@ -104,16 +108,15 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
     );
   };
 
-  const readyItems = orderItems.filter(item => item.status === 'ready');
-  const servedItems = orderItems.filter(item => item.status === 'served');
-  const cookingItems = orderItems.filter(item => item.status === 'cooking');
+  const pendingItems = orderItems.filter(item => item.status === 'pending');
+  const completedItems = orderItems.filter(item => item.status === 'completed');
 
   // Bill calculations
   const calculateSubtotal = () => {
-    return orderItems.reduce((total, item) => {
-      const itemPrice = item.price + (item.modifierPrice || 0);
-      return total + (itemPrice * item.quantity);
+    const sum = orderItems.reduce((total, item) => {
+      return total + (item.price * item.quantity);
     }, 0);
+    return sum;
   };
 
   const subtotal = calculateSubtotal();
@@ -131,6 +134,21 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
   }
   
   const total = subtotal + vat + serviceCharge - discount;
+
+  console.log('💰 OrderDetailModal: Bill calculated:', {
+    subtotal: subtotal,
+    vat: vat,
+    serviceCharge: serviceCharge,
+    discount: discount,
+    appliedVoucher: appliedVoucher,
+    total: total,
+    orderItems: orderItems.map(item => ({
+      name: item.name,
+      quantity: item.quantity,
+      price: item.price,
+      itemTotal: item.price * item.quantity
+    }))
+  });
 
   const handleApplyVoucher = () => {
     const code = voucherCode.toUpperCase();
@@ -256,7 +274,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                     lineHeight: '20px',
                     letterSpacing: '-0.1504px'
                   }}>
-                    4 Guests
+                    {tableDetail?.guest_count || 0} Guests
                   </span>
                 </div>
 
@@ -341,8 +359,8 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
               flexDirection: 'column',
               gap: '24px'
             }}>
-              {/* Ready to Serve Section */}
-              {readyItems.length > 0 && (
+              {/* Pending Section */}
+              {pendingItems.length > 0 && (
                 <div>
                   <div style={{
                     display: 'flex',
@@ -353,19 +371,19 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                     <div style={{
                       width: '12px',
                       height: '12px',
-                      background: '#00c950',
+                      background: '#ff8904',
                       opacity: 0.928,
                       borderRadius: '50%'
                     }} />
                     <h2 style={{
-                      color: '#05df72',
+                      color: '#ff8904',
                       fontSize: '20px',
                       fontWeight: 'bold',
                       lineHeight: '28px',
                       margin: 0,
                       letterSpacing: '-0.4492px'
                     }}>
-                      Ready to Serve
+                      Pending
                     </h2>
                     <span style={{
                       color: '#99a1af',
@@ -373,7 +391,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                       lineHeight: '20px',
                       letterSpacing: '-0.1504px'
                     }}>
-                      ({readyItems.length})
+                      ({pendingItems.length})
                     </span>
                   </div>
 
@@ -382,7 +400,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                     flexDirection: 'column',
                     gap: '12px'
                   }}>
-                    {readyItems.map((item) => (
+                    {pendingItems.map((item) => (
                       <div
                         key={item.id}
                         style={{
@@ -554,8 +572,8 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                 </div>
               )}
 
-              {/* Served Section */}
-              {servedItems.length > 0 && (
+              {/* Completed Section */}
+              {completedItems.length > 0 && (
                 <div>
                   <div style={{
                     display: 'flex',
@@ -563,24 +581,24 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                     gap: '8px',
                     marginBottom: '16px'
                   }}>
-                    <CheckCircle style={{ width: '20px', height: '20px', color: '#99a1af' }} />
+                    <CheckCircle style={{ width: '20px', height: '20px', color: '#00c950' }} />
                     <h2 style={{
-                      color: '#99a1af',
+                      color: '#05df72',
                       fontSize: '20px',
                       fontWeight: 'bold',
                       lineHeight: '28px',
                       margin: 0,
                       letterSpacing: '-0.4492px'
                     }}>
-                      Served
+                      Completed
                     </h2>
                     <span style={{
-                      color: '#6a7282',
+                      color: '#99a1af',
                       fontSize: '14px',
                       lineHeight: '20px',
                       letterSpacing: '-0.1504px'
                     }}>
-                      ({servedItems.length})
+                      ({completedItems.length})
                     </span>
                   </div>
 
@@ -589,7 +607,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                     flexDirection: 'column',
                     gap: '12px'
                   }}>
-                    {servedItems.map((item) => (
+                    {completedItems.map((item) => (
                       <button
                         key={item.id}
                         onClick={() => handleUndoServed(item.id)}
@@ -640,148 +658,6 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                   </div>
                 </div>
               )}
-
-              {/* Cooking Section */}
-              {cookingItems.length > 0 && (
-                <div>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    marginBottom: '16px'
-                  }}>
-                    <ChefHat style={{ width: '20px', height: '20px', color: '#ff8904', transform: 'rotate(93deg)' }} />
-                    <h2 style={{
-                      color: '#ff8904',
-                      fontSize: '20px',
-                      fontWeight: 'bold',
-                      lineHeight: '28px',
-                      margin: 0,
-                      letterSpacing: '-0.4492px'
-                    }}>
-                      Cooking
-                    </h2>
-                    <span style={{
-                      color: '#99a1af',
-                      fontSize: '14px',
-                      lineHeight: '20px',
-                      letterSpacing: '-0.1504px'
-                    }}>
-                      ({cookingItems.length})
-                    </span>
-                  </div>
-
-                  <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '12px'
-                  }}>
-                    {cookingItems.map((item) => (
-                      <div
-                        key={item.id}
-                        style={{
-                          background: 'rgba(16, 24, 40, 0.5)',
-                          borderLeft: '4px solid #ff6900',
-                          borderRadius: '14px',
-                          padding: '20px 24px',
-                          display: 'flex',
-                          alignItems: 'start',
-                          justifyContent: 'space-between',
-                          gap: '16px'
-                        }}
-                      >
-                        <div style={{ flex: 1 }}>
-                          <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '12px',
-                            marginBottom: '8px'
-                          }}>
-                            <ChefHat style={{ width: '26px', height: '26px', color: '#ff8904', transform: 'rotate(93deg)' }} />
-                            <span style={{
-                              color: '#99a1af',
-                              fontSize: '18px',
-                              lineHeight: '28px',
-                              letterSpacing: '-0.4395px'
-                            }}>
-                              {item.quantity}x {item.name}
-                            </span>
-                          </div>
-
-                          {item.modifiers && item.modifiers.length > 0 && (
-                            <div style={{
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: '4px',
-                              marginLeft: '38px'
-                            }}>
-                              {item.modifiers.map((modifier, idx) => (
-                                <span
-                                  key={idx}
-                                  style={{
-                                    color: '#fdc700',
-                                    fontSize: '13px',
-                                    fontWeight: 500,
-                                    lineHeight: '18px'
-                                  }}
-                                >
-                                  • {modifier}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-
-                          {item.note && (
-                            <div style={{
-                              marginTop: '8px',
-                              marginLeft: '38px',
-                              padding: '6px 10px',
-                              background: 'rgba(21, 93, 252, 0.1)',
-                              border: '1px solid rgba(21, 93, 252, 0.3)',
-                              borderRadius: '6px'
-                            }}>
-                              <span style={{
-                                color: '#51a2ff',
-                                fontSize: '12px',
-                                lineHeight: '16px',
-                                fontStyle: 'italic'
-                              }}>
-                                📝 {item.note}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-
-                        <button
-                          onClick={() => setEditingItem(item)}
-                          style={{
-                            width: '44px',
-                            height: '44px',
-                            background: '#155dfc',
-                            border: 'none',
-                            borderRadius: '10px',
-                            boxShadow: '0px 4px 8px rgba(21, 93, 252, 0.3)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            flexShrink: 0,
-                            transition: 'all 0.2s'
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.transform = 'scale(1.05)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.transform = 'scale(1)';
-                          }}
-                        >
-                          <Edit3 style={{ width: '20px', height: '20px', color: '#ffffff' }} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           ) : (
             <div style={{
@@ -813,7 +689,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                   gap: '12px'
                 }}>
                   {orderItems.map((item) => {
-                    const itemTotal = (item.price + (item.modifierPrice || 0)) * item.quantity;
+                    const itemTotal = (item.price) * item.quantity;
                     return (
                       <div
                         key={item.id}
@@ -847,10 +723,10 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                             }}>
                               {item.name}
                             </span>
-                            {item.status === 'served' && (
+                            {item.status === 'completed' && (
                               <CheckCircle style={{ width: '16px', height: '16px', color: '#00c950' }} />
                             )}
-                            {item.status === 'cooking' && (
+                            {item.status === 'pending' && (
                               <ChefHat style={{ width: '16px', height: '16px', color: '#ff8904' }} />
                             )}
                           </div>
@@ -883,7 +759,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                             color: '#6a7282',
                             fontSize: '13px'
                           }}>
-                            ${item.price.toFixed(2)} {item.modifierPrice ? `+ $${item.modifierPrice.toFixed(2)}` : ''}
+                            {formatPrice(item.price)}
                           </div>
                         </div>
 
@@ -893,7 +769,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                           fontWeight: 'bold',
                           lineHeight: '24px'
                         }}>
-                          ${itemTotal.toFixed(2)}
+                          {formatPrice(itemTotal)}
                         </div>
                       </div>
                     );
@@ -1091,7 +967,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                       fontWeight: 600,
                       lineHeight: '24px'
                     }}>
-                      ${subtotal.toFixed(2)}
+                      {formatPrice(subtotal)}
                     </span>
                   </div>
 
@@ -1114,7 +990,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                       fontWeight: 600,
                       lineHeight: '24px'
                     }}>
-                      ${vat.toFixed(2)}
+                      {formatPrice(vat)}
                     </span>
                   </div>
 
@@ -1137,7 +1013,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                       fontWeight: 600,
                       lineHeight: '24px'
                     }}>
-                      ${serviceCharge.toFixed(2)}
+                      {formatPrice(serviceCharge)}
                     </span>
                   </div>
 
@@ -1166,7 +1042,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                         fontWeight: 'bold',
                         lineHeight: '24px'
                       }}>
-                        -${discount.toFixed(2)}
+                        -{formatPrice(discount)}
                       </span>
                     </div>
                   )}
@@ -1204,7 +1080,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                       lineHeight: '36px',
                       letterSpacing: '0.0703px'
                     }}>
-                      ${total.toFixed(2)}
+                      {formatPrice(total)}
                     </span>
                   </div>
 
@@ -1221,7 +1097,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                         fontSize: '14px',
                         fontWeight: 600
                       }}>
-                        🎉 You save ${discount.toFixed(2)} with this promotion!
+                        🎉 You save {formatPrice(discount)} with this promotion!
                       </span>
                     </div>
                   )}

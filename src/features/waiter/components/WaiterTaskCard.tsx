@@ -1,6 +1,7 @@
 import React from 'react';
 import { Clock, ChefHat, MessageCircle, Receipt } from 'lucide-react';
 import { WaiterTask } from '../types/waiter.types';
+import { formatPrice } from '../../../lib/utils';
 
 interface WaiterTaskCardProps {
   task: WaiterTask;
@@ -215,14 +216,23 @@ export const WaiterTaskCard: React.FC<WaiterTaskCardProps> = ({ task, onComplete
               margin: 0,
               letterSpacing: '0.0703px'
             }}>
-              ${task.totalAmount.toFixed(2)}
+              {formatPrice(task.totalAmount)}
             </p>
           </div>
         )}
 
         {/* Action Button */}
         <button
-          onClick={() => onComplete(task.id, task.type)}
+          onClick={() => {
+            console.log('📋 Serve button clicked', {
+              taskId: task.id,
+              tableNumber: task.tableNumber,
+              taskType: task.type,
+              items: task.items,
+              totalAmount: task.totalAmount
+            });
+            onComplete(task.id, task.type);
+          }}
           style={{
             background: config.buttonBg,
             color: '#ffffff',

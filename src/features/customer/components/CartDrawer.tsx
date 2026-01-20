@@ -60,6 +60,10 @@ export function CartDrawer({
   const [orderError, setOrderError] = useState<string | null>(null);
   const [apiOrderHistory, setApiOrderHistory] = useState<OrderHistory | null>(null);
   const [loadingOrderHistory, setLoadingOrderHistory] = useState(false);
+  const [isCallingStaff, setIsCallingStaff] = useState(false);
+  const [isRequestingBill, setIsRequestingBill] = useState(false);
+  const [staffCallMessage, setStaffCallMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [billRequestMessage, setBillRequestMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // Fetch order history when history tab is opened
   React.useEffect(() => {
@@ -232,6 +236,64 @@ export function CartDrawer({
   const handleSuccessModalClose = () => {
     setShowSuccessModal(false);
     setActiveTab('history');
+  };
+
+  const handleCallStaff = async () => {
+    try {
+      setIsCallingStaff(true);
+      setStaffCallMessage(null);
+      
+      const cleanTableNumber = tableNumber?.trim();
+      const tableId = cleanTableNumber ? parseInt(cleanTableNumber, 10) : 0;
+
+      if (!cleanTableNumber || !tableId || isNaN(tableId)) {
+        setStaffCallMessage({ type: 'error', text: 'Invalid table number' });
+        return;
+      }
+
+      console.log('📞 Calling staff for table:', tableId);
+      const response = await orderApi.callStaff(tableId);
+      
+      console.log('✅ Staff called successfully:', response);
+      setStaffCallMessage({ type: 'success', text: 'Staff has been notified! They will be with you shortly.' });
+      
+      // Clear message after 3 seconds
+      setTimeout(() => setStaffCallMessage(null), 3000);
+    } catch (error: any) {
+      console.error('❌ Failed to call staff:', error);
+      setStaffCallMessage({ type: 'error', text: 'Failed to call staff. Please try again.' });
+    } finally {
+      setIsCallingStaff(false);
+    }
+  };
+
+  const handleRequestBill = async () => {
+    try {
+      setIsRequestingBill(true);
+      setBillRequestMessage(null);
+      
+      const cleanTableNumber = tableNumber?.trim();
+      const tableId = cleanTableNumber ? parseInt(cleanTableNumber, 10) : 0;
+
+      if (!cleanTableNumber || !tableId || isNaN(tableId)) {
+        setBillRequestMessage({ type: 'error', text: 'Invalid table number' });
+        return;
+      }
+
+      console.log('📋 Requesting bill for table:', tableId);
+      const response = await orderApi.requestBill(tableId, { requested_by: 'customer' });
+      
+      console.log('✅ Bill requested successfully:', response);
+      setBillRequestMessage({ type: 'success', text: 'Bill request sent! Your bill will be prepared shortly.' });
+      
+      // Clear message after 3 seconds
+      setTimeout(() => setBillRequestMessage(null), 3000);
+    } catch (error: any) {
+      console.error('❌ Failed to request bill:', error);
+      setBillRequestMessage({ type: 'error', text: 'Failed to request bill. Please try again.' });
+    } finally {
+      setIsRequestingBill(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -1051,61 +1113,121 @@ export function CartDrawer({
                 {formatPrice(orderHistory.total - getDiscountAmount())}
               </span>
             </div>
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <button
-                style={{
-                  flex: 1,
-                  backgroundColor: '#ffffff',
-                  color: '#52b788',
-                  border: '2px solid #52b788',
-                  borderRadius: '12px',
-                  padding: '14px',
-                  fontSize: '15px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
+            <div style={{ display: 'flex', gap: '12px', flexDirection: 'column' }}>
+              {/* Call Staff Message */}
+              {staffCallMessage && (
+                <div style={{
+                  padding: '12px',
+                  borderRadius: '8px',
+                  backgroundColor: staffCallMessage.type === 'success' ? '#f0fdf4' : '#fef2f2',
+                  border: `1px solid ${staffCallMessage.type === 'success' ? '#86efac' : '#fecaca'}`,
+                  color: staffCallMessage.type === 'success' ? '#166534' : '#991b1b',
+                  fontSize: '14px',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  transition: 'all 0.2s'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#f0fdf4';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#ffffff';
-                }}
-              >
-                <Phone style={{ width: '18px', height: '18px' }} />
-                Call Staff
-              </button>
-              <button
-                style={{
-                  flex: 1,
-                  backgroundColor: '#ffffff',
-                  color: '#52b788',
-                  border: '2px solid #52b788',
-                  borderRadius: '12px',
-                  padding: '14px',
-                  fontSize: '15px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
+                  gap: '8px'
+                }}>
+                  {staffCallMessage.type === 'success' ? (
+                    <CheckCircle style={{ width: '16px', height: '16px' }} />
+                  ) : (
+                    <AlertCircle style={{ width: '16px', height: '16px' }} />
+                  )}
+                  {staffCallMessage.text}
+                </div>
+              )}
+
+              {/* Bill Request Message */}
+              {billRequestMessage && (
+                <div style={{
+                  padding: '12px',
+                  borderRadius: '8px',
+                  backgroundColor: billRequestMessage.type === 'success' ? '#f0fdf4' : '#fef2f2',
+                  border: `1px solid ${billRequestMessage.type === 'success' ? '#86efac' : '#fecaca'}`,
+                  color: billRequestMessage.type === 'success' ? '#166534' : '#991b1b',
+                  fontSize: '14px',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  transition: 'all 0.2s'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#f0fdf4';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#ffffff';
-                }}
-              >
-                <FileText style={{ width: '18px', height: '18px' }} />
-                Request Bill
-              </button>
+                  gap: '8px'
+                }}>
+                  {billRequestMessage.type === 'success' ? (
+                    <CheckCircle style={{ width: '16px', height: '16px' }} />
+                  ) : (
+                    <AlertCircle style={{ width: '16px', height: '16px' }} />
+                  )}
+                  {billRequestMessage.text}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button
+                  onClick={handleCallStaff}
+                  disabled={isCallingStaff}
+                  style={{
+                    flex: 1,
+                    backgroundColor: isCallingStaff ? '#e5e7eb' : '#ffffff',
+                    color: isCallingStaff ? '#9ca3af' : '#52b788',
+                    border: `2px solid ${isCallingStaff ? '#d1d5db' : '#52b788'}`,
+                    borderRadius: '12px',
+                    padding: '14px',
+                    fontSize: '15px',
+                    fontWeight: '600',
+                    cursor: isCallingStaff ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    transition: 'all 0.2s',
+                    opacity: isCallingStaff ? 0.6 : 1
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isCallingStaff) {
+                      e.currentTarget.style.backgroundColor = '#f0fdf4';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isCallingStaff) {
+                      e.currentTarget.style.backgroundColor = '#ffffff';
+                    }
+                  }}
+                >
+                  <Phone style={{ width: '18px', height: '18px' }} />
+                  {isCallingStaff ? 'Calling...' : 'Call Staff'}
+                </button>
+                <button
+                  onClick={handleRequestBill}
+                  disabled={isRequestingBill}
+                  style={{
+                    flex: 1,
+                    backgroundColor: isRequestingBill ? '#e5e7eb' : '#ffffff',
+                    color: isRequestingBill ? '#9ca3af' : '#52b788',
+                    border: `2px solid ${isRequestingBill ? '#d1d5db' : '#52b788'}`,
+                    borderRadius: '12px',
+                    padding: '14px',
+                    fontSize: '15px',
+                    fontWeight: '600',
+                    cursor: isRequestingBill ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    transition: 'all 0.2s',
+                    opacity: isRequestingBill ? 0.6 : 1
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isRequestingBill) {
+                      e.currentTarget.style.backgroundColor = '#f0fdf4';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isRequestingBill) {
+                      e.currentTarget.style.backgroundColor = '#ffffff';
+                    }
+                  }}
+                >
+                  <FileText style={{ width: '18px', height: '18px' }} />
+                  {isRequestingBill ? 'Requesting...' : 'Request Bill'}
+                </button>
+              </div>
             </div>
           </div>
           )}

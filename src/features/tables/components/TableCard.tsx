@@ -4,6 +4,7 @@ import { Button } from "../../../components/ui/misc/button";
 import { Badge } from "../../../components/ui/data-display/badge";
 import type { UITable } from "../pages/TablesPage";
 import { useTranslation } from "react-i18next";
+import { formatPrice } from "../../../lib/utils";
 interface TableCardProps {
   table: UITable;
   onQRPreview: (table: UITable) => void;
@@ -82,7 +83,7 @@ export function TableCard({ table, onQRPreview, onEdit }: TableCardProps) {
             <div className="flex items-center gap-1.5">
               <DollarSign className="w-3.5 h-3.5 text-orange-700" />
               <span className="text-sm text-orange-900">
-                {t("common.orders.total")}: <strong>${table.order_data.total_bill.toFixed(2)}</strong>
+                {t("common.orders.total")}: <strong>{formatPrice(table.order_data.total_bill)}</strong>
               </span>
             </div>
           </div>

@@ -1,22 +1,22 @@
 import React, { useState } from 'react';
 import { X, Plus, Trash2 } from 'lucide-react';
 
-interface OrderItemWithStatus {
+// UI-friendly representation of order item
+interface UIOrderItem {
   id: string;
   name: string;
   quantity: number;
-  status: 'ready' | 'served' | 'cooking';
+  status: 'pending' | 'completed';
   modifiers?: string[];
   note?: string;
   price: number;
-  modifierPrice?: number;
 }
 
 interface EditItemModalProps {
-  item: OrderItemWithStatus;
+  item: UIOrderItem;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (item: OrderItemWithStatus) => void;
+  onSave: (item: UIOrderItem) => void;
 }
 
 export const EditItemModal: React.FC<EditItemModalProps> = ({
@@ -159,25 +159,21 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({
             </div>
             <div style={{
               padding: '8px 12px',
-              background: item.status === 'ready' 
-                ? 'rgba(0, 201, 80, 0.1)' 
-                : item.status === 'cooking'
-                ? 'rgba(255, 105, 0, 0.1)'
-                : 'rgba(153, 161, 175, 0.1)',
+              background: item.status === 'pending' 
+                ? 'rgba(255, 137, 4, 0.1)' 
+                : 'rgba(0, 201, 80, 0.1)',
               borderRadius: '8px',
               width: 'fit-content'
             }}>
               <span style={{
-                color: item.status === 'ready' 
-                  ? '#05df72' 
-                  : item.status === 'cooking'
-                  ? '#ff8904'
-                  : '#99a1af',
+                color: item.status === 'pending' 
+                  ? '#ff8904' 
+                  : '#05df72',
                 fontSize: '12px',
                 fontWeight: 600,
                 textTransform: 'capitalize'
               }}>
-                {item.status === 'ready' ? 'Sẵn sàng phục vụ' : item.status === 'cooking' ? 'Đang nấu' : 'Đã phục vụ'}
+                {item.status === 'pending' ? 'Đang chờ' : 'Hoàn tất'}
               </span>
             </div>
           </div>

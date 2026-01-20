@@ -140,7 +140,7 @@ export function KitchenDisplayPage({ onBack }: KitchenDisplayPageProps) {
     }
   };
 
-  const handleUpdateItem = async (orderId: string, itemId: string, status: 'done' | 'pending') => {
+  const handleUpdateItem = async (orderId: string, itemId: string, status: 'completed' | 'pending') => {
     setIsUpdating(true);
     try {
       const order = orders.find(o => o.id === orderId);
@@ -181,8 +181,8 @@ export function KitchenDisplayPage({ onBack }: KitchenDisplayPageProps) {
         
         return {
           menu_item_id: item.menu_item_id || parseInt(item.id),
-          // If all items done, use 'completed' instead of 'done'
-          status: allDone ? 'completed' : status
+          // Convert 'done' to 'completed' for API, keep 'pending' as is
+          status: status === 'done' ? 'completed' : status
         };
       }).filter(Boolean) as Array<{ menu_item_id: number; status: string }>;
 
@@ -559,7 +559,7 @@ export function KitchenDisplayPage({ onBack }: KitchenDisplayPageProps) {
       )}
 
       <ItemSummaryModal
-        orders={orders}
+        orders={orders.filter(o => o.items.some(item => item.status !== 'done'))}
         orderDetails={[]}
         isOpen={showItemSummary}
         onClose={() => setShowItemSummary(false)}
