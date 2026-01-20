@@ -53,4 +53,12 @@ export const kitchenApi = {
 		});
 		return response.data || response;
 	},
+
+	updateItemsInOrder: async (orderId: string | number, items: Array<{ menu_item_id: number; status: string }>) => {
+		const response = await fetcher(`/orders/${orderId}/items/status`, {
+			method: 'PATCH',
+			body: JSON.stringify({ items }),
+		});
+		return response.data || response;
+	},
 };

@@ -1,28 +1,49 @@
-import React, { useState } from 'react';
-import { X, Clock, Printer, Check } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Clock, Printer, Check, Loader2 } from 'lucide-react';
 import type { TableOrder, OrderItem } from '../types/kitchen.types';
 
 interface OrderDetailModalProps {
   order: TableOrder;
   isOpen: boolean;
   onClose: () => void;
-  onUpdateItem: (orderId: string, itemId: string, isDone: boolean) => void;
+  onBatchUpdate: (orderId: string, updates: Record<string, 'done' | 'pending'>) => void;
   onComplete: (orderId: string) => void;
+  isLoading?: boolean;
 }
 
 export function OrderDetailModal({ 
   order, 
   isOpen, 
   onClose, 
-  onUpdateItem, 
-  onComplete 
+  onBatchUpdate,
+  onComplete,
+  isLoading = false
 }: OrderDetailModalProps) {
-  // Local state to track pending changes
+  // Local state to track ALL item statuses
   const [localItems, setLocalItems] = useState<Record<string, 'done' | 'pending'>>({});
+  const [hasChanges, setHasChanges] = useState(false);
+  
+  // Initialize localItems with ALL items from order
+  useEffect(() => {
+    if (isOpen) {
+      console.log('Order Detail Modal opened with order:', order);
+      const initialState: Record<string, 'done' | 'pending'> = {};
+      order.items.forEach(item => {
+        initialState[item.id] = item.status || 'pending';
+      });
+      setLocalItems(initialState);
+      setHasChanges(false);
+    }
+  }, [isOpen, order.items]);
   
   if (!isOpen) return null;
 
   const getStatusColor = () => {
+    // Don't show 'delayed' color if order is completed
+    if (order.status === 'completed') {
+      return '#364153'; // gray for completed
+    }
+    
     switch (order.status) {
       case 'delayed':
         return '#e7000b';
@@ -46,20 +67,25 @@ export function OrderDetailModal({
       ...prev,
       [itemId]: newStatus
     }));
+    setHasChanges(true);
   };
 
   const handleUpdate = () => {
-    // Apply all pending changes
-    Object.entries(localItems).forEach(([itemId, status]) => {
-      onUpdateItem(order.id, itemId, status === 'done');
-    });
-    // Clear local changes after update
-    setLocalItems({});
-    // Close modal after update
-    onClose();
+    if (!hasChanges) {
+      onClose();
+      return;
+    }
+
+    // Send batch update to parent
+    onBatchUpdate(order.id, localItems);
   };
 
-  // Sort items by category priority: Appetizer -> Main Course -> Dessert -> Beverage
+  const handleComplete = () => {
+    if (!allItemsDone) return;
+    onComplete(order.id);
+  };
+
+  // Sort items by category priority
   const getCategoryOrder = (category?: string) => {
     switch (category) {
       case 'Appetizer': return 1;
@@ -74,7 +100,7 @@ export function OrderDetailModal({
     return getCategoryOrder(a.category) - getCategoryOrder(b.category);
   });
 
-  const completedItems = order.items.filter(item => getItemStatus(item) === 'done').length;
+  const completedItems = Object.values(localItems).filter(status => status === 'done').length;
   const totalItems = order.items.length;
   const allItemsDone = completedItems === totalItems;
 
@@ -281,32 +307,36 @@ export function OrderDetailModal({
                 {/* Checkbox */}
                 <button
                   onClick={() => toggleItemStatus(item.id, itemStatus)}
+                  disabled={isLoading}
                   style={{
                     width: '56px',
                     height: '56px',
                     borderRadius: '14px',
                     border: isDone ? '4px solid #00a63e' : '4px solid #4a5565',
                     backgroundColor: isDone ? '#00a63e' : 'transparent',
-                    cursor: 'pointer',
+                    cursor: isLoading ? 'not-allowed' : 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    transition: 'all 0.2s'
+                    transition: 'all 0.2s',
+                    opacity: isLoading ? 0.6 : 1
                   }}
                   onMouseEnter={(e) => {
-                    if (!isDone) {
+                    if (!isDone && !isLoading) {
                       e.currentTarget.style.backgroundColor = 'rgba(0, 166, 62, 0.1)';
                     }
                   }}
                   onMouseLeave={(e) => {
-                    if (!isDone) {
+                    if (!isDone && !isLoading) {
                       e.currentTarget.style.backgroundColor = 'transparent';
                     }
                   }}
                 >
-                  {isDone && (
+                  {isLoading && !isDone ? (
+                    <Loader2 style={{ width: '24px', height: '24px', color: '#4a5565', animation: 'spin 1s linear infinite' }} />
+                  ) : isDone ? (
                     <Check style={{ width: '32px', height: '32px', color: '#ffffff' }} />
-                  )}
+                  ) : null}
                 </button>
               </div>
             );
@@ -351,56 +381,68 @@ export function OrderDetailModal({
           <div style={{ display: 'flex', gap: '16px' }}>
             <button
               onClick={handleUpdate}
+              disabled={isLoading}
               style={{
                 height: '48px',
-                padding: '0 40px',
+                padding: '0 24px',
                 border: 'none',
                 borderRadius: '8px',
-                background: 'linear-gradient(to right, #155dfc, #1447e6)',
+                background: isLoading ? '#4a5565' : 'linear-gradient(to right, #155dfc, #1447e6)',
                 color: '#ffffff',
-                fontSize: '20px',
+                fontSize: '18px',
                 fontWeight: 'bold',
                 lineHeight: '28px',
-                letterSpacing: '-0.4492px',
-                cursor: 'pointer',
-                boxShadow: '0px 10px 15px -3px rgba(21,93,252,0.3), 0px 4px 6px -4px rgba(21,93,252,0.3)',
-                transition: 'opacity 0.2s'
+                letterSpacing: '-0.4px',
+                cursor: isLoading ? 'not-allowed' : 'pointer',
+                boxShadow: isLoading ? 'none' : '0px 10px 15px -3px rgba(21,93,252,0.3), 0px 4px 6px -4px rgba(21,93,252,0.3)',
+                transition: 'opacity 0.2s',
+                opacity: isLoading ? 0.6 : 1,
+                whiteSpace: 'nowrap'
               }}
-              onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
-              onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+              onMouseEnter={(e) => {
+                if (!isLoading) e.currentTarget.style.opacity = '0.9';
+              }}
+              onMouseLeave={(e) => {
+                if (!isLoading) e.currentTarget.style.opacity = '1';
+              }}
             >
-              UPDATE
+              {allItemsDone ? 'COMPLETE' : 'UPDATE'}
             </button>
 
             <button
-              onClick={() => onComplete(order.id)}
-              disabled={!allItemsDone}
+              onClick={handleComplete}
+              disabled={!allItemsDone || isLoading}
               style={{
                 height: '48px',
-                padding: '0 40px',
+                padding: '0 24px',
                 border: 'none',
                 borderRadius: '8px',
-                backgroundColor: '#364153',
+                backgroundColor: allItemsDone && !isLoading ? '#00a63e' : '#364153',
                 color: allItemsDone ? '#ffffff' : '#6a7282',
-                fontSize: '20px',
+                fontSize: '18px',
                 fontWeight: 'bold',
                 lineHeight: '28px',
-                letterSpacing: '-0.4492px',
-                cursor: allItemsDone ? 'pointer' : 'not-allowed',
+                letterSpacing: '-0.4px',
+                cursor: allItemsDone && !isLoading ? 'pointer' : 'not-allowed',
                 opacity: allItemsDone ? 1 : 0.5,
                 transition: 'background-color 0.2s',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px'
+                gap: '8px',
+                whiteSpace: 'nowrap'
               }}
               onMouseEnter={(e) => {
-                if (allItemsDone) e.currentTarget.style.backgroundColor = '#4a5568';
+                if (allItemsDone && !isLoading) e.currentTarget.style.backgroundColor = '#009633';
               }}
               onMouseLeave={(e) => {
-                if (allItemsDone) e.currentTarget.style.backgroundColor = '#364153';
+                if (allItemsDone && !isLoading) e.currentTarget.style.backgroundColor = '#00a63e';
               }}
             >
-              <span>⏳</span>
+              {isLoading ? (
+                <Loader2 style={{ width: '20px', height: '20px', animation: 'spin 1s linear infinite' }} />
+              ) : (
+                <span>✓</span>
+              )}
               DONE ({completedItems}/{totalItems})
             </button>
           </div>

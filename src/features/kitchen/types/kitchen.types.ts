@@ -69,6 +69,7 @@ export function transformToTableOrder(order: KitchenOrder): TableOrder {
     priority: determinePriority(diffMins),
     items: order.items?.map(item => ({
       id: item.id.toString(),
+      menu_item_id: item.menu_item_id,
       name: item.menu_item_name,
       quantity: item.quantity,
       category: determineCategoryFromName(item.menu_item_name),
@@ -87,7 +88,7 @@ function determinePriority(minutesAgo: number): OrderPriority {
   return 'normal';
 }
 
-function determineCategoryFromName(name: string): 'Main Course' | 'Appetizer' | 'Dessert' | 'Beverage' {
+export function determineCategoryFromName(name: string): 'Main Course' | 'Appetizer' | 'Dessert' | 'Beverage' {
   const lower = name.toLowerCase();
   if (lower.includes('drink') || lower.includes('water') || lower.includes('cola') || lower.includes('tea')) return 'Beverage';
   if (lower.includes('dessert') || lower.includes('cake') || lower.includes('ice cream')) return 'Dessert';
@@ -106,6 +107,7 @@ export interface OrderModifier {
 
 export interface OrderItem {
   id: string;
+  menu_item_id?: number;
   name: string;
   quantity: number;
   category?: 'Main Course' | 'Appetizer' | 'Dessert' | 'Beverage';

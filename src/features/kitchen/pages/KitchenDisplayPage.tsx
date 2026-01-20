@@ -4,7 +4,7 @@ import { OrderCard } from '../components/OrderCard';
 import { OrderDetailModal } from '../components/OrderDetailModal';
 import { ItemSummaryModal } from '../components/ItemSummaryModal';
 import { kitchenApi } from '../services/kitchen.api';
-import { transformToTableOrder } from '../types/kitchen.types';
+import { transformToTableOrder, determineCategoryFromName } from '../types/kitchen.types';
 import type { TableOrder, KitchenStats, OrderFilterType, KitchenOrder, OrderDetail } from '../types/kitchen.types';
 
 interface KitchenDisplayPageProps {
@@ -19,21 +19,19 @@ export function KitchenDisplayPage({ onBack }: KitchenDisplayPageProps) {
   const [selectedOrder, setSelectedOrder] = useState<TableOrder | null>(null);
   const [selectedOrderDetail, setSelectedOrderDetail] = useState<OrderDetail[]>([]);
   const [showItemSummary, setShowItemSummary] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     loadData();
-  }, [activeFilter]); // Only load once on mount
+  }, [activeFilter]);
 
   const loadData = async () => {
     try {
-      // Build API params based on active filter
       const params: any = { page: 1, page_size: 100 };
 
       if (activeFilter === 'completed') {
-        // Filter by status completed
         params.status = 'completed';
       } else if (activeFilter === 'main-course') {
-        // Filter by category
         params.category = 'maincourse';
       } else if (activeFilter === 'appetizers') {
         params.category = 'appetizer';
@@ -42,21 +40,32 @@ export function KitchenDisplayPage({ onBack }: KitchenDisplayPageProps) {
       } else if (activeFilter === 'beverages') {
         params.category = 'beverage';
       }
-      // For 'all', don't add any category/status filter
 
       const response = await kitchenApi.list(params);
-      
-      // Transform API response to TableOrder format
       const transformedOrders = response.data.items.map(transformToTableOrder);
       
-      // Mark orders as 'delayed' if urgent (over 30 minutes)
-      const ordersWithDelayedStatus = transformedOrders.map(order => 
-        order.priority === 'urgent' ? { ...order, status: 'delayed' as const } : order
-      );
+      // Mark orders as 'delayed' if over 30 minutes and not completed
+      const now = new Date();
+      const ordersWithDelayedStatus = transformedOrders.map(order => {
+        // Don't mark completed orders as delayed
+        if (order.status === 'completed') {
+          return order;
+        }
+        
+        // Calculate time difference in minutes
+        const orderTime = new Date(response.data.items.find((o: any) => o.id.toString() === order.id)?.created_at || '');
+        const minutesSinceCreated = (now.getTime() - orderTime.getTime()) / 60000;
+        
+        // Mark as delayed if over 30 minutes
+        if (minutesSinceCreated > 30) {
+          return { ...order, status: 'delayed' as const };
+        }
+        
+        return order;
+      });
       
       setOrders(ordersWithDelayedStatus);
       
-      // Calculate stats from orders
       const stats = calculateStats(response.data.items);
       setStats(stats);
     } catch (error) {
@@ -71,7 +80,6 @@ export function KitchenDisplayPage({ onBack }: KitchenDisplayPageProps) {
     const pendingOrders = orders.filter(o => o.status === 'pending').length;
     const completedToday = orders.filter(o => o.status === 'completed').length;
     
-    // Calculate average prep time from order timestamps
     const now = new Date();
     const avgMins = orders.length > 0 
       ? Math.round(
@@ -94,10 +102,9 @@ export function KitchenDisplayPage({ onBack }: KitchenDisplayPageProps) {
   };
 
   const handleStartOrder = async (orderId: string) => {
-    try {      // First transition: pending → confirmed
+    try {
       await kitchenApi.updateStatus(orderId, 'confirmed');
       await kitchenApi.updateStatus(orderId, 'preparing');
-      // Reload data from API
       await loadData();
     } catch (error) {
       console.error('Failed to start order:', error);
@@ -105,25 +112,139 @@ export function KitchenDisplayPage({ onBack }: KitchenDisplayPageProps) {
   };
 
   const handleCompleteOrder = async (orderId: string) => {
-    // TODO: Implement when needed
-    console.log('Complete order:', orderId);
+    setIsUpdating(true);
+    try {
+      const order = orders.find(o => o.id === orderId);
+      if (!order) return;
+
+      // Update all items to completed
+      const itemsToUpdate = order.items.map(item => ({
+        menu_item_id: item.menu_item_id || parseInt(item.id),
+        status: 'completed'
+      }));
+      await kitchenApi.updateItemsInOrder(orderId, itemsToUpdate);
+      
+      // Update order status to completed
+      await kitchenApi.updateStatus(orderId, 'completed');
+      
+      setSelectedOrder(null);
+      await loadData();
+    } catch (error) {
+      console.error('Failed to complete order:', error);
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
-  const handleUpdateItem = async (orderId: string, itemId: string, isDone: boolean) => {
-    // TODO: Implement when needed
-    console.log('Update item:', orderId, itemId, isDone);
+  const handleUpdateItem = async (orderId: string, itemId: string, status: 'done' | 'pending') => {
+    setIsUpdating(true);
+    try {
+      const order = orders.find(o => o.id === orderId);
+      if (!order) return;
+
+      const item = order.items.find(i => i.id === itemId);
+      if (!item) return;
+
+      const menuItemId = item.menu_item_id || parseInt(item.id);
+      await kitchenApi.updateItemsInOrder(orderId, [
+        { menu_item_id: menuItemId, status: status }
+      ]);
+      
+      // Reload to get fresh data
+      await loadData();
+    } catch (error) {
+      console.error('Failed to update item:', error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  // Handle batch update with auto-completion
+  const handleBatchUpdate = async (orderId: string, updates: Record<string, 'done' | 'pending'>) => {
+    setIsUpdating(true);
+    try {
+      const order = orders.find(o => o.id === orderId);
+      if (!order) return;
+
+      // Check if all items will be done after this update
+      const allDone = Object.values(updates).every(status => status === 'done') 
+                      && Object.keys(updates).length === order.items.length;
+
+      // Prepare all item updates with correct final status
+      const itemsToUpdate = Object.entries(updates).map(([itemId, status]) => {
+        const item = order.items.find(i => i.id === itemId);
+        if (!item) return null;
+        
+        return {
+          menu_item_id: item.menu_item_id || parseInt(item.id),
+          // If all items done, use 'completed' instead of 'done'
+          status: allDone ? 'completed' : status
+        };
+      }).filter(Boolean) as Array<{ menu_item_id: number; status: string }>;
+
+      if (itemsToUpdate.length === 0) return;
+
+      // Update all items (API will auto-complete order if all items completed)
+      await kitchenApi.updateItemsInOrder(orderId, itemsToUpdate);
+
+      setSelectedOrder(null);
+      await loadData();
+    } catch (error) {
+      console.error('Failed to batch update items:', error);
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   const handleQuickUpdate = (selections: Array<{ orderId: string; itemId: string }>) => {
-    // TODO: Implement when needed
     console.log('Quick update:', selections);
   };
 
   const handleOrderCardClick = async (order: TableOrder) => {
     try {
       const orderDetail = await kitchenApi.detail(order.id);
+      console.log('Fresh order detail from API:', orderDetail);
+      
+      // Calculate if order is delayed (over 30 minutes and not completed)
+      let modalStatus = order.status;
+      if (orderDetail.status === 'completed') {
+        modalStatus = 'completed';
+      } else {
+        const now = new Date();
+        const orderTime = new Date(orderDetail.created_at);
+        const minutesSinceCreated = (now.getTime() - orderTime.getTime()) / 60000;
+        
+        if (minutesSinceCreated > 30) {
+          modalStatus = 'delayed';
+        }
+      }
+      
+      // Transform fresh order detail to TableOrder format
+      const freshOrder: TableOrder = {
+        id: orderDetail.id.toString(),
+        tableNumber: orderDetail.table_name,
+        orderNumber: orderDetail.order_number,
+        time: order.time,
+        timeAgo: order.timeAgo,
+        status: modalStatus, // Use calculated status
+        priority: order.priority,
+        items: orderDetail.items.map(item => ({
+          id: item.id.toString(),
+          menu_item_id: item.menu_item_id,
+          name: item.menu_item_name,
+          quantity: item.quantity,
+          category: determineCategoryFromName(item.menu_item_name),
+          modifiers: item.modifiers?.map(m => ({
+            name: m.modifier_group_name,
+            value: m.modifier_option_name
+          })) || [],
+          // Map item status: API might return 'completed' but we use 'done' in UI
+          status: (item.status === 'completed' ? 'done' : item.status) as 'pending' | 'done'
+        }))
+      };
+      
       setSelectedOrderDetail([orderDetail]);
-      setSelectedOrder(order);
+      setSelectedOrder(freshOrder);
     } catch (error) {
       console.error('Failed to fetch order details:', error);
     }
@@ -152,25 +273,19 @@ export function KitchenDisplayPage({ onBack }: KitchenDisplayPageProps) {
     { label: 'Completed', value: 'completed' },
   ];
 
-  // Filter orders based on active filter and item status
   const displayOrders = orders.filter(order => {
-    // Skip orders with no items
     if (order.items.length === 0) {
       return false;
     }
     
-    // For completed tab, show only completed orders
     if (activeFilter === 'completed') {
       return order.status === 'completed';
     }
     
-    // For other tabs, exclude completed orders
     if (order.status === 'completed') {
       return false;
     }
     
-    // For other filters (appetizers, desserts, beverages, main-course, all),
-    // exclude orders where all items are done
     return order.items.some(item => item.status !== 'done');
   });
 
@@ -187,14 +302,12 @@ export function KitchenDisplayPage({ onBack }: KitchenDisplayPageProps) {
       }}>
         {/* Header Section */}
         <div style={{ marginBottom: '24px' }}>
-          {/* Top Bar */}
           <div style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             marginBottom: '16px'
           }}>
-            {/* Station Info */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               {onBack && (
                 <button
@@ -251,9 +364,7 @@ export function KitchenDisplayPage({ onBack }: KitchenDisplayPageProps) {
               </div>
             </div>
 
-            {/* Stats & Actions */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-              {/* Avg Prep Time */}
               <div style={{
                 backgroundColor: '#1e2939',
                 borderRadius: '10px',
@@ -286,7 +397,6 @@ export function KitchenDisplayPage({ onBack }: KitchenDisplayPageProps) {
                 </div>
               </div>
 
-              {/* Connection Status */}
               <div style={{
                 backgroundColor: '#1e2939',
                 borderRadius: '10px',
@@ -314,7 +424,6 @@ export function KitchenDisplayPage({ onBack }: KitchenDisplayPageProps) {
                 </span>
               </div>
 
-              {/* Item Summary Button */}
               <button 
                 onClick={() => setShowItemSummary(true)}
                 style={{
@@ -346,7 +455,6 @@ export function KitchenDisplayPage({ onBack }: KitchenDisplayPageProps) {
             </div>
           </div>
 
-          {/* Filter Tabs */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             {filters.map((filter) => (
               <button
@@ -381,7 +489,6 @@ export function KitchenDisplayPage({ onBack }: KitchenDisplayPageProps) {
           </div>
         </div>
 
-        {/* Orders Grid */}
         {displayOrders.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '80px 0' }}>
             <p style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '18px' }}>
@@ -409,18 +516,17 @@ export function KitchenDisplayPage({ onBack }: KitchenDisplayPageProps) {
         )}
       </div>
 
-      {/* Order Detail Modal */}
       {selectedOrder && (
         <OrderDetailModal
           order={selectedOrder}
           isOpen={!!selectedOrder}
           onClose={() => setSelectedOrder(null)}
-          onUpdateItem={handleUpdateItem}
+          onBatchUpdate={handleBatchUpdate}
           onComplete={handleCompleteOrder}
+          isLoading={isUpdating}
         />
       )}
 
-      {/* Item Summary Modal */}
       <ItemSummaryModal
         orders={orders}
         orderDetails={[]}
