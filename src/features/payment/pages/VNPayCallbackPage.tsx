@@ -39,7 +39,6 @@ export const VNPayCallbackPage: React.FC = () => {
         const result = await serveApi.handleVNPayCallback(queryParams, token);
 
         console.log('✅ VNPay callback result:', result);
-await new Promise(resolve => setTimeout(resolve, 30000));
         if (result && result.success) {
           // Redirect to waiter page with success flag
           window.location.href = `/admin/waiter?payment_success=true&payment_id=${paymentId}`;
