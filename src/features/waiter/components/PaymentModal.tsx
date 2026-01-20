@@ -40,6 +40,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   const [sliderPosition, setSliderPosition] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [showVNPayWebView, setShowVNPayWebView] = useState(false);
+  const [vnpayUrl, setVnpayUrl] = useState<string>('');
   const sliderRef = useRef<HTMLDivElement>(null);
   const isProcessingRef = useRef(false);
 
@@ -97,6 +99,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
   if (!isOpen) return null;
 
+  // Calculate totals
   const calculateSubtotal = () => {
     return orderItems.reduce((total, item) => {
       const itemPrice = item.price + (item.modifierPrice || 0);
@@ -258,9 +261,17 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         
         // If vnpay payment, redirect to VNPay URL
         if (selectedPaymentMethod === 'vnpay' && payment.vnpay_url) {
-          console.log('🔗 Redirecting to VNPay:', payment.vnpay_url);
+          console.log('🔗 VNPay URL from API:', payment.vnpay_url);
+          
+          // JavaScript's JSON.parse() already decoded \u0026 → &
+          // But just to be safe, handle both cases
+          const vnpayUrl = payment.vnpay_url.replace(/\\u0026/g, '&');
+          
+          console.log('🔗 Final VNPay URL:', vnpayUrl);
+          console.log('🔗 Redirecting to VNPay payment page...');
+          
           // Redirect browser to VNPay payment page
-          window.location.href = payment.vnpay_url;
+          window.open(vnpayUrl, '_self');
           return;
         } else {
           // For cash payment, complete immediately
@@ -993,6 +1004,140 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         </>
       )}
 
+      {/* VNPay WebView Modal */}
+      {showVNPayWebView && vnpayUrl && (
+        <>
+          <div
+            onClick={() => {
+              setShowVNPayWebView(false);
+              setVnpayUrl('');
+              onPaymentComplete();
+            }}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0, 0, 0, 0.9)',
+              zIndex: 1200,
+              animation: 'fadeIn 0.3s ease-out'
+            }}
+          />
+          <div style={{
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: '95%',
+            maxWidth: '1200px',
+            height: '90vh',
+            background: '#ffffff',
+            borderRadius: '16px',
+            zIndex: 1201,
+            overflow: 'hidden',
+            boxShadow: '0px 30px 60px rgba(0, 0, 0, 0.8)',
+            display: 'flex',
+            flexDirection: 'column',
+            animation: 'scaleIn 0.3s ease-out'
+          }}>
+            {/* WebView Header */}
+            <div style={{
+              background: 'linear-gradient(to right, #00a63e, #008236)',
+              padding: '16px 20px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+            }}>
+              <div>
+                <h3 style={{
+                  color: '#ffffff',
+                  fontSize: '18px',
+                  fontWeight: 'bold',
+                  margin: 0,
+                  marginBottom: '4px'
+                }}>
+                  VNPay Payment
+                </h3>
+                <p style={{
+                  color: 'rgba(255, 255, 255, 0.8)',
+                  fontSize: '13px',
+                  margin: 0
+                }}>
+                  Complete your payment securely
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowVNPayWebView(false);
+                  setVnpayUrl('');
+                  onPaymentComplete();
+                }}
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  border: 'none',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+                }}
+              >
+                <X style={{ width: '24px', height: '24px', color: '#ffffff' }} />
+              </button>
+            </div>
+
+            {/* iframe WebView */}
+            <iframe
+              src={vnpayUrl}
+              title="VNPay Payment"
+              style={{
+                flex: 1,
+                width: '100%',
+                border: 'none',
+                background: '#ffffff'
+              }}
+              onLoad={() => {
+                console.log('✅ VNPay iframe loaded');
+              }}
+            />
+
+            {/* Footer Info */}
+            <div style={{
+              background: '#f5f5f5',
+              padding: '12px 20px',
+              borderTop: '1px solid #e0e0e0',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px'
+            }}>
+              <div style={{
+                width: '8px',
+                height: '8px',
+                background: '#00a63e',
+                borderRadius: '50%',
+                animation: 'pulse 2s ease-in-out infinite'
+              }} />
+              <span style={{
+                color: '#666',
+                fontSize: '13px',
+                fontWeight: 500
+              }}>
+                Secure payment powered by VNPay
+              </span>
+            </div>
+          </div>
+        </>
+      )}
+
       <style>
         {`
           @keyframes fadeIn {
@@ -1017,6 +1162,17 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             }
             to {
               transform: rotate(360deg);
+            }
+          }
+
+          @keyframes pulse {
+            0%, 100% {
+              opacity: 1;
+              transform: scale(1);
+            }
+            50% {
+              opacity: 0.5;
+              transform: scale(1.2);
             }
           }
         `}
