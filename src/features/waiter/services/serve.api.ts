@@ -423,7 +423,7 @@ export const serveApi = {
       console.log('📋 Request body:', queryParams);
 
       const res = await fetch(url, {
-        method: 'POST',
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${authToken}`
