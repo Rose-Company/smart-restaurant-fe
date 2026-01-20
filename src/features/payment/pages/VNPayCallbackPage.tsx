@@ -29,8 +29,13 @@ export const VNPayCallbackPage: React.FC = () => {
           return;
         }
 
+        // Add 30s delay for testing network call
+        console.log('⏳ Waiting 30 seconds for testing...');
+        await new Promise(resolve => setTimeout(resolve, 30000));
+
         // Call backend API to mark payment as successful
         const token = localStorage.getItem('admin_auth_token') || '';
+        console.log('📞 Calling VNPay callback API...');
         const result = await serveApi.handleVNPayCallback(queryParams, token);
 
         console.log('✅ VNPay callback result:', result);
