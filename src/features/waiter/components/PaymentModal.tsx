@@ -238,7 +238,6 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         method: selectedPaymentMethod
       });
 
-      // For cash payment, automatically set received_amount = total, change_amount = 0
       const receivedAmount = selectedPaymentMethod === 'cash' ? total : undefined;
       const changeAmount = selectedPaymentMethod === 'cash' ? 0 : undefined;
 
@@ -252,39 +251,24 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       );
 
       if (payment) {
-        console.log('✅ Payment successful:', payment);
-        
-        // Download bill PDF using bill info from payment response or tableDetail
+      
         const actualBillId = payment.bill_id || billId;
         const finalBillNumber = payment.bill_number || billNumber;
         await downloadBillPDF(actualBillId, finalBillNumber, token);
-        
-        // If vnpay payment, redirect to VNPay URL
-        if (selectedPaymentMethod === 'vnpay' && payment.vnpay_url) {
-          console.log('🔗 VNPay URL from API:', payment.vnpay_url);
-          
-          // JavaScript's JSON.parse() already decoded \u0026 → &
-          // But just to be safe, handle both cases
-          const vnpayUrl = payment.vnpay_url.replace(/\\u0026/g, '&');
-          
-          console.log('🔗 Final VNPay URL:', vnpayUrl);
-          console.log('🔗 Redirecting to VNPay payment page...');
-          
-          // Redirect browser to VNPay payment page
+        console.log(selectedPaymentMethod , (payment as any).data.vnpay_url)
+        if (selectedPaymentMethod === 'vnpay' && (payment as any).data.vnpay_url) {
+          const vnpayUrl = (payment as any).data.vnpay_url.replace(/\\u0026/g, '&');
           window.open(vnpayUrl, '_self');
           return;
         } else {
-          // For cash payment, complete immediately
           onPaymentComplete();
           onClose();
         }
       } else {
-        console.error('❌ Payment failed');
         isProcessingRef.current = false;
         setIsProcessingPayment(false);
       }
     } catch (error) {
-      console.error('❌ Error processing payment:', error);
       isProcessingRef.current = false;
       setIsProcessingPayment(false);
     }
