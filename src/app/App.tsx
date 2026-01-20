@@ -6,6 +6,9 @@ import { MenuPage } from '../features/menu/pages/MenuPage';
 import { KitchenDisplayPage } from '../features/kitchen/pages/KitchenDisplayPage';
 import { WaiterTaskFeedPage } from '../features/waiter/pages/WaiterTaskFeedPage';
 import { SettingsPage } from '../features/settings/pages/SettingsPage';
+import { StaffPage } from '../features/staff/pages/StaffPage';
+import { MyProfilePage } from '../features/profile/pages/MyProfilePage';
+import { AnalyticsPage } from '../features/analytics/pages/AnalyticsPage';
 import LoginPage from '../features/auth/pages/LoginPage';
 import { CustomerApp } from '../features/customer/App';
 
@@ -23,7 +26,7 @@ export default function App() {
     const pageFromUrl = pathSegments[pathSegments.length - 1] as SidebarPageKey;
     
     // List of valid pages
-    const validPages: SidebarPageKey[] = ['dashboard', 'tables', 'menu', 'kitchen', 'waiter', 'customers', 'qr-codes', 'analytics', 'reports', 'settings'];
+    const validPages: SidebarPageKey[] = ['dashboard', 'tables', 'menu', 'kitchen', 'waiter', 'customers', 'staff', 'qr-codes', 'analytics', 'reports', 'settings', 'profile'];
     
     return validPages.includes(pageFromUrl) ? pageFromUrl : 'tables';
   });
@@ -42,7 +45,7 @@ export default function App() {
       const path = window.location.pathname;
       const pathSegments = path.split('/').filter(Boolean);
       const pageFromUrl = pathSegments[pathSegments.length - 1] as SidebarPageKey;
-      const validPages: SidebarPageKey[] = ['dashboard', 'tables', 'menu', 'kitchen', 'waiter', 'customers', 'qr-codes', 'analytics', 'reports', 'settings'];
+      const validPages: SidebarPageKey[] = ['dashboard', 'tables', 'menu', 'kitchen', 'waiter', 'customers', 'qr-codes', 'analytics', 'reports', 'settings', 'profile'];
       
       if (validPages.includes(pageFromUrl)) {
         setCurrentPage(pageFromUrl);
@@ -97,6 +100,12 @@ export default function App() {
         return <WaiterTaskFeedPage />;
       case 'settings':
         return <SettingsPage onLogout={handleLogout} />;
+      case 'staff':
+        return <StaffPage />;
+      case 'profile':
+        return <MyProfilePage />;
+      case 'analytics':
+        return <AnalyticsPage />;
       case 'customers':
         // Navigate to customer menu for testing
         window.location.href = '/customer/menu';
