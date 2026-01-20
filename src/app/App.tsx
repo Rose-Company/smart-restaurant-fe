@@ -8,6 +8,7 @@ import { WaiterTaskFeedPage } from '../features/waiter/pages/WaiterTaskFeedPage'
 import { StaffPage } from '../features/staff/pages/StaffPage';
 import { MyProfilePage } from '../features/profile/pages/MyProfilePage';
 import { AnalyticsPage } from '../features/analytics/pages/AnalyticsPage';
+import { VNPayCallbackPage } from '../features/payment/pages/VNPayCallbackPage';
 import LoginPage from '../features/auth/pages/LoginPage';
 import { CustomerApp } from '../features/customer/App';
 
@@ -30,12 +31,15 @@ export default function App() {
     return validPages.includes(pageFromUrl) ? pageFromUrl : 'tables';
   });
   const [isCustomerRoute, setIsCustomerRoute] = useState(false);
+  const [isPaymentCallback, setIsPaymentCallback] = useState(false);
 
-  // Check if current route is customer route
+  // Check if current route is customer route or payment callback
   useEffect(() => {
     const path = window.location.pathname;
     const isCustomer = path.startsWith('/customer') || path.startsWith('/menu');
+    const isCallback = path.startsWith('/payment/callback');
     setIsCustomerRoute(isCustomer);
+    setIsPaymentCallback(isCallback);
   }, []);
 
   // Handle browser back/forward button
@@ -78,6 +82,11 @@ export default function App() {
   // Render customer app if on customer route
   if (isCustomerRoute) {
     return <CustomerApp />;
+  }
+
+  // Render payment callback page if on callback route
+  if (isPaymentCallback) {
+    return <VNPayCallbackPage />;
   }
 
   // Show login page if not authenticated

@@ -403,6 +403,42 @@ export const serveApi = {
       console.error('Error processing payment:', error);
       return null;
     }
+  },
+
+  /**
+   * Handle VNPay callback
+   * POST /api/vnpay/callback
+   */
+  handleVNPayCallback: async (queryParams: Record<string, string>, token?: string): Promise<{ success: boolean; message: string } | null> => {
+    try {
+      const authToken = token || localStorage.getItem('admin_auth_token') || '';
+
+      if (!authToken) {
+        console.warn('[serveApi.handleVNPayCallback] No admin token found');
+        return null;
+      }
+
+      const res = await fetch(`/api/vnpay/callback`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify(queryParams)
+      });
+
+      if (!res.ok) {
+        console.error('Failed to handle VNPay callback:', res.status);
+        return null;
+      }
+
+      const result = await res.json();
+      console.log('✅ VNPay callback handled:', result);
+      return result;
+    } catch (error) {
+      console.error('Error handling VNPay callback:', error);
+      return null;
+    }
   }
 
 

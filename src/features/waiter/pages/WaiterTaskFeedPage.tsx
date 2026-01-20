@@ -23,6 +23,28 @@ export const WaiterTaskFeedPage: React.FC = () => {
   const [showTableMap, setShowTableMap] = useState(false);
 
   useEffect(() => {
+    // Check for payment callback result in URL
+    const searchParams = new URLSearchParams(window.location.search);
+    const paymentSuccess = searchParams.get('payment_success');
+    const paymentError = searchParams.get('payment_error');
+    const paymentId = searchParams.get('payment_id');
+
+    if (paymentSuccess === 'true') {
+      setNotificationMessage(`Payment ${paymentId} completed successfully!`);
+      setShowNotification(true);
+      // Clear URL params
+      window.history.replaceState({}, '', '/admin/waiter');
+      // Reload tasks to refresh list
+      loadTasks();
+    } else if (paymentError === 'true') {
+      setNotificationMessage('Payment failed. Please try again.');
+      setShowNotification(true);
+      // Clear URL params
+      window.history.replaceState({}, '', '/admin/waiter');
+    }
+  }, []);
+
+  useEffect(() => {
     loadTasks();
   }, [activeFilter]);
 
