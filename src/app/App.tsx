@@ -13,7 +13,11 @@ export default function App() {
     // Check localStorage on initial load
     return localStorage.getItem('admin_auth_token') ? true : false;
   });
-  const [currentPage, setCurrentPage] = useState<SidebarPageKey>('tables');
+  const [currentPage, setCurrentPage] = useState<SidebarPageKey>(() => {
+    // Restore currentPage from localStorage on initial load
+    const savedPage = localStorage.getItem('admin_current_page') as SidebarPageKey;
+    return savedPage || 'tables';
+  });
   const [isCustomerRoute, setIsCustomerRoute] = useState(false);
 
   // Check if current route is customer route
@@ -32,8 +36,15 @@ export default function App() {
   // Handle logout - clear token and reset state
   const handleLogout = () => {
     localStorage.removeItem('admin_auth_token');
+    localStorage.removeItem('admin_current_page');
     setIsAuthenticated(false);
     setCurrentPage('tables');
+  };
+
+  // Save currentPage to localStorage whenever it changes
+  const handlePageChange = (page: SidebarPageKey) => {
+    localStorage.setItem('admin_current_page', page);
+    setCurrentPage(page);
   };
 
   // Render customer app if on customer route
@@ -55,7 +66,7 @@ export default function App() {
       case 'menu':
         return <MenuPage />;
       case 'kitchen':
-        return <KitchenDisplayPage onBack={() => setCurrentPage('dashboard')} />;
+        return <KitchenDisplayPage onBack={() => handlePageChange('dashboard')} />;
       case 'waiter':
         return <WaiterTaskFeedPage />;
       case 'customers':
@@ -84,7 +95,7 @@ export default function App() {
   return (
     <div className="flex h-screen bg-gray-50">
       {!shouldHideSidebar && (
-        <Sidebar currentPage={currentPage} onNavigate={setCurrentPage} />
+        <Sidebar currentPage={currentPage} onNavigate={handlePageChange} />
       )}
       <div className="flex-1 flex flex-col overflow-hidden">{renderPage()}</div>
     </div>
