@@ -11,7 +11,7 @@ import {
   TableRow,
 } from '../../../components/ui/data-display/table';
 import type { MenuItem } from '../types/menu.types';
-
+import { formatPrice } from '../../../lib/utils';
 interface MenuTableProps {
   items: MenuItem[];
   onEdit: (id: number) => void;
@@ -189,7 +189,7 @@ export function MenuTable({
       label: 'Price',
       renderCell: (item) => (
         <TableCell>
-          <span className="text-gray-900">${item.price.toFixed(2)}</span>
+          <span className="text-gray-900">{formatPrice(item.price)}đ</span>
         </TableCell>
       ),
     },

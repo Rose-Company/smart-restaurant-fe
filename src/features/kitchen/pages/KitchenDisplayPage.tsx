@@ -27,6 +27,10 @@ export function KitchenDisplayPage({ onBack }: KitchenDisplayPageProps) {
 
   const loadData = async () => {
     try {
+      setLoading(true);
+      // Clear orders list before loading new data
+      setOrders([]);
+      
       const params: any = { page: 1, page_size: 100 };
 
       if (activeFilter === 'completed') {
@@ -250,19 +254,7 @@ export function KitchenDisplayPage({ onBack }: KitchenDisplayPageProps) {
     }
   };
 
-  if (loading) {
-    return (
-      <div style={{
-        flex: 1,
-        backgroundColor: '#f9fafb',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
-        <div style={{ color: '#6b7280' }}>Loading kitchen display...</div>
-      </div>
-    );
-  }
+
 
   const filters: { label: string; value: OrderFilterType }[] = [
     { label: 'All Orders', value: 'all' },
@@ -489,7 +481,46 @@ export function KitchenDisplayPage({ onBack }: KitchenDisplayPageProps) {
           </div>
         </div>
 
-        {displayOrders.length === 0 ? (
+        {loading ? (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '400px',
+            gap: '20px'
+          }}>
+            <div style={{
+              width: '50px',
+              height: '50px',
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, rgb(255, 105, 0) 0%, rgb(231, 0, 11) 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              animation: 'spin 1s linear infinite'
+            }}>
+              <div style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                backgroundColor: '#000000'
+              }} />
+            </div>
+            <p style={{
+              color: '#99a1af',
+              fontSize: '16px',
+              margin: 0
+            }}>
+              Fetching orders...
+            </p>
+            <style>{`
+              @keyframes spin {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+              }
+            `}</style>
+          </div>
+        ) : displayOrders.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '80px 0' }}>
             <p style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '18px' }}>
               No orders to display

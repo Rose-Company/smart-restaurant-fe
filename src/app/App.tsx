@@ -14,9 +14,17 @@ export default function App() {
     return localStorage.getItem('admin_auth_token') ? true : false;
   });
   const [currentPage, setCurrentPage] = useState<SidebarPageKey>(() => {
-    // Restore currentPage from localStorage on initial load
-    const savedPage = localStorage.getItem('admin_current_page') as SidebarPageKey;
-    return savedPage || 'tables';
+    // Get page from URL pathname
+    const path = window.location.pathname;
+    const pathSegments = path.split('/').filter(Boolean);
+    
+    // Extract page from path (e.g., /admin/kitchen -> 'kitchen')
+    const pageFromUrl = pathSegments[pathSegments.length - 1] as SidebarPageKey;
+    
+    // List of valid pages
+    const validPages: SidebarPageKey[] = ['dashboard', 'tables', 'menu', 'kitchen', 'waiter', 'customers', 'qr-codes', 'analytics', 'reports', 'settings'];
+    
+    return validPages.includes(pageFromUrl) ? pageFromUrl : 'tables';
   });
   const [isCustomerRoute, setIsCustomerRoute] = useState(false);
 
@@ -25,6 +33,23 @@ export default function App() {
     const path = window.location.pathname;
     const isCustomer = path.startsWith('/customer') || path.startsWith('/menu');
     setIsCustomerRoute(isCustomer);
+  }, []);
+
+  // Handle browser back/forward button
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname;
+      const pathSegments = path.split('/').filter(Boolean);
+      const pageFromUrl = pathSegments[pathSegments.length - 1] as SidebarPageKey;
+      const validPages: SidebarPageKey[] = ['dashboard', 'tables', 'menu', 'kitchen', 'waiter', 'customers', 'qr-codes', 'analytics', 'reports', 'settings'];
+      
+      if (validPages.includes(pageFromUrl)) {
+        setCurrentPage(pageFromUrl);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
   // Handle login - store token and set authenticated
@@ -36,15 +61,15 @@ export default function App() {
   // Handle logout - clear token and reset state
   const handleLogout = () => {
     localStorage.removeItem('admin_auth_token');
-    localStorage.removeItem('admin_current_page');
     setIsAuthenticated(false);
     setCurrentPage('tables');
+    window.history.pushState({}, '', '/admin/tables');
   };
 
-  // Save currentPage to localStorage whenever it changes
+  // Save currentPage to URL and state whenever it changes
   const handlePageChange = (page: SidebarPageKey) => {
-    localStorage.setItem('admin_current_page', page);
     setCurrentPage(page);
+    window.history.pushState({}, '', `/admin/${page}`);
   };
 
   // Render customer app if on customer route
