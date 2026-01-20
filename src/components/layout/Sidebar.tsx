@@ -1,7 +1,7 @@
 import React from 'react';
-import { LayoutDashboard, Utensils, QrCode, Users, Settings, BarChart3, FileText, Menu, ChefHat, ClipboardList } from 'lucide-react';
+import { LayoutDashboard, Utensils, QrCode, Users, Settings, BarChart3, FileText, Menu, ChefHat, ClipboardList, UserCog, User } from 'lucide-react';
 import { useTranslation } from "react-i18next";
-export type SidebarPageKey = 'dashboard' | 'tables' | 'menu' | 'kitchen' | 'waiter' | 'qr-codes' | 'customers' | 'analytics' | 'reports' | 'settings';
+export type SidebarPageKey = 'dashboard' | 'tables' | 'menu' | 'kitchen' | 'waiter' | 'qr-codes' | 'customers' | 'staff' | 'analytics' | 'reports' | 'settings' | 'profile';
 
 interface SidebarProps {
   currentPage: SidebarPageKey;
@@ -18,6 +18,7 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
     { icon: ClipboardList, label: t("sidebar.waiter"), key: 'waiter' },
     { icon: QrCode, label: t("sidebar.qr"), key: 'qr-codes' },
     { icon: Users, label: t("sidebar.customers"), key: 'customers' },
+    { icon: UserCog, label: 'Staff & Users', key: 'staff' },
     { icon: BarChart3, label: t("sidebar.analytics"), key: 'analytics' },
     { icon: FileText, label: t("sidebar.reports"), key: 'reports' },
     { icon: Settings, label: t("sidebar.settings"), key: 'settings' },
@@ -59,15 +60,23 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
       </nav>
 
       <div className="p-4 border-t border-white/10">
-        <div className="flex items-center gap-3 px-4 py-3">
+        <button
+          type="button"
+          onClick={() => onNavigate('profile')}
+          className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+            currentPage === 'profile'
+              ? 'bg-[#27ae60] text-white'
+              : 'text-white/70 hover:bg-white/5 hover:text-white'
+          }`}
+        >
           <div className="w-10 h-10 bg-[#27ae60] rounded-full flex items-center justify-center">
             <span>JD</span>
           </div>
-          <div className="flex-1">
+          <div className="flex-1 text-left">
             <p className="text-sm text-white">John Doe</p>
             <p className="text-xs text-white/60">{t("role.administrator")}</p>
           </div>
-        </div>
+        </button>
       </div>
     </div>
   );
