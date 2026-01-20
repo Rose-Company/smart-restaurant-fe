@@ -11,12 +11,12 @@ interface SidebarProps {
 export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
   const { t } = useTranslation("common");
   const menuItems: { icon: React.ComponentType<{ className?: string }>; label: string; key: SidebarPageKey }[] = [
-    { icon: LayoutDashboard, label: t("sidebar.dashboard"), key: 'dashboard' },
+//  { icon: LayoutDashboard, label: t("sidebar.dashboard"), key: 'dashboard' },
     { icon: Utensils, label: t("sidebar.tables"), key: 'tables' },
     { icon: Menu, label: t("sidebar.menu"), key: 'menu' },
     { icon: ChefHat, label: t("sidebar.kitchen"), key: 'kitchen' },
     { icon: ClipboardList, label: t("sidebar.waiter"), key: 'waiter' },
-    { icon: QrCode, label: t("sidebar.qr"), key: 'qr-codes' },
+//  { icon: QrCode, label: t("sidebar.qr"), key: 'qr-codes' },
     { icon: Users, label: t("sidebar.customers"), key: 'customers' },
     { icon: UserCog, label: 'Staff & Users', key: 'staff' },
     { icon: BarChart3, label: t("sidebar.analytics"), key: 'analytics' },

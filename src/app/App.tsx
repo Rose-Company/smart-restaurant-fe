@@ -87,8 +87,6 @@ export default function App() {
 
   const renderPage = () => {
     switch (currentPage) {
-      case 'dashboard':
-        return <DashboardPage />;
       case 'tables':
         return <TablesPage />;
       case 'menu':
