@@ -5,6 +5,8 @@ export interface TaskItem {
   id: string;
   name: string;
   quantity: number;
+  unitPrice?: number;
+  status?: 'pending' | 'completed';
 }
 
 export interface WaiterTask {
@@ -16,6 +18,15 @@ export interface WaiterTask {
   items?: TaskItem[];
   note?: string;
   totalAmount?: number;
+  // Properties from Table API response
+  capacity?: number;
+  location?: string;
+  tableStatus?: 'occupied' | 'available' | 'reserved' | 'cleaning';
+  activeOrdersCount?: number;
+  guestCount?: number;
+  // Flags for coloring
+  isHelpNeeded?: boolean;
+  isReadyToBill?: boolean;
 }
 
 export type TaskFilterType = 'all' | 'kitchen' | 'requests' | 'payment';

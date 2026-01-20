@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ChefHat, MessageCircle, Receipt, Bell } from 'lucide-react';
 import { WaiterTask, TaskFilterType } from '../types/waiter.types';
 import { waiterApi } from '../services/waiter.api';
+import { serveApi, Table } from '../services/serve.api';
 import { WaiterTaskCard } from '../components/WaiterTaskCard';
 import { SuccessNotification } from '../components/SuccessNotification';
 import { OrderDetailModal } from '../components/OrderDetailModal';
@@ -22,13 +23,76 @@ export const WaiterTaskFeedPage: React.FC = () => {
     loadTasks();
   }, [activeFilter]);
 
+  // Transform Table data from API to WaiterTask format
+  const transformTableToTask = (table: Table): WaiterTask => {
+    // Determine task type and status based on table state
+    let taskType: 'kitchen_ready' | 'customer_request' | 'payment_request';
+    
+    if (table.is_ready_to_bill) {
+      taskType = 'payment_request';
+    } else if (table.is_help_needed) {
+      taskType = 'customer_request';
+    } else {
+      taskType = 'kitchen_ready';
+    }
+
+    return {
+      id: String(table.id),
+      tableNumber: table.table_number,
+      type: taskType,
+      status: 'pending',
+      createdAt: new Date(table.updated_at),
+      items: table.orders?.[0]?.items?.map(item => ({
+        id: String(item.id),
+        name: item.item_name,
+        quantity: item.quantity
+      })) || [],
+      totalAmount: table.total_bill,
+      // Add custom properties for coloring
+      isHelpNeeded: table.is_help_needed,
+      isReadyToBill: table.is_ready_to_bill
+    };
+  };
+
   const loadTasks = async () => {
     try {
       setLoading(true);
-      const data = await waiterApi.list(activeFilter);
-      setTasks(data);
+      
+      // Check if token exists before making API call
+      const token = localStorage.getItem('admin_auth_token');
+      if (!token) {
+        console.log('No admin token found, using fallback data');
+        const mockData = await waiterApi.list(activeFilter);
+        setTasks(mockData);
+        return;
+      }
+      
+      // Fetch tables from API
+      const tablesData = await serveApi.getOccupiedTables();
+      
+      // Transform tables to tasks
+      const transformedTasks = tablesData.map(transformTableToTask);
+      
+      // Filter based on active filter
+      let filteredTasks = transformedTasks;
+      if (activeFilter === 'kitchen') {
+        filteredTasks = transformedTasks.filter(t => t.type === 'kitchen_ready');
+      } else if (activeFilter === 'requests') {
+        filteredTasks = transformedTasks.filter(t => t.type === 'customer_request');
+      } else if (activeFilter === 'payment') {
+        filteredTasks = transformedTasks.filter(t => t.type === 'payment_request');
+      }
+      
+      setTasks(filteredTasks);
     } catch (error) {
       console.error('Failed to load tasks:', error);
+      // Fallback to mock data if API fails
+      try {
+        const mockData = await waiterApi.list(activeFilter);
+        setTasks(mockData);
+      } catch (mockError) {
+        console.error('Failed to load mock tasks:', mockError);
+      }
     } finally {
       setLoading(false);
     }

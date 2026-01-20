@@ -5,6 +5,7 @@ import { DashboardPage } from '../features/dashboard/pages/DashboardPage';
 import { MenuPage } from '../features/menu/pages/MenuPage';
 import { KitchenDisplayPage } from '../features/kitchen/pages/KitchenDisplayPage';
 import { WaiterTaskFeedPage } from '../features/waiter/pages/WaiterTaskFeedPage';
+import { SettingsPage } from '../features/settings/pages/SettingsPage';
 import LoginPage from '../features/auth/pages/LoginPage';
 import { CustomerApp } from '../features/customer/App';
 
@@ -94,11 +95,13 @@ export default function App() {
         return <KitchenDisplayPage onBack={() => handlePageChange('dashboard')} />;
       case 'waiter':
         return <WaiterTaskFeedPage />;
+      case 'settings':
+        return <SettingsPage onLogout={handleLogout} />;
       case 'customers':
         // Navigate to customer menu for testing
         window.location.href = '/customer/menu';
         return null;
-      // Các trang khác (qr-codes, analytics, reports, settings)
+      // Các trang khác (qr-codes, analytics, reports)
       // hiện tại chỉ là placeholder đơn giản.
         default:
         return (
