@@ -418,7 +418,11 @@ export const serveApi = {
         return null;
       }
 
-      const res = await fetch(`/api/vnpay/callback`, {
+      const url = `/api/vnpay/callback`;
+      console.log('📤 Calling VNPay callback API:', url);
+      console.log('📋 Request body:', queryParams);
+
+      const res = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -427,8 +431,12 @@ export const serveApi = {
         body: JSON.stringify(queryParams)
       });
 
+      console.log('📥 Response status:', res.status);
+
       if (!res.ok) {
-        console.error('Failed to handle VNPay callback:', res.status);
+        console.error('❌ Failed to handle VNPay callback:', res.status);
+        const errorText = await res.text();
+        console.error('❌ Error response:', errorText);
         return null;
       }
 
@@ -436,7 +444,7 @@ export const serveApi = {
       console.log('✅ VNPay callback handled:', result);
       return result;
     } catch (error) {
-      console.error('Error handling VNPay callback:', error);
+      console.error('❌ Error handling VNPay callback:', error);
       return null;
     }
   }
