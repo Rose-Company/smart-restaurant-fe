@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { CheckCircle, X } from 'lucide-react';
 
 interface OrderSuccessModalProps {
@@ -10,6 +11,7 @@ interface OrderSuccessModalProps {
 }
 
 export function OrderSuccessModal({ isOpen, orderNumber, title, message, onClose }: OrderSuccessModalProps) {
+  const { t } = useTranslation('customer');
   if (!isOpen) return null;
 
   return (

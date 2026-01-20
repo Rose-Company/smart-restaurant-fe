@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Mail, Lock, Eye, EyeOff, ArrowLeft, User, Utensils } from 'lucide-react';
 import { authCustomerApi, SignupRequest } from '../../services/auth.api';
 import { OTPVerificationPopup } from '../../components/OTPVerifyPopUp';
@@ -10,6 +11,7 @@ interface CustomerRegisterPageProps {
 }
 
 export function CustomerRegisterPage({ onBack, onLoginClick, onRegisterSuccess }: CustomerRegisterPageProps) {
+  const { t } = useTranslation('customer');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -196,7 +198,7 @@ export function CustomerRegisterPage({ onBack, onLoginClick, onRegisterSuccess }
               marginBottom: '8px',
               textAlign: 'center'
             }}>
-              Create Account
+              {t('auth.createAccount')}
             </h1>
             <p style={{
               fontSize: '15px',
@@ -230,7 +232,7 @@ export function CustomerRegisterPage({ onBack, onLoginClick, onRegisterSuccess }
                   color: '#374151',
                   marginBottom: '8px'
                 }}>
-                  First Name
+                  {t('auth.firstName')}
                 </label>
                 <div style={{ position: 'relative' }}>
                   <User style={{
@@ -272,7 +274,7 @@ export function CustomerRegisterPage({ onBack, onLoginClick, onRegisterSuccess }
                   color: '#374151',
                   marginBottom: '8px'
                 }}>
-                  Last Name
+                  {t('auth.lastName')}
                 </label>
                 <div style={{ position: 'relative' }}>
                   <User style={{
@@ -494,7 +496,7 @@ export function CustomerRegisterPage({ onBack, onLoginClick, onRegisterSuccess }
                 onMouseEnter={(e) => !loading && (e.currentTarget.style.backgroundColor = '#40a574')}
                 onMouseLeave={(e) => !loading && (e.currentTarget.style.backgroundColor = '#52b788')}
               >
-                {loading ? 'Creating account...' : 'Create Account'}
+                {loading ? t('auth.creatingAccount') : t('auth.createAccount')}
               </button>
 
               {/* Divider */}

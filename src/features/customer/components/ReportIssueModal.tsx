@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Upload, Camera } from 'lucide-react';
 import { ReportSuccessModal } from './ReportSuccessModal';
 import { useReports } from '../context/ReportsContext';
@@ -19,6 +20,7 @@ const issueTypes = [
 ];
 
 export function ReportIssueModal({ isOpen, onClose, orderNumber }: ReportIssueModalProps) {
+  const { t } = useTranslation('customer');
   const [selectedIssue, setSelectedIssue] = useState<string | null>(null);
   const [description, setDescription] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);

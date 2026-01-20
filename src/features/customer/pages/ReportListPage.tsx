@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, ChevronRight, MessageCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useReports, Report } from '../context/ReportsContext';
@@ -10,6 +11,7 @@ interface ReportListPageProps {
 }
 
 export function ReportListPage({ onBack }: ReportListPageProps) {
+  const { t } = useTranslation('customer');
   const { user } = useAuth();
   const { reports } = useReports();
   const [activeTab, setActiveTab] = useState<FilterTab>('All');
@@ -89,7 +91,7 @@ export function ReportListPage({ onBack }: ReportListPageProps) {
             margin: 0,
             letterSpacing: '-0.31px'
           }}>
-            My Reports
+            {t('reports.title')}
           </h1>
         </div>
 
@@ -118,7 +120,7 @@ export function ReportListPage({ onBack }: ReportListPageProps) {
                 textAlign: 'center'
               }}
             >
-              {tab}
+              {t(`reports.status${tab === 'All' ? 'All' : tab === 'Pending' ? 'Pending' : tab === 'In Progress' ? 'InProgress' : 'Completed'}`)}
               {activeTab === tab && (
                 <div style={{
                   position: 'absolute',
@@ -145,7 +147,7 @@ export function ReportListPage({ onBack }: ReportListPageProps) {
             boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
             border: '1px solid #e5e7eb'
           }}>
-            <p style={{ fontSize: '16px', color: '#6b7280', marginBottom: '8px' }}>No reports found</p>
+            <p style={{ fontSize: '16px', color: '#6b7280', marginBottom: '8px' }}>{t('reports.noReports')}</p>
             <p style={{ fontSize: '14px', color: '#9ca3af' }}>You haven't submitted any reports yet</p>
           </div>
         ) : (

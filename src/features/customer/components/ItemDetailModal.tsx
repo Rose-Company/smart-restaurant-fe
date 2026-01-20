@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Plus, Minus, Clock, Star } from 'lucide-react';
 import type { MenuItem, ModifierGroup } from '../../menu/types/menu.types';
-import { formatPrice } from '../../../lib/currency';
+import { formatPrice } from '../../../lib/utils';
 
 interface SelectedModifiers {
   [groupId: string]: string[];
@@ -28,6 +29,7 @@ export function ItemDetailModal({
   onAddToCart,
   calculatePrice
 }: ItemDetailModalProps) {
+  const { t } = useTranslation('customer');
   const [imageIndex, setImageIndex] = useState(0);
   const [itemNotes, setItemNotes] = useState('');
 

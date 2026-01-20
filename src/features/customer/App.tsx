@@ -26,17 +26,9 @@ function CustomerAppContent() {
     const token = urlParams.get('token') || undefined;
     const table = urlParams.get('table') || undefined;
 
-    console.log('📋 [App.tsx] URL params extracted:', {
-      token,
-      table,
-      searchParams: window.location.search
-    });
 
     setTableToken(token);
     setTableNumber(table);
-    
-    console.log('📋 [App.tsx] State will be set:', { token, table });
-    
     if (isAuthenticated) {
       setCurrentView('menu');
     }
@@ -49,7 +41,7 @@ function CustomerAppContent() {
 
   const handleRegisterSuccess = (email: string) => {
     setOtpEmail(email);
-    setCurrentView('otp');
+    setCurrentView('login');
   };
 
   const handleRequestOTPSuccess = (data: SignupRequest) => {
@@ -90,7 +82,6 @@ function CustomerAppContent() {
       );
 
     case 'menu':
-      console.log('📋 [App.tsx] Rendering CustomerMenuPage with:', { tableToken, tableNumber });
       return (
         <CustomerMenuPage
           tableToken={tableToken}

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { CheckCircle, ShoppingCart, ArrowLeft } from 'lucide-react';
 
 interface ReorderSuccessModalProps {
@@ -9,6 +10,7 @@ interface ReorderSuccessModalProps {
 }
 
 export function ReorderSuccessModal({ isOpen, itemCount, onViewCart, onContinue }: ReorderSuccessModalProps) {
+  const { t } = useTranslation('customer');
   if (!isOpen) return null;
 
   return (

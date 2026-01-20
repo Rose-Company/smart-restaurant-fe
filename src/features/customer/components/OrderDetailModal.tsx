@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Star, AlertCircle } from 'lucide-react';
 import { findMenuItemByName } from '../data/menuData';
-import { formatPrice } from '../../../lib/currency';
+import { formatPrice } from '../../../lib/utils';
 
 interface OrderDetailItem {
   id: string;
@@ -35,6 +36,7 @@ interface OrderDetailModalProps {
 }
 
 export function OrderDetailModal({ isOpen, onClose, order, onReorder, onReportIssue }: OrderDetailModalProps) {
+  const { t } = useTranslation('customer');
   const [itemRatings, setItemRatings] = useState<{ [key: string]: number }>({});
   const [hoveredRating, setHoveredRating] = useState<{ [key: string]: number }>({});
 

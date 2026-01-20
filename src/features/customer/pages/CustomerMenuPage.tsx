@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { MenuItem } from '../../menu/types/menu.types';
 import { customerMenuApi } from '../services/menu.api';
 import { useAuth } from '../context/AuthContext';
@@ -65,6 +66,7 @@ export function CustomerMenuPage({
   onOrdersClick,
   onReportsClick,
 }: CustomerMenuPageProps) {
+  const { t } = useTranslation('customer');
   const { user, logout } = useAuth();
   const {
     cart,
@@ -417,7 +419,7 @@ export function CustomerMenuPage({
                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
-                    My Account
+                    {t('menu.account')}
                   </button>
                   <button
                     onClick={handleOrdersClick}
@@ -436,7 +438,7 @@ export function CustomerMenuPage({
                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
-                    Order History
+                    {t('menu.orderHistory')}
                   </button>
                   <button
                     onClick={handleReportsClick}
@@ -455,7 +457,7 @@ export function CustomerMenuPage({
                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
-                    Reports
+                    {t('menu.reports')}
                   </button>
                   <button
                     onClick={handleLogout}
@@ -474,7 +476,7 @@ export function CustomerMenuPage({
                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fef2f2'}
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
-                    Logout
+                    {t('menu.logout')}
                   </button>
                 </>
               ) : (
@@ -495,7 +497,7 @@ export function CustomerMenuPage({
                   onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
                   onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                 >
-                  Login
+                  {t('menu.login')}
                 </button>
               )}
             </div>
@@ -540,8 +542,8 @@ export function CustomerMenuPage({
 
         {menuItems.length === 0 ? (
           <div style={{ textAlign: 'center', paddingTop: '48px', paddingBottom: '48px' }}>
-            <p style={{ color: '#6b7280', fontSize: '16px' }}>No items found</p>
-            <p style={{ color: '#9ca3af', fontSize: '14px', marginTop: '8px' }}>Try adjusting your filters</p>
+            <p style={{ color: '#6b7280', fontSize: '16px' }}>{t('menu.noItems')}</p>
+            <p style={{ color: '#9ca3af', fontSize: '14px', marginTop: '8px' }}>{t('menu.adjustFilters')}</p>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -574,10 +576,10 @@ export function CustomerMenuPage({
               fontWeight: '500'
             }}
           >
-            Prev
+            {t('menu.prev')}
           </button>
           <span style={{ margin: '0 12px', color: '#6b7280', fontSize: '14px' }}>
-            Page {page}
+            {t('menu.page')} {page}
           </span>
           <button
             disabled={page * pageSize >= total}
@@ -594,7 +596,7 @@ export function CustomerMenuPage({
               fontWeight: '500'
             }}
           >
-            Next
+            {t('menu.next')}
           </button>
         </div>
       )}

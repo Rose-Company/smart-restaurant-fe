@@ -40,7 +40,18 @@ export const customerMenuApi = {
 
     // Backend đang trả flat object
     return {
-      items: json.items ?? [],
+      items: (json.items ?? []).map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        category: item.category,
+        price: item.price,
+        status: item.status?.toLowerCase() === 'available' ? 'available' : 'unavailable',
+        lastUpdate: item.last_update,
+        chefRecommended: item.chef_recommended ?? false,
+        imageUrl: item.image_url,
+        description: item.description,
+        preparationTime: item.preparation_time,
+      })),
       total: json.total ?? 0,
       page: json.page ?? 1,
       page_size: json.page_size ?? 20,

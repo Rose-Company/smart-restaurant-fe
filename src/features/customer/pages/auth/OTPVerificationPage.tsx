@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Utensils, Mail } from 'lucide-react';
 import { authCustomerApi } from '../../services/auth.api';
 
@@ -9,6 +10,7 @@ interface OTPVerificationPageProps {
 }
 
 export function OTPVerificationPage({ email, onBack, onVerifySuccess }: OTPVerificationPageProps) {
+  const { t } = useTranslation('customer');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -231,7 +233,7 @@ export function OTPVerificationPage({ email, onBack, onVerifySuccess }: OTPVerif
             marginBottom: '8px',
             textAlign: 'center'
           }}>
-            Verify Your Email
+            {t('auth.verifyYourEmail')}
           </h1>
           <p style={{
             fontSize: '15px',
@@ -330,7 +332,7 @@ export function OTPVerificationPage({ email, onBack, onVerifySuccess }: OTPVerif
                 }
               }}
             >
-              {loading ? 'Verifying...' : 'Verify Code'}
+              {loading ? t('auth.verifying') : t('auth.verifyCode')}
             </button>
 
             {/* Resend OTP */}

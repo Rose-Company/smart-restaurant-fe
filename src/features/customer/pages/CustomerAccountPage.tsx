@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, User, Mail, Phone, Lock, Save, CheckCircle, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { authCustomerApi } from '../services/auth.api';
@@ -11,6 +12,7 @@ interface CustomerAccountPageProps {
 type OTPStep = 'idle' | 'request' | 'verify' | 'reset';
 
 export function CustomerAccountPage({ onBack }: CustomerAccountPageProps) {
+  const { t } = useTranslation('customer');
   const { user, updateUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -188,7 +190,7 @@ export function CustomerAccountPage({ onBack }: CustomerAccountPageProps) {
           color: '#1f2937',
           margin: 0
         }}>
-          Quản lý tài khoản
+          {t('account.title')}
         </h1>
       </div>
 
@@ -214,7 +216,7 @@ export function CustomerAccountPage({ onBack }: CustomerAccountPageProps) {
               color: '#1f2937',
               margin: 0
             }}>
-              Thông tin cá nhân
+              {t('account.profileSection')}
             </h2>
             {!isEditing && (
               <button
@@ -230,7 +232,7 @@ export function CustomerAccountPage({ onBack }: CustomerAccountPageProps) {
                   cursor: 'pointer'
                 }}
               >
-                Chỉnh sửa
+                {t('account.edit')}
               </button>
             )}
           </div>
@@ -273,7 +275,7 @@ export function CustomerAccountPage({ onBack }: CustomerAccountPageProps) {
               marginBottom: '8px'
             }}>
               <User style={{ width: '16px', height: '16px' }} />
-              Họ và tên
+              {t('account.fullName')}
             </label>
             <input
               type="text"
@@ -334,7 +336,7 @@ export function CustomerAccountPage({ onBack }: CustomerAccountPageProps) {
               marginBottom: '8px'
             }}>
               <Phone style={{ width: '16px', height: '16px' }} />
-              Số điện thoại
+              {t('account.phone')}
             </label>
             <input
               type="tel"
@@ -376,7 +378,7 @@ export function CustomerAccountPage({ onBack }: CustomerAccountPageProps) {
                   cursor: 'pointer'
                 }}
               >
-                Hủy
+                {t('common.cancel')}
               </button>
               <button
                 onClick={handleProfileUpdate}
@@ -398,7 +400,7 @@ export function CustomerAccountPage({ onBack }: CustomerAccountPageProps) {
                 }}
               >
                 <Save style={{ width: '16px', height: '16px' }} />
-                {loading ? 'Đang lưu...' : 'Lưu thay đổi'}
+                {loading ? t('common.saving') : t('account.save')}
               </button>
             </div>
           )}
@@ -421,7 +423,7 @@ export function CustomerAccountPage({ onBack }: CustomerAccountPageProps) {
             gap: '8px'
           }}>
             <Lock style={{ width: '18px', height: '18px' }} />
-            Đổi mật khẩu
+            {t('account.changePassword')}
           </h2>
 
           {passwordStep === 'idle' && (
@@ -431,7 +433,7 @@ export function CustomerAccountPage({ onBack }: CustomerAccountPageProps) {
                 color: '#6b7280',
                 marginBottom: '16px'
               }}>
-                Để đổi mật khẩu, chúng tôi sẽ gửi mã OTP đến email của bạn
+                {t('account.sendOTPHint')}
               </p>
               <button
                 onClick={() => setPasswordStep('request')}
@@ -447,7 +449,7 @@ export function CustomerAccountPage({ onBack }: CustomerAccountPageProps) {
                   cursor: 'pointer'
                 }}
               >
-                Bắt đầu đổi mật khẩu
+                {t('account.startChangePassword')}
               </button>
             </>
           )}
@@ -506,7 +508,7 @@ export function CustomerAccountPage({ onBack }: CustomerAccountPageProps) {
                     cursor: 'pointer'
                   }}
                 >
-                  Hủy
+                  {t('common.cancel')}
                 </button>
                 <button
                   onClick={handleRequestPasswordOTP}
@@ -523,7 +525,7 @@ export function CustomerAccountPage({ onBack }: CustomerAccountPageProps) {
                     cursor: loading ? 'not-allowed' : 'pointer'
                   }}
                 >
-                  {loading ? 'Đang gửi...' : 'Gửi OTP'}
+                  {loading ? t('common.sending') : t('auth.sendOTP')}
                 </button>
               </div>
             </>
@@ -536,7 +538,7 @@ export function CustomerAccountPage({ onBack }: CustomerAccountPageProps) {
                 color: '#6b7280',
                 marginBottom: '16px'
               }}>
-                Nhập mã OTP đã được gửi đến <strong>{resetEmail}</strong>
+                {t('auth.enterOTP')} <strong>{resetEmail}</strong>
               </p>
               <div style={{
                 display: 'flex',
@@ -595,7 +597,7 @@ export function CustomerAccountPage({ onBack }: CustomerAccountPageProps) {
                     cursor: 'pointer'
                   }}
                 >
-                  Hủy
+                  {t('common.cancel')}
                 </button>
                 <button
                   onClick={handleVerifyOTP}
@@ -612,7 +614,7 @@ export function CustomerAccountPage({ onBack }: CustomerAccountPageProps) {
                     cursor: loading || otp.some(d => !d) ? 'not-allowed' : 'pointer'
                   }}
                 >
-                  {loading ? 'Đang xác thực...' : 'Xác thực'}
+                  {loading ? t('common.verifying') : t('auth.verify')}
                 </button>
               </div>
             </>
@@ -628,13 +630,13 @@ export function CustomerAccountPage({ onBack }: CustomerAccountPageProps) {
                   color: '#374151',
                   marginBottom: '8px'
                 }}>
-                  Mật khẩu mới
+                  {t('account.newPassword')}
                 </label>
                 <input
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Nhập mật khẩu mới (tối thiểu 8 ký tự)"
+                  placeholder={t('auth.passwordPlaceholder')}
                   style={{
                     width: '100%',
                     padding: '12px',
@@ -652,13 +654,13 @@ export function CustomerAccountPage({ onBack }: CustomerAccountPageProps) {
                   color: '#374151',
                   marginBottom: '8px'
                 }}>
-                  Xác nhận mật khẩu
+                  {t('account.confirmPassword')}
                 </label>
                 <input
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Nhập lại mật khẩu mới"
+                  placeholder={t('auth.confirmPasswordPlaceholder')}
                   style={{
                     width: '100%',
                     padding: '12px',
@@ -699,7 +701,7 @@ export function CustomerAccountPage({ onBack }: CustomerAccountPageProps) {
                     cursor: 'pointer'
                   }}
                 >
-                  Hủy
+                  {t('common.cancel')}
                 </button>
                 <button
                   onClick={handleResetPassword}
@@ -716,7 +718,7 @@ export function CustomerAccountPage({ onBack }: CustomerAccountPageProps) {
                     cursor: loading || !newPassword || !confirmPassword ? 'not-allowed' : 'pointer'
                   }}
                 >
-                  {loading ? 'Đang cập nhật...' : 'Đổi mật khẩu'}
+                  {loading ? t('common.updating') : t('account.changePassword')}
                 </button>
               </div>
             </>

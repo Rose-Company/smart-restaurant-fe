@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ShoppingCart, X, Plus, Minus, Phone, FileText, CheckCircle, AlertCircle } from 'lucide-react';
 import type { MenuItem } from '../../menu/types/menu.types';
 import { orderApi, type CreateOrderRequest } from '../services/order.api';
-import { formatPrice } from '../../../lib/currency';
+import { formatPrice } from '../../../lib/utils';
 import { OrderSuccessModal } from './OrderSuccessModal';
 import { AVAILABLE_VOUCHERS, findVoucherByCode, type Voucher } from '../data/voucherData';
 import { DEFAULT_ORDER_HISTORY, type OrderHistory, type OrderHistoryItem, type OrderRound } from '../data/orderData';
@@ -48,6 +49,7 @@ export function CartDrawer({
   orderHistory: propOrderHistory,
   onConfirmOrder
 }: CartDrawerProps) {
+  const { t } = useTranslation('customer');
   const [activeTab, setActiveTab] = useState<'current' | 'history'>('current');
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [customerName, setCustomerName] = useState('');
@@ -321,7 +323,7 @@ export function CartDrawer({
               }}
             >
               <ShoppingCart style={{ width: '16px', height: '16px' }} />
-              Current Order
+              {t('cart.currentOrder')}
               {getTotalItems() > 0 && (
                 <span style={{
                   minWidth: '18px',
@@ -360,7 +362,7 @@ export function CartDrawer({
               }}
             >
               <FileText style={{ width: '16px', height: '16px' }} />
-              My Orders
+              {t('cart.myOrders')}
               {orderHistory.rounds.length > 0 && (
                 <span style={{
                   minWidth: '18px',
@@ -398,7 +400,7 @@ export function CartDrawer({
                   color: '#d1d5db',
                   margin: '0 auto 16px auto'
                 }} />
-                <p style={{ color: '#6b7280', fontSize: '16px' }}>Your cart is empty</p>
+                <p style={{ color: '#6b7280', fontSize: '16px' }}>{t('cart.emptyCart')}</p>
               </div>
             ) : (
               <>
@@ -735,7 +737,7 @@ export function CartDrawer({
                 fontWeight: '500',
                 color: '#6b7280'
               }}>
-                Subtotal
+                {t('cart.subtotal')}
               </span>
               <span style={{
                 fontSize: '15px',
@@ -779,7 +781,7 @@ export function CartDrawer({
                 fontWeight: '600',
                 color: '#1f2937'
               }}>
-                Total
+                {t('cart.total')}
               </span>
               <span style={{
                 fontSize: '24px',
@@ -813,7 +815,7 @@ export function CartDrawer({
             )}
             <input
               type="text"
-              placeholder="Your Name (Optional)"
+              placeholder={t('cart.yourName')}
               value={customerName}
               onChange={(e) => setCustomerName(e.target.value)}
               style={{
@@ -845,7 +847,7 @@ export function CartDrawer({
               onMouseEnter={(e) => !isLoading && (e.currentTarget.style.backgroundColor = '#40a574')}
               onMouseLeave={(e) => !isLoading && (e.currentTarget.style.backgroundColor = '#52b788')}
             >
-              {isLoading ? 'Processing...' : `Confirm Order • ${formatPrice(getTotalPrice() * 1.08)}`}
+              {isLoading ? t('common.saving') : `${t('cart.confirmOrder')} • ${formatPrice(getTotalPrice() * 1.08)}`}
             </button>
           </div>
           )}
@@ -865,7 +867,7 @@ export function CartDrawer({
                 marginBottom: '8px',
                 display: 'block'
               }}>
-                Voucher Code
+                {t('cart.voucher')}
               </label>
               {appliedVoucher ? (
                 <div style={{
@@ -908,7 +910,7 @@ export function CartDrawer({
                         setVoucherCode(e.target.value.toUpperCase());
                         setVoucherError('');
                       }}
-                      placeholder="Enter code"
+                      placeholder={t('cart.enterCode')}
                       style={{
                         flex: 1,
                         padding: '10px 12px',
@@ -938,7 +940,7 @@ export function CartDrawer({
                       onMouseEnter={(e) => voucherCode.trim() && (e.currentTarget.style.backgroundColor = '#27ae60')}
                       onMouseLeave={(e) => voucherCode.trim() && (e.currentTarget.style.backgroundColor = '#52b788')}
                     >
-                      Apply
+                      {t('cart.apply')}
                     </button>
                   </div>
                   {voucherError && (
@@ -972,7 +974,7 @@ export function CartDrawer({
                 fontWeight: '500',
                 color: '#6b7280'
               }}>
-                Subtotal
+                {t('cart.subtotal')}
               </span>
               <span style={{
                 fontSize: '15px',
@@ -1039,7 +1041,7 @@ export function CartDrawer({
                 fontWeight: '600',
                 color: '#1f2937'
               }}>
-                Total
+                {t('cart.total')}
               </span>
               <span style={{
                 fontSize: '24px',

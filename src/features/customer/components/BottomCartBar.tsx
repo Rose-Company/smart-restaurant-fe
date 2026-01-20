@@ -1,6 +1,7 @@
 import React from 'react';
 import { ShoppingCart } from 'lucide-react';
-import { formatPrice } from '../../../lib/currency';
+import { useTranslation } from 'react-i18next';
+import { formatPrice } from '../../../lib/utils';
 
 interface BottomCartBarProps {
   itemCount: number;
@@ -9,6 +10,7 @@ interface BottomCartBarProps {
 }
 
 export function BottomCartBar({ itemCount, totalPrice, onViewCart }: BottomCartBarProps) {
+  const { t } = useTranslation('customer');
   return (
     <div style={{
       position: 'fixed',
@@ -40,7 +42,7 @@ export function BottomCartBar({ itemCount, totalPrice, onViewCart }: BottomCartB
           fontWeight: '500', 
           color: '#ffffff'
         }}>
-          {itemCount === 0 ? 'Your cart is empty' : `${itemCount} items • ${formatPrice(totalPrice)}`}
+          {itemCount === 0 ? t('cart.emptyCart') : `${itemCount} ${t('cart.items')} • ${formatPrice(totalPrice)}`}
         </span>
       </div>
       <button
@@ -57,7 +59,7 @@ export function BottomCartBar({ itemCount, totalPrice, onViewCart }: BottomCartB
           transition: 'all 0.2s'
         }}
       >
-        View Cart
+        {t('cart.viewCart')}
       </button>
     </div>
   );

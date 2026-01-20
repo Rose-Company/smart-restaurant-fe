@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Calendar, Clock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
@@ -14,6 +15,7 @@ interface OrderHistoryPageProps {
 }
 
 export function OrderHistoryPage({ onBack }: OrderHistoryPageProps) {
+  const { t } = useTranslation('customer');
   const { user } = useAuth();
   const { addToCart } = useCart();
   const [orders, setOrders] = useState<Order[]>([]);
@@ -152,7 +154,7 @@ export function OrderHistoryPage({ onBack }: OrderHistoryPageProps) {
             animation: 'spin 1s linear infinite',
             margin: '0 auto 16px'
           }} />
-          <p style={{ color: '#6b7280', fontSize: '16px' }}>Loading orders...</p>
+          <p style={{ color: '#6b7280', fontSize: '16px' }}>{t('orderHistory.loadingOrders')}</p>
         </div>
       </div>
     );
@@ -200,7 +202,7 @@ export function OrderHistoryPage({ onBack }: OrderHistoryPageProps) {
           margin: 0,
           flex: 1
         }}>
-          My Past Orders
+          {t('orderHistory.title')}
         </h1>
       </div>
 
@@ -214,8 +216,8 @@ export function OrderHistoryPage({ onBack }: OrderHistoryPageProps) {
             textAlign: 'center',
             boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
           }}>
-            <p style={{ fontSize: '16px', color: '#6b7280', marginBottom: '8px' }}>No orders yet</p>
-            <p style={{ fontSize: '14px', color: '#9ca3af' }}>Your order history will appear here</p>
+            <p style={{ fontSize: '16px', color: '#6b7280', marginBottom: '8px' }}>{t('orderHistory.noOrders')}</p>
+            <p style={{ fontSize: '14px', color: '#9ca3af' }}>{t('orderHistory.noOrdersMessage')}</p>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -273,7 +275,7 @@ export function OrderHistoryPage({ onBack }: OrderHistoryPageProps) {
                       color: '#101828',
                       marginBottom: '4px'
                     }}>
-                      Table {order.tableNumber}
+                      {t('orderHistory.table')} {order.tableNumber}
                     </div>
                     <div style={{
                       fontSize: '14px',
@@ -318,7 +320,7 @@ export function OrderHistoryPage({ onBack }: OrderHistoryPageProps) {
                         onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f0fdf4'}
                         onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                       >
-                        View Details
+                        {t('orderHistory.details')}
                       </button>
                       {order.status !== 'Cancelled' && (
                         <button
@@ -336,7 +338,7 @@ export function OrderHistoryPage({ onBack }: OrderHistoryPageProps) {
                           onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f0fdf4'}
                           onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ffffff'}
                         >
-                          Re-order
+                          {t('orderHistory.reorder')}
                         </button>
                       )}
                     </div>

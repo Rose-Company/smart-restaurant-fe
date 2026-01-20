@@ -1,5 +1,6 @@
 import React from 'react';
 import { Search, User, Utensils } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface CustomerHeaderProps {
   onSearchClick?: () => void;
@@ -7,6 +8,7 @@ interface CustomerHeaderProps {
 }
 
 export function CustomerHeader({ onSearchClick, onUserClick }: CustomerHeaderProps) {
+  const { t } = useTranslation('customer');
   return (
     <div style={{ 
       backgroundColor: '#ffffff', 

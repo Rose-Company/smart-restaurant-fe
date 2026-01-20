@@ -189,7 +189,7 @@ export function MenuTable({
       label: 'Price',
       renderCell: (item) => (
         <TableCell>
-          <span className="text-gray-900">{formatPrice(item.price)}đ</span>
+          <span className="text-gray-900">{formatPrice(item.price)}</span>
         </TableCell>
       ),
     },

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Mail, Lock, Eye, EyeOff, ArrowLeft, Utensils } from 'lucide-react';
 import { authCustomerApi, LoginRequest } from '../../services/auth.api';
 
@@ -9,6 +10,7 @@ interface CustomerLoginPageProps {
 }
 
 export function CustomerLoginPage({ onBack, onRegisterClick, onLoginSuccess }: CustomerLoginPageProps) {
+  const { t } = useTranslation('customer');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -192,7 +194,7 @@ export function CustomerLoginPage({ onBack, onRegisterClick, onLoginSuccess }: C
             marginBottom: '8px',
             textAlign: 'center'
           }}>
-            Welcome Back
+            {t('auth.welcomeBack')}
           </h1>
           <p style={{
             fontSize: '15px',
@@ -200,7 +202,7 @@ export function CustomerLoginPage({ onBack, onRegisterClick, onLoginSuccess }: C
             marginBottom: '32px',
             textAlign: 'center'
           }}>
-            Sign in to your account
+            {t('auth.signInHint')}
           </p>
 
           {error && (
@@ -226,7 +228,7 @@ export function CustomerLoginPage({ onBack, onRegisterClick, onLoginSuccess }: C
                 color: '#374151',
                 marginBottom: '8px'
               }}>
-                Email
+                {t('auth.email')}
               </label>
               <div style={{ position: 'relative' }}>
                 <Mail style={{
@@ -244,7 +246,7 @@ export function CustomerLoginPage({ onBack, onRegisterClick, onLoginSuccess }: C
                   value={formData.email}
                   onChange={handleInputChange}
                   required
-                  placeholder="Enter your email"
+                  placeholder={t('auth.emailPlaceholder')}
                   style={{
                     width: '100%',
                     padding: '12px 12px 12px 44px',
@@ -269,7 +271,7 @@ export function CustomerLoginPage({ onBack, onRegisterClick, onLoginSuccess }: C
                 color: '#374151',
                 marginBottom: '8px'
               }}>
-                Password
+                {t('auth.password')}
               </label>
               <div style={{ position: 'relative' }}>
                 <Lock style={{
@@ -287,7 +289,7 @@ export function CustomerLoginPage({ onBack, onRegisterClick, onLoginSuccess }: C
                   value={formData.password}
                   onChange={handleInputChange}
                   required
-                  placeholder="Enter your password"
+                  placeholder={t('auth.passwordPlaceholder')}
                   style={{
                     width: '100%',
                     padding: '12px 44px 12px 44px',
@@ -345,7 +347,7 @@ export function CustomerLoginPage({ onBack, onRegisterClick, onLoginSuccess }: C
               onMouseEnter={(e) => !loading && (e.currentTarget.style.backgroundColor = '#40a574')}
               onMouseLeave={(e) => !loading && (e.currentTarget.style.backgroundColor = '#52b788')}
             >
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading ? t('auth.signingIn') : t('auth.signIn')}
             </button>
 
             {/* Divider */}
@@ -356,7 +358,7 @@ export function CustomerLoginPage({ onBack, onRegisterClick, onLoginSuccess }: C
               gap: '12px'
             }}>
               <div style={{ flex: 1, height: '1px', backgroundColor: '#e5e7eb' }} />
-              <span style={{ fontSize: '14px', color: '#6b7280' }}>or</span>
+              <span style={{ fontSize: '14px', color: '#6b7280' }}>{t('common.or')}</span>
               <div style={{ flex: 1, height: '1px', backgroundColor: '#e5e7eb' }} />
             </div>
 
@@ -390,7 +392,7 @@ export function CustomerLoginPage({ onBack, onRegisterClick, onLoginSuccess }: C
                 <path d="M4.405 11.9c-.2-.6-.314-1.24-.314-1.9 0-.66.114-1.3.314-1.9V5.51H1.064A9.996 9.996 0 000 10c0 1.614.386 3.14 1.064 4.49l3.34-2.59z" fill="#FBBC05" />
                 <path d="M10 3.977c1.468 0 2.786.505 3.823 1.496l2.868-2.868C14.959.99 12.695 0 10 0 6.09 0 2.71 2.24 1.064 5.51l3.34 2.59C5.19 5.736 7.395 3.977 10 3.977z" fill="#EA4335" />
               </svg>
-              Continue with Google
+              {t('auth.continueWithGoogle')}
             </button>
           </form>
 
@@ -401,7 +403,7 @@ export function CustomerLoginPage({ onBack, onRegisterClick, onLoginSuccess }: C
             fontSize: '14px',
             color: '#6b7280'
           }}>
-            Don't have an account?{' '}
+            {t('auth.dontHaveAccount')}{' '}
             <button
               onClick={onRegisterClick}
               style={{
@@ -413,7 +415,7 @@ export function CustomerLoginPage({ onBack, onRegisterClick, onLoginSuccess }: C
                 padding: 0
               }}
             >
-              Sign up
+              {t('auth.registerNow')}
             </button>
           </div>
         </div>

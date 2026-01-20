@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface CategoryTabsProps {
   categories: string[];
@@ -7,6 +8,7 @@ interface CategoryTabsProps {
 }
 
 export function CategoryTabs({ categories, selectedCategory, onCategoryChange }: CategoryTabsProps) {
+  const { t } = useTranslation('customer');
   return (
     <div style={{ 
       backgroundColor: '#ffffff',
