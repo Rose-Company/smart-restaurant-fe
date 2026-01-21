@@ -111,19 +111,19 @@ export function MenuTable({
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'Available':
+      case 'available':
         return {
           backgroundColor: '#dcfce7',
           color: '#15803d',
           borderColor: '#bbf7d0'
         };
-      case 'Sold Out':
+      case 'sold_out':
         return {
           backgroundColor: '#fee2e2',
           color: '#b91c1c',
           borderColor: '#fecaca'
         };
-      case 'Unavailable':
+      case 'unavailable':
         return {
           backgroundColor: '#f3f4f6',
           color: '#374151',

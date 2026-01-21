@@ -121,7 +121,8 @@ export const WaiterTaskFeedPage: React.FC = () => {
           tablesData = await serveApi.getTablesList(
             { status: 'occupied', is_help_needed: true },
             token
-          ).then(res => res.items);
+          ).then(res => res.items)
+          .then(items => items.filter(item => item.is_help_needed));
           break;
           
         case 'payment':
@@ -129,7 +130,8 @@ export const WaiterTaskFeedPage: React.FC = () => {
           tablesData = await serveApi.getTablesList(
             { status: 'occupied', is_ready_to_bill: true },
             token
-          ).then(res => res.items);
+          ).then(res => res.items)
+          .then(items => items.filter(item => item.is_ready_to_bill))
           break;
           
         default:
