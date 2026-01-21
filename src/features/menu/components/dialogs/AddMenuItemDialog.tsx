@@ -24,7 +24,7 @@ import type {
 import { categoryApi } from '../../categories/services/category.api';
 import { modifierGroupApi } from '../../modifiers/services/modifier.api';
 import {Category} from '../../categories/types/category.types'
-
+import { formatPrice } from '../../../../lib/utils';
 // Brand color constant to avoid Tailwind arbitrary value issues
 const BRAND_COLOR = '#27ae60';
 const BRAND_COLOR_HOVER = '#229954';
@@ -79,7 +79,7 @@ export function AddMenuItemDialog({
           required: group.is_required,
           selectionType: group.selectionType === 'single' ? 'Single' : 'Multi',
           optionsPreview: group.options.length > 0 
-            ? group.options.slice(0, 3).map(opt => `${opt.name} (+$${opt.priceAdjustment.toFixed(2)})`).join(', ')
+            ? group.options.slice(0, 3).map(opt => `${opt.name} (+${formatPrice(opt.priceAdjustment)})`).join(', ')
             : 'No options',
         }));
       setAvailableGroups(mappedGroups);
@@ -382,15 +382,12 @@ export function AddMenuItemDialog({
                           Price <span className="text-red-500">*</span>
                         </Label>
                         <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                            $
-                          </span>
                           <Input
                             id="price"
                             type="number"
                             step="0.01"
                             min="0"
-                            placeholder="0.00"
+                            placeholder="VND"
                             value={price}
                             onChange={(e) => setPrice(e.target.value)}
                             style={{ backgroundColor: '#f3f3f5', borderColor: '#d1d5dc' }}

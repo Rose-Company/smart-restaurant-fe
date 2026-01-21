@@ -1,6 +1,13 @@
 // Staff/Waiter API for table management
 // Uses admin_auth_token from localStorage
 
+// Handle 401 response - token expired
+const handleUnauthorized = () => {
+  console.error('❌ Token expired (401 Unauthorized)');
+  localStorage.removeItem('admin_auth_token');
+  window.location.href = '/';
+};
+
 export interface OrderItem {
   id: number;
   item_name: string;
@@ -167,7 +174,8 @@ export const serveApi = {
 
       if (!response.ok) {
         if (response.status === 401) {
-          throw new Error('Unauthorized - Invalid or expired token');
+          handleUnauthorized();
+          return { total: 0, page: 1, page_size: 10, items: [], extra: null };
         }
         throw new Error(`Failed to fetch tables: ${response.statusText}`);
       }

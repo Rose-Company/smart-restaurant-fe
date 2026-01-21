@@ -34,8 +34,10 @@ function CustomerAppContent() {
     }
   }, [isAuthenticated]);
 
-  const handleLoginSuccess = (user: any) => {
-    login(user, '');
+  const handleLoginSuccess = (token: string) => {
+    // Token is the JWT string, store it properly
+    localStorage.setItem('customer_token', token);
+    login({} as any, token);
     setCurrentView('menu');
   };
 

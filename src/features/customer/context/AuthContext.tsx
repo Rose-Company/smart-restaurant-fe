@@ -46,8 +46,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setToken(userToken);
     setIsAuthenticated(true);
 
-    // Persist to localStorage
-    localStorage.setItem('customer_user', JSON.stringify(userData));
+    // Persist to localStorage - token without JSON.stringify to avoid extra quotes
+    if (userData.id) {
+      localStorage.setItem('customer_user', JSON.stringify(userData));
+    }
     localStorage.setItem('customer_token', userToken);
   };
 

@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, User, Mail, Phone, Lock, Save, CheckCircle, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { authCustomerApi } from '../services/auth.api';
+import { profileApi } from '../../profile/services/profile.api';
 import { OrderSuccessModal } from '../components/OrderSuccessModal';
 
 interface CustomerAccountPageProps {
@@ -18,12 +19,44 @@ export function CustomerAccountPage({ onBack }: CustomerAccountPageProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [pageLoading, setPageLoading] = useState(true);
 
   // Profile form state
   const [profileData, setProfileData] = useState({
     name: user?.name || '',
     phone: user?.phone || ''
   });
+
+  // Load user info on mount
+  useEffect(() => {
+    const loadUserInfo = async () => {
+      try {
+        setPageLoading(true);
+        const userInfo = await authCustomerApi.getMe();
+        if (userInfo?.data) {
+          const fullName = `${userInfo.data.first_name} ${userInfo.data.last_name}`;
+          
+          // Update user context
+          if (user?.id) {
+            updateUser({
+              ...user,
+              id: user.id,
+              name: fullName,
+              email: userInfo.data.email
+            });
+          }
+        } else {
+          console.warn('No user data in response');
+        }
+      } catch (error) {
+        console.error('Error loading user info:', error);
+      } finally {
+        setPageLoading(false);
+      }
+    };
+
+    loadUserInfo();
+  }, []);
 
   // Password reset state
   const [passwordStep, setPasswordStep] = useState<OTPStep>('idle');
@@ -160,6 +193,31 @@ export function CustomerAccountPage({ onBack }: CustomerAccountPageProps) {
       minHeight: '100vh', 
       backgroundColor: '#f5f5f5'
     }}>
+      {pageLoading && (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '100vh',
+          backgroundColor: 'rgba(0, 0, 0, 0.1)'
+        }}>
+          <div style={{
+            width: '40px',
+            height: '40px',
+            border: '4px solid #e5e7eb',
+            borderTop: '4px solid #52b788',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite'
+          }} />
+          <style>{`
+            @keyframes spin {
+              to { transform: rotate(360deg); }
+            }
+          `}</style>
+        </div>
+      )}
+      {!pageLoading && (
+        <>
       {/* Header */}
       <div style={{
         backgroundColor: '#ffffff',
@@ -734,6 +792,8 @@ export function CustomerAccountPage({ onBack }: CustomerAccountPageProps) {
           setError('');
         }}
       />
+        </>
+      )}
     </div>
   );
 }

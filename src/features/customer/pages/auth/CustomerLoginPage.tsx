@@ -36,6 +36,8 @@ export function CustomerLoginPage({ onBack, onRegisterClick, onLoginSuccess }: C
       const response = await authCustomerApi.login(formData);
 
       if (response.code === 200 && response.data) {
+        // Store token in localStorage
+        localStorage.setItem('customer_token', response.data);
         if (onLoginSuccess) {
           onLoginSuccess(response.data);
         }
@@ -102,6 +104,8 @@ export function CustomerLoginPage({ onBack, onRegisterClick, onLoginSuccess }: C
               const loginResponse = await authCustomerApi.loginWithGoogle(tokenResponse.id_token);
 
               if (loginResponse.code === 200 && loginResponse.data) {
+                // Store token in localStorage
+                localStorage.setItem('customer_token', loginResponse.data);
                 if (onLoginSuccess) {
                   onLoginSuccess(loginResponse.data);
                 }
