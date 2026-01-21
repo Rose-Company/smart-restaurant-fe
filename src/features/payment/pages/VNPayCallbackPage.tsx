@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { serveApi } from '../../waiter/services/serve.api';
+import { log } from 'console';
 
 export const VNPayCallbackPage: React.FC = () => {
   useEffect(() => {
@@ -22,28 +23,22 @@ export const VNPayCallbackPage: React.FC = () => {
 
         // Check response code - 00 means success
         const responseCode = queryParams.vnp_ResponseCode;
-        if (responseCode !== '00') {
-          console.error('❌ Payment failed. Response code:', responseCode);
+        if (responseCode !== '00') {          
           // Redirect to waiter with error
           window.location.href = `/admin/waiter?payment_error=true`;
           return;
         }
 
-        // Add 30s delay for testing network call
-        console.log('⏳ Waiting 30 seconds for testing...');
         
 
         // Call backend API to mark payment as successful
         const token = localStorage.getItem('admin_auth_token') || '';
         console.log('📞 Calling VNPay callback API...');
-        const result = await serveApi.handleVNPayCallback(queryParams, token);
-
-        console.log('✅ VNPay callback result:', result);
-        if (result && result.success) {
-          // Redirect to waiter page with success flag
+        const result: any = await serveApi.handleVNPayCallback(queryParams, token);
+        if (result && result.code === 200) {
           window.location.href = `/admin/waiter?payment_success=true&payment_id=${paymentId}`;
         } else {
-          console.error('❌ Callback API failed:', result?.message);
+          console.error('❌ Callback API failed:', result?.message)
           // Redirect to waiter with error
           window.location.href = `/admin/waiter?payment_error=true`;
         }

@@ -20,6 +20,7 @@ import type {
   MenuItem,
   UploadedImage,
   ModifierGroup,
+  Status,
 } from '../../types/menu.types';
 import { categoryApi } from '../../categories/services/category.api';
 import { modifierGroupApi } from '../../modifiers/services/modifier.api';
@@ -48,8 +49,8 @@ export function EditMenuItemDialog({
   const [category, setCategory] = useState('');
   const [chefRecommended, setChefRecommended] = useState(false);
   const [status, setStatus] = useState<
-    'Available' | 'Sold Out' | 'Unavailable'
-  >('Available');
+    Status
+  >('available');
   const [images, setImages] = useState<UploadedImage[]>([]);
   const [modifiers, setModifiers] = useState<ModifierGroup[]>([]);
   const [isDragging, setIsDragging] = useState(false);
@@ -99,6 +100,12 @@ export function EditMenuItemDialog({
     }
   };
 
+  const STATUS_MAP: Record<string, Status> = {
+    Available: 'available',
+    'Sold Out': 'sold_out',
+    Unavailable: 'unavailable',
+  };
+
   // Load item data when dialog opens or item changes
   useEffect(() => {
     if (isOpen && item) {
@@ -107,7 +114,7 @@ export function EditMenuItemDialog({
       setPrice(item.price?.toString() || '');
       setPreparationTime(item.preparationTime?.toString() || '');
       setChefRecommended(item.chefRecommended || false);
-      setStatus(item.status || 'Available');
+      setStatus(STATUS_MAP[item.status] || 'available');
       if (item.images && item.images.length > 0) {
         setImages(item.images);
       } else if (item.imageUrl) {
@@ -292,6 +299,7 @@ export function EditMenuItemDialog({
       return;
     }
 
+    console.log(status)
     onUpdateItem(item.id, {
       name,
       description,
@@ -521,14 +529,14 @@ export function EditMenuItemDialog({
                       <RadioGroup
                         value={status}
                         onValueChange={(value) =>
-                          setStatus(value as 'Available' | 'Sold Out' | 'Unavailable')
+                          setStatus(value as Status)
                         }
                         className="flex gap-3"
                       >
                         <Label
                           htmlFor="status-available"
                           className="flex items-center justify-between p-3 rounded-lg border border-gray-200 cursor-pointer transition-all hover:border-gray-300 flex-1"
-                          style={status === 'Available' ? {
+                          style={status === 'available' ? {
                             borderColor: BRAND_COLOR,
                             backgroundColor: '#f0fdf4'
                           } : undefined}
@@ -546,7 +554,7 @@ export function EditMenuItemDialog({
                         <Label
                           htmlFor="status-sold-out"
                           className="flex items-center justify-between p-3 rounded-lg border border-gray-200 cursor-pointer transition-all hover:border-gray-300 flex-1"
-                          style={status === 'Sold Out' ? {
+                          style={status === 'sold_out' ? {
                             borderColor: '#ef4444',
                             backgroundColor: '#fef2f2'
                           } : undefined}
@@ -564,13 +572,13 @@ export function EditMenuItemDialog({
                         <Label
                           htmlFor="status-unavailable"
                           className="flex items-center justify-between p-3 rounded-lg border border-gray-200 cursor-pointer transition-all hover:border-gray-300 flex-1"
-                          style={status === 'Unavailable' ? {
+                          style={status === 'unavailable' ? {
                             borderColor: '#6b7280',
                             backgroundColor: '#f9fafb'
                           } : undefined}
                         >
                           <div className="flex items-center gap-2">
-                            <RadioGroupItem value="Unavailable" id="status-unavailable" />
+                            <RadioGroupItem value="unavailable" id="status-unavailable" />
                             <span className="text-sm font-medium text-gray-900">Unavailable</span>
                           </div>
                           <span

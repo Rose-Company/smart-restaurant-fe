@@ -409,37 +409,34 @@ export const serveApi = {
    * Handle VNPay callback
    * POST /api/vnpay/callback
    */
-  handleVNPayCallback: async (queryParams: Record<string, string>, token?: string): Promise<{ success: boolean; message: string } | null> => {
+  handleVNPayCallback: async (
+    queryParams: Record<string, string>,
+    token?: string
+  ): Promise<{ success: boolean; message: string } | null> => {
     try {
       const authToken = token || localStorage.getItem('admin_auth_token') || '';
-
-      if (!authToken) {
-        console.warn('[serveApi.handleVNPayCallback] No admin token found');
-        return null;
-      }
-
-      const url = `/api/vnpay/callback`;
+  
+      const queryString = new URLSearchParams(queryParams).toString();
+      const url = `/api/vnpay/callback?${queryString}`;
+  
       console.log('📤 Calling VNPay callback API:', url);
-      console.log('📋 Request body:', queryParams);
-
+  
       const res = await fetch(url, {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`
-        },
-        body: JSON.stringify(queryParams)
+        headers: authToken
+          ? { Authorization: `Bearer ${authToken}` }
+          : undefined,
       });
-
+  
       console.log('📥 Response status:', res.status);
-
+  
       if (!res.ok) {
         console.error('❌ Failed to handle VNPay callback:', res.status);
         const errorText = await res.text();
         console.error('❌ Error response:', errorText);
         return null;
       }
-
+  
       const result = await res.json();
       console.log('✅ VNPay callback handled:', result);
       return result;

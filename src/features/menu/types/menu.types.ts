@@ -22,12 +22,14 @@ export interface ModifierGroup {
   optionsPreview?: string; // e.g., "Small (+$0), Medium (+$2), Large (+$4)"
 }
 
+export type Status = 'available' | 'sold_out' | 'unavailable';
+
 export interface MenuItem {
   id: number;
   name: string;
   category: string;
   price: number;
-  status: 'available' | 'sold_out' | 'unavailable';
+  status: Status
   lastUpdate: string;
   chefRecommended: boolean;
   imageUrl: string;
