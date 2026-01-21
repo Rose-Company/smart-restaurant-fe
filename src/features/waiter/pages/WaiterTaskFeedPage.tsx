@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { ChefHat, MessageCircle, Receipt, Bell } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { ChefHat, MessageCircle, Receipt, Bell, ArrowLeft } from 'lucide-react';
 import { WaiterTask, TaskFilterType } from '../types/waiter.types';
 import { waiterApi } from '../services/waiter.api';
 import { serveApi, Table, TableDetail } from '../services/serve.api';
@@ -8,6 +8,7 @@ import { SuccessNotification } from '../components/SuccessNotification';
 import { OrderDetailModal } from '../components/OrderDetailModal';
 import { PaymentModal } from '../components/PaymentModal';
 import { TableMapModal } from '../components/TableMapModal';
+import { usePollingTables } from '../hooks/usePollingTables';
 
 export const WaiterTaskFeedPage: React.FC = () => {
   const [tasks, setTasks] = useState<WaiterTask[]>([]);
@@ -22,6 +23,58 @@ export const WaiterTaskFeedPage: React.FC = () => {
   const [paymentTableDetail, setPaymentTableDetail] = useState<TableDetail | null>(null);
   const [showTableMap, setShowTableMap] = useState(false);
 
+  // Memoize polling parameters to prevent unnecessary re-renders
+  const pollingParams = useMemo(() => {
+    switch (activeFilter) {
+      case 'kitchen':
+        return { status: 'occupied' as const };
+      case 'requests':
+        return { status: 'occupied' as const, is_help_needed: true };
+      case 'payment':
+        return { status: 'occupied' as const, is_ready_to_bill: true };
+      default:
+        return { status: 'occupied' as const };
+    }
+  }, [activeFilter]);
+
+  // Use ref to track params without triggering effect
+  const paramsRef = useRef(pollingParams);
+  useEffect(() => {
+    paramsRef.current = pollingParams;
+  }, [pollingParams]);
+
+  // Set up polling with 10-second interval
+  usePollingTables({
+    params: paramsRef.current,
+    enabled: true,
+    intervalMs: 10000, // 10 seconds
+    onSuccess: (data) => {
+      let tablesData = data.items;
+      
+      // Apply additional filters based on active filter
+      if (activeFilter === 'kitchen') {
+        tablesData = tablesData.filter(t => !t.is_help_needed && !t.is_ready_to_bill);
+      } else if (activeFilter === 'requests') {
+        tablesData = tablesData.filter(t => t.is_help_needed);
+      } else if (activeFilter === 'payment') {
+        tablesData = tablesData.filter(t => t.is_ready_to_bill);
+      }
+      
+      // Transform tables to tasks
+      const transformedTasks = tablesData.map(transformTableToTask);
+      setTasks(transformedTasks);
+      setLoading(false);
+    },
+    onError: (error) => {
+      console.error('Failed to load tasks:', error);
+      setLoading(false);
+      // Fallback to mock data if API fails
+      waiterApi.list(activeFilter)
+        .then(mockData => setTasks(mockData))
+        .catch(mockError => console.error('Failed to load mock tasks:', mockError));
+    }
+  });
+
   useEffect(() => {
     // Check for payment callback result in URL
     const searchParams = new URLSearchParams(window.location.search);
@@ -34,8 +87,6 @@ export const WaiterTaskFeedPage: React.FC = () => {
       setShowNotification(true);
       // Clear URL params
       window.history.replaceState({}, '', '/admin/waiter');
-      // Reload tasks to refresh list
-      loadTasks();
     } else if (paymentError === 'true') {
       setNotificationMessage('Payment failed. Please try again.');
       setShowNotification(true);
@@ -44,13 +95,6 @@ export const WaiterTaskFeedPage: React.FC = () => {
     }
   }, []);
 
-  useEffect(() => {
-    loadTasks();
-  }, [activeFilter]);
-
-  /**
-   * Transform Table from API to WaiterTask format
-   */
   const transformTableToTask = (table: Table): WaiterTask => {
     let taskType: 'kitchen_ready' | 'customer_request' | 'payment_request';
     
@@ -86,79 +130,6 @@ export const WaiterTaskFeedPage: React.FC = () => {
     };
   };
 
-  /**
-   * Load tasks from API based on active filter
-   */
-  const loadTasks = async () => {
-    try {
-      setLoading(true);
-      
-      let tablesData: Table[] = [];
-      
-      // Get token
-      const token = localStorage.getItem('admin_auth_token');
-      if (!token) {
-        console.log('No admin token found, using fallback mock data');
-        const mockData = await waiterApi.list(activeFilter);
-        setTasks(mockData);
-        return;
-      }
-
-      // Fetch tables based on active filter with correct parameters
-      switch (activeFilter) {
-        case 'kitchen':
-          // Kitchen tab: occupied tables (excluding help needed and ready to bill)
-          tablesData = await serveApi.getTablesList(
-            { status: 'occupied' },
-            token
-          ).then(res => res.items);
-          // Filter out help needed and ready to bill from kitchen view
-          tablesData = tablesData.filter(t => !t.is_help_needed && !t.is_ready_to_bill);
-          break;
-          
-        case 'requests':
-          // Requests tab: occupied tables with help needed
-          tablesData = await serveApi.getTablesList(
-            { status: 'occupied', is_help_needed: true },
-            token
-          ).then(res => res.items)
-          .then(items => items.filter(item => item.is_help_needed));
-          break;
-          
-        case 'payment':
-          // Payment tab: occupied tables ready for billing
-          tablesData = await serveApi.getTablesList(
-            { status: 'occupied', is_ready_to_bill: true },
-            token
-          ).then(res => res.items)
-          .then(items => items.filter(item => item.is_ready_to_bill))
-          break;
-          
-        default:
-          // All tab: all occupied tables
-          tablesData = await serveApi.getTablesList(
-            { status: 'occupied' },
-            token
-          ).then(res => res.items);
-      }
-      
-      // Transform tables to tasks
-      const transformedTasks = tablesData.map(transformTableToTask);
-      setTasks(transformedTasks);
-    } catch (error) {
-      console.error('Failed to load tasks:', error);
-      // Fallback to mock data if API fails
-      try {
-        const mockData = await waiterApi.list(activeFilter);
-        setTasks(mockData);
-      } catch (mockError) {
-        console.error('Failed to load mock tasks:', mockError);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleCompleteTask = async (taskId: string, taskType: string) => {
     if (taskType === 'customer_request') {
       // Show success notification for customer request
@@ -182,25 +153,25 @@ export const WaiterTaskFeedPage: React.FC = () => {
           const token = localStorage.getItem('admin_auth_token');
           
           if (token) {
-            console.log('🍽️ Fetching order detail for table:', tableId);
+            console.log('Fetching order detail for table:', tableId);
             const tableDetail = await serveApi.getTableDetail(tableId, token);
             
             if (tableDetail) {
-              console.log('✅ Order detail received:', tableDetail);
+              console.log('Order detail received:', tableDetail);
               setSelectedTableDetail(tableDetail);
             } else {
-              console.log('❌ No table detail returned');
+              console.log('No table detail returned');
             }
           }
         } catch (error) {
-          console.error('❌ Failed to fetch table details:', error);
+          console.error('Failed to fetch table details:', error);
         }
       }
     } else if (taskType === 'payment_request') {
       // Open payment modal for payment requests
       const task = tasks.find(t => t.id === taskId);
       if (task) {
-        console.log('💳 handleCompleteTask called for payment_request', { taskId, taskType, task });
+        console.log('handleCompleteTask called for payment_request', { taskId, taskType, task });
         setPaymentTask(task);
         
         // Fetch table detail for payment modal
@@ -209,18 +180,18 @@ export const WaiterTaskFeedPage: React.FC = () => {
           const token = localStorage.getItem('admin_auth_token');
           
           if (token) {
-            console.log('🧾 Fetching order detail for table:', tableId);
+            console.log('Fetching order detail for table:', tableId);
             const tableDetail = await serveApi.getTableDetail(tableId, token);
             
             if (tableDetail) {
-              console.log('✅ Order detail received for payment:', tableDetail);
+              console.log('Order detail received for payment:', tableDetail);
               setPaymentTableDetail(tableDetail);
             } else {
-              console.log('❌ No table detail returned');
+              console.log('No table detail returned');
             }
           }
         } catch (error) {
-          console.error('❌ Failed to fetch table details:', error);
+          console.error('Failed to fetch table details:', error);
         }
       }
     } else {
@@ -282,6 +253,31 @@ export const WaiterTaskFeedPage: React.FC = () => {
         justifyContent: 'space-between',
         zIndex: 50
       }}>
+        {/* Back Button */}
+        <button
+          onClick={() => window.history.back()}
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            padding: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginRight: '16px',
+            transition: 'opacity 0.2s'
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
+          onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
+          title="Go back"
+        >
+          <ArrowLeft style={{
+            width: '24px',
+            height: '24px',
+            color: '#ffffff'
+          }} />
+        </button>
+
         <div style={{
           display: 'flex',
           flexDirection: 'column',

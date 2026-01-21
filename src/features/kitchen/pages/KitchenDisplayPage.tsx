@@ -33,16 +33,10 @@ export function KitchenDisplayPage({ onBack }: KitchenDisplayPageProps) {
       
       const params: any = { page: 1, page_size: 100 };
 
+      // Only filter by status for 'completed' tab
+      // For category filters, we show all orders but highlight items from that category
       if (activeFilter === 'completed') {
         params.status = 'completed';
-      } else if (activeFilter === 'main-course') {
-        params.category = 'maincourse';
-      } else if (activeFilter === 'appetizers') {
-        params.category = 'appetizer';
-      } else if (activeFilter === 'desserts') {
-        params.category = 'dessert';
-      } else if (activeFilter === 'beverages') {
-        params.category = 'beverage';
       }
 
       const response = await kitchenApi.list(params);
@@ -274,6 +268,7 @@ export function KitchenDisplayPage({ onBack }: KitchenDisplayPageProps) {
       return order.status === 'completed';
     }
     
+    // For all other filters (including category), show all active orders
     if (order.status === 'completed') {
       return false;
     }

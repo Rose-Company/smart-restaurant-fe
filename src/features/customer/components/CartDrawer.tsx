@@ -639,9 +639,9 @@ export function CartDrawer({
                     paddingBottom: '8px'
                   }}>
                     {[
-                      { name: 'Coca Cola', price: 3.50, image: 'https://images.unsplash.com/photo-1554866585-cd94860890b7?w=200' },
-                      { name: 'Sparkling Water', price: 2.50, image: 'https://images.unsplash.com/photo-1523362628745-0c100150b504?w=200' },
-                      { name: 'Fresh Lemonade', price: 4.00, image: 'https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?w=200' }
+                      { name: 'Coca Cola', price: 20000, image: 'https://images.unsplash.com/photo-1554866585-cd94860890b7?w=200' },
+                      { name: 'Sparkling Water', price: 25000, image: 'https://images.unsplash.com/photo-1523362628745-0c100150b504?w=200' },
+                      { name: 'Fresh Lemonade', price: 40000, image: 'https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?w=200' }
                     ].map((item, idx) => (
                       <div
                         key={idx}

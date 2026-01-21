@@ -112,6 +112,35 @@ export function MenuPage() {
     };
   };
 
+  // Centralized function to load menu items
+  const loadMenuItems = async () => {
+    try {
+      setLoading(true);
+      const res = await menuItemApi.list({
+        page: currentPage,
+        page_size: itemsPerPage,
+        search: searchQuery || undefined,
+        category: categoryFilter !== "all" ? categoryFilter : undefined,
+        status: statusFilter !== "all" ? statusFilter : undefined,
+        sort:
+          sortBy === "price-asc"
+            ? "price_asc"
+            : sortBy === "price-desc"
+            ? "price_desc"
+            : sortBy === "name"
+            ? "name"
+            : undefined,
+      });
+      const data = res.data;
+      setItems(data.items.map(mapMenuItem));
+      setTotal(data.total);
+    } catch (err) {
+      console.error("Error loading menu items:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   //Load categories
   useEffect(() => {
     loadCategories();
@@ -311,31 +340,9 @@ export function MenuPage() {
     }
   };
 
+  // Load menu items when filters or pagination changes
   useEffect(() => {
-    setLoading(true);
-
-    menuItemApi
-      .list({
-        page: currentPage,
-        page_size: itemsPerPage,
-        search: searchQuery || undefined,
-        category: categoryFilter !== "all" ? categoryFilter : undefined,
-        status: statusFilter !== "all" ? statusFilter : undefined,
-        sort:
-          sortBy === "price-asc"
-            ? "price_asc"
-            : sortBy === "price-desc"
-            ? "price_desc"
-            : sortBy === "name"
-            ? "name"
-            : undefined,
-      })
-      .then((res) => {
-        const data = res.data;
-        setItems(res.data.items.map(mapMenuItem));
-        setTotal(data.total);
-      })
-      .finally(() => setLoading(false));
+    loadMenuItems();
   }, [currentPage, searchQuery, categoryFilter, statusFilter, sortBy]);
 
   const handleClearFilters = () => {
@@ -381,11 +388,14 @@ export function MenuPage() {
           modifier_group_id: mod.id,
         })),
       });
+
+      // Only close dialog and reload if successful
+      setShowAddDialog(false);
+      setCurrentPage(1); // Reset to page 1 to see new item
     } catch (error) {
       console.error("Error creating menu item:", error);
       alert("Failed to create menu item");
-    } finally {
-      // setIsLoading(false);
+      throw error; // Re-throw to be handled by the dialog if needed
     }
   };
 
@@ -436,30 +446,13 @@ export function MenuPage() {
           })) || [],
       });
 
+      // Only close dialog and reload if successful
       setEditingItem(null);
-
-      // Reload items after update
-      const res = await menuItemApi.list({
-        page: currentPage,
-        page_size: itemsPerPage,
-        search: searchQuery || undefined,
-        category: categoryFilter !== "all" ? categoryFilter : undefined,
-        status: statusFilter !== "all" ? statusFilter : undefined,
-        sort:
-          sortBy === "price-asc"
-            ? "price_asc"
-            : sortBy === "price-desc"
-            ? "price_desc"
-            : sortBy === "name"
-            ? "name"
-            : undefined,
-      });
-      const data = res.data;
-      setItems(res.data.items.map(mapMenuItem));
-      setTotal(data.total);
+      await loadMenuItems();
     } catch (err) {
       console.error("Error updating menu item:", err);
       alert(err instanceof Error ? err.message : "Failed to update menu item");
+      throw err; // Re-throw to be handled by the dialog if needed
     }
   };
 
@@ -470,25 +463,7 @@ export function MenuPage() {
 
     try {
       await menuItemApi.delete(id);
-
-      const res = await menuItemApi.list({
-        page: currentPage,
-        page_size: itemsPerPage,
-        search: searchQuery || undefined,
-        category: categoryFilter !== "all" ? categoryFilter : undefined,
-        status: statusFilter !== "all" ? statusFilter : undefined,
-        sort:
-          sortBy === "price-asc"
-            ? "price_asc"
-            : sortBy === "price-desc"
-            ? "price_desc"
-            : sortBy === "name"
-            ? "name"
-            : undefined,
-      });
-      const data = res.data;
-      setItems(res.data.items.map(mapMenuItem));
-      setTotal(data.total);
+      await loadMenuItems();
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed to delete menu item");
       console.error("Error deleting menu item:", err);

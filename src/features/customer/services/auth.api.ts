@@ -102,4 +102,45 @@ export const authCustomerApi = {
             })
         });
     },
+
+    getMe: async (): Promise<ApiResponse<any>> => {
+        try {
+            const token = localStorage.getItem('customer_token');
+            
+            if (!token) {
+                console.warn('No customer token found');
+                return { code: 401, message: 'No token found' };
+            }
+
+            console.log('Fetching customer info from /api/me');
+            
+            const res = await fetch('/api/me', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            if (res.status === 401) {
+                console.error('Token expired (401 Unauthorized)');
+                localStorage.removeItem('customer_token');
+                window.location.href = '/';
+                return { code: 401, message: 'Token expired' };
+            }
+
+            if (!res.ok) {
+                const errorText = await res.text();
+                console.error('Error response:', errorText);
+                throw new Error('Failed to fetch user info');
+            }
+
+            const data = await res.json();
+            console.log('Customer info:', data);
+            return data;
+        } catch (error) {
+            console.error('Error fetching customer info:', error);
+            throw error;
+        }
+    },
 };
